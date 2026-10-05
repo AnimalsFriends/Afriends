@@ -11,8 +11,6 @@
  */
 export const SITE_DEFAULTS = {
 
-
-
   /* ------------------------------------------------------------------
      1. DATOS DEL NEGOCIO
      ------------------------------------------------------------------ */
@@ -20,9 +18,8 @@ export const SITE_DEFAULTS = {
     nombre: "AnimalsFriends",
 
     // Datos legales (los usan Aviso Legal y Política de Privacidad). Complétalos antes de publicar.
-    razonSocial: "AnimalsFriends",       // Ej: "Animal Friends S.A.S." o nombre completo del titular
-    nit: "",               // Ej: "901.234.567-8" o cédula si es persona natural
-
+    razonSocial: "",       // Ej: "Animal Friends S.A.S." o nombre completo del titular
+    nit: "",                // Ej: "901.234.567-8" o cédula si es persona natural
 
     // Número para recibir los pedidos. Solo dígitos, con código de país, sin + ni espacios.
     // Colombia = 57  ->  57 + 3123044174
@@ -31,10 +28,10 @@ export const SITE_DEFAULTS = {
     // Cómo se ve el número en la página
     telefonoVisible: "+57 312 3044174",
 
-    correo: "petcommunity.133@gmail.com",            // Ej: "hola@animalfriends.com.co"  (vacío = no se muestra)
+    correo: "",            // Ej: "hola@animalfriends.com.co"  (vacío = no se muestra)
     direccion: "",         // Ej: "Calle 123 # 45-67, Barrio X" (vacío = no se muestra)
-    ciudad: "Bogotá",      // Se usa para el SEO (Google)
-    ubicacionVisible: "Bogotá, Colombia",   // Lo que se ve en el pie de página
+    ciudad: "",            // Se usa para el SEO (Google)
+    ubicacionVisible: "",  // Lo que se ve en el pie de página
 
     // Cada línea es un renglón en el pie de página
     horarios: [
@@ -72,7 +69,6 @@ export const SITE_DEFAULTS = {
     }
   },
 
-
   /* ------------------------------------------------------------------
      2. CATEGORÍAS (TARJETAS) Y SERVICIOS
      ------------------------------------------------------------------
@@ -101,11 +97,10 @@ export const SITE_DEFAULTS = {
 
     /* ---------------------------- BAÑOS ---------------------------- */
     {
-      id: "banos",                 // único, sin espacios ni tildes
+      id: "banos",
       activa: true,
       tipo: "normal",
 
-      // Tarjeta en "Nuestros Servicios"
       tarjeta: {
         icono: "🛁",
         titulo: "Baños para Perros",
@@ -120,17 +115,16 @@ export const SITE_DEFAULTS = {
         textoBoton: "Seleccionar Baños"
       },
 
-      // Pestaña y panel del cotizador
       pestana: "🛁 Baños Perros",
       tituloPanel: "Baños para Perros y Cuidados Básicos",
       descripcionPanel: "Selecciona los servicios de higiene que necesites para tu peludito.",
 
       servicios: [
-        { id: "bano-normal",    activo: true, nombre: "Baño normal",       precio: 35000 },
-        { id: "bano-medicado",  activo: true, nombre: "Baño medicado",     precio: 50000 },
+        { id: "bano-normal", activo: true, nombre: "Baño normal", precio: 35000 },
+        { id: "bano-medicado", activo: true, nombre: "Baño medicado", precio: 50000 },
         { id: "limpieza-oidos", activo: true, nombre: "Limpieza de oídos", precio: 15000 },
-        { id: "deslanados",     activo: true, nombre: "Deslanados",        precio: 30000 },
-        { id: "corte-unas",     activo: true, nombre: "Corte de uñas",     precio: 15000 }
+        { id: "deslanados", activo: true, nombre: "Deslanados", precio: 30000 },
+        { id: "corte-unas", activo: true, nombre: "Corte de uñas", precio: 15000 }
       ]
     },
 
@@ -156,13 +150,14 @@ export const SITE_DEFAULTS = {
       tituloPanel: "Colegio Canino y Ruta",
       descripcionPanel: "Selecciona el servicio de ruta canina y marca los días que asistirá tu peludito.",
 
-      unidadPrecio: "por día",                       // texto junto al precio
+      unidadPrecio: "por día",
       dias: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"],
       preguntaDias: "¿Qué días de la semana requiere ruta?",
 
       servicios: [
         {
-          id: "colegio-ruta", activo: true,
+          id: "colegio-ruta",
+          activo: true,
           nombre: "Ruta Canina & Colegio Diario",
           nombreMensaje: "Colegio con Ruta Canina",
           precio: 40000
@@ -199,7 +194,8 @@ export const SITE_DEFAULTS = {
 
       servicios: [
         {
-          id: "hotel-noche", activo: true,
+          id: "hotel-noche",
+          activo: true,
           nombre: "Alojamiento Hotel 24/7",
           nombreMensaje: "Hotel con Alojamiento",
           precio: 60000
@@ -231,21 +227,20 @@ export const SITE_DEFAULTS = {
 
       servicios: [
         {
-          id: "corte-raza", activo: true,
+          id: "corte-raza",
+          activo: true,
           nombre: "Corte y Peluquería Estética por Raza",
           nombreMensaje: "Corte y Peluquería por raza",
           precio: 45000
         },
         {
-          id: "desenredado-spa", activo: true,
+          id: "desenredado-spa",
+          activo: true,
           nombre: "Desenredado profundo y spa capilar",
           nombreMensaje: "Desenredado profundo y spa",
           precio: 35000
         }
       ]
     }
-
-    /* Para agregar otra categoría, pon una coma después de la llave "}" de arriba
-       y pega aquí un bloque nuevo (copia uno de los de arriba y edítalo). */
   ]
 };
