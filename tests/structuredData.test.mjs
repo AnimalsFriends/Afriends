@@ -10,7 +10,7 @@ const business = (extra = {}, siteUrl = "") =>
 test("no inventa datos: sin dirección ni correo no aparecen", () => {
   const b = business();
   assert.equal(b.email, undefined);
-  assert.equal(b.address.streetAddress, undefined);
+  assert.equal(b.address, undefined);
   assert.equal(b.url, undefined);
 });
 
