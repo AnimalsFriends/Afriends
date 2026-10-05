@@ -10,7 +10,7 @@ export const SITE_DEFAULTS = {
      1. DATOS DEL NEGOCIO
      ------------------------------------------------------------------ */
   negocio: {
-    nombre: "Animal Friends",
+    nombre: "Animals Friends",
 
     // Datos legales (los usan Aviso Legal y Política de Privacidad). Complétalos antes de publicar.
     razonSocial: "",       // Ej: "Animal Friends S.A.S." o nombre completo del titular
@@ -24,10 +24,10 @@ export const SITE_DEFAULTS = {
     // Cómo se ve el número en la página
     telefonoVisible: "+57 312 3044174",
 
-    correo: "",            // Ej: "hola@animalfriends.com.co"  (vacío = no se muestra)
+    correo: "petcommunity.133@gmail.com",            // Ej: "hola@animalfriends.com.co"  (vacío = no se muestra)
     direccion: "",         // Ej: "Calle 123 # 45-67, Barrio X" (vacío = no se muestra)
-    ciudad: "Bogotá",      // Se usa para el SEO (Google)
-    ubicacionVisible: "Bogotá, Colombia",   // Lo que se ve en el pie de página
+    ciudad: "Chía",      // Se usa para el SEO (Google)
+    ubicacionVisible: "Chía, Cundinamarca, Colombia",   // Lo que se ve en el pie de página
 
     // Cada línea es un renglón en el pie de página
     horarios: [
