@@ -8,7 +8,7 @@ const business = (extra = {}, siteUrl = "") =>
   buildBusinessSchema({ negocio: { ...state.negocio, ...extra }, categorias: state.categorias, siteUrl })["@graph"][0];
 
 test("no inventa datos: sin dirección ni correo no aparecen", () => {
-  const b = business();
+  const b = business({ correo: "", direccion: "", ciudad: "" });
   assert.equal(b.email, undefined);
   assert.equal(b.address, undefined);
   assert.equal(b.url, undefined);
