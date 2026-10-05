@@ -1,9 +1,0 @@
-# Variables para scripts/deploy-to-supabase-storage.mjs (entorno Node/CI, no el navegador).
-# Copia este archivo como ".env" para uso local con una herramienta como dotenv,
-# o cárgalas manualmente en tu terminal. En GitHub Actions van como Secrets
-# del repositorio (ver .github/workflows/deploy-supabase.yml).
-
-SUPABASE_URL=https://TU-PROYECTO.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=TU-SERVICE-ROLE-KEY
-SUPABASE_BUCKET=animals-friends-site
-
