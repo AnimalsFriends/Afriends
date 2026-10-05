@@ -1,0 +1,68 @@
+# =====================================================================
+# CI/CD de Animal Friends
+#   - En cada Pull Request y en cada push a main: build, auditoría y pruebas.
+#   - Si todo pasa: despliega a Cloudflare Pages (producción en main, vista previa en PRs).
+# Configuración necesaria: ver GUIA_FASE4_CONFIGURACION.md (sección 5).
+# =====================================================================
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Build, auditoría y pruebas
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SITE_URL: ${{ vars.SITE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generar SEO (sitemap, robots, canonical, JSON-LD)
+        run: node scripts/build.mjs
+      - name: Auditar enlaces, SEO y compatibilidad con la CSP
+        run: node scripts/audit.mjs
+      - name: Pruebas automáticas
+        run: node --test
+
+  deploy:
+    name: Desplegar a Cloudflare Pages
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Las PR de forks no tienen acceso a secretos: no se despliegan.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      SITE_URL: ${{ vars.SITE_URL }}
+      CF_PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Construir y empaquetar (dist/)
+        run: node scripts/build.mjs && node scripts/package.mjs
+      - name: Publicar en Cloudflare Pages
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CF_PAGES_PROJECT != '' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ vars.CF_PAGES_PROJECT }} --branch=${{ github.head_ref || github.ref_name }}
+      - name: Aviso si faltan credenciales
+        if: ${{ env.CLOUDFLARE_API_TOKEN == '' || env.CF_PAGES_PROJECT == '' }}
+        run: echo "::warning::Despliegue omitido. Configura el secreto CLOUDFLARE_API_TOKEN y la variable CF_PAGES_PROJECT (ver GUIA_FASE4_CONFIGURACION.md)."

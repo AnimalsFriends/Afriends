@@ -1,0 +1,103 @@
+/* =====================================================================
+   LAYOUT - header, navegación, footer, botón flotante de WhatsApp,
+   páginas legales y página 404. Mobile-First.
+   ===================================================================== */
+
+/* ---------- Header ---------- */
+.site-header {
+  position: sticky; top: 0; z-index: 50; min-height: var(--header-h);
+  background: rgba(250, 248, 245, .94); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--color-border);
+}
+.site-header__bar { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); min-height: var(--header-h); }
+.site-header__logo { display: block; line-height: 0; border-radius: var(--radius-sm); }
+.site-header__logo img { height: 3rem; width: auto; border-radius: var(--radius-sm); }
+
+.nav-toggle {
+  display: inline-grid; place-items: center; width: var(--tap-min); height: var(--tap-min);
+  border: 2px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-surface); color: var(--color-text); cursor: pointer;
+}
+.nav-toggle svg { width: 1.5rem; height: 1.5rem; }
+.nav-toggle .icon-close { display: none; }
+.nav-toggle[aria-expanded="true"] .icon-open { display: none; }
+.nav-toggle[aria-expanded="true"] .icon-close { display: block; }
+
+/* Navegación móvil: panel desplegable */
+.site-nav {
+  display: none; position: absolute; top: 100%; left: 0; right: 0;
+  padding: var(--sp-4) var(--gutter) var(--sp-5);
+  background: var(--color-bg); border-bottom: 1px solid var(--color-border); box-shadow: var(--shadow-md);
+}
+.site-nav[data-open="true"] { display: block; }
+.site-nav ul { display: grid; gap: var(--sp-1); margin-bottom: var(--sp-4); }
+.site-nav a:not(.btn) {
+  display: flex; align-items: center; min-height: var(--tap-min);
+  padding-inline: var(--sp-2); font-weight: 700; font-size: var(--fs-lg);
+}
+.site-nav .btn { width: 100%; }
+
+@media (min-width: 56rem) {
+  .nav-toggle { display: none; }
+  .site-nav {
+    display: flex; position: static; align-items: center; gap: var(--sp-5);
+    padding: 0; background: none; border: 0; box-shadow: none;
+  }
+  .site-nav ul { display: flex; gap: var(--sp-4); margin: 0; }
+  .site-nav a:not(.btn) { font-size: var(--fs-base); }
+  .site-nav .btn { width: auto; min-height: var(--tap-min); padding: var(--sp-2) var(--sp-4); }
+}
+
+/* ---------- Footer ---------- */
+.site-footer { background: var(--brand-gris); color: var(--brand-crema); margin-top: var(--sp-8); padding-block: var(--sp-7) var(--sp-5); }
+.site-footer a { color: var(--brand-crema); text-decoration-color: var(--brand-crema); }
+.site-footer h2 { font-size: var(--fs-lg); color: var(--brand-crema); margin-bottom: var(--sp-3); }
+.site-footer__grid { display: grid; gap: var(--sp-6); grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+.site-footer__brand img { width: 4.5rem; height: 4.5rem; border-radius: 50%; margin-bottom: var(--sp-3); }
+.site-footer p, .site-footer li { font-size: var(--fs-sm); margin-bottom: var(--sp-2); }
+.site-footer__list { display: grid; gap: var(--sp-2); }
+.site-footer__subtitle { margin-top: var(--sp-4); }
+.site-footer__legal { margin-top: var(--sp-6); padding-top: var(--sp-4); border-top: 1px solid rgba(250, 248, 245, .25); font-size: var(--fs-sm); }
+
+/* ---------- Botón flotante de WhatsApp ---------- */
+.wa-float {
+  position: fixed; z-index: 80;
+  right: max(var(--sp-4), env(safe-area-inset-right)); bottom: max(var(--sp-4), env(safe-area-inset-bottom));
+  width: 3.5rem; height: 3.5rem; display: grid; place-items: center; border-radius: 50%;
+  background: #128C7E; color: #fff; box-shadow: var(--shadow-md);
+  transition: transform .15s ease, background-color .15s ease;
+}
+.wa-float:hover { background: #0F7A6D; transform: scale(1.06); }
+.wa-float svg { width: 1.75rem; height: 1.75rem; fill: currentColor; }
+
+/* ---------- Páginas legales (texto largo) ---------- */
+.prose { max-width: 46rem; }
+.prose h1 { font-size: var(--fs-2xl); }
+.prose h2 { font-size: var(--fs-xl); margin-top: var(--sp-6); }
+.prose ul { list-style: disc; padding-left: 1.25rem; display: block; margin-bottom: var(--sp-4); }
+.prose li { margin-bottom: var(--sp-2); }
+.prose .meta { color: var(--color-text-soft); font-size: var(--fs-sm); }
+.legal-missing { background: #FFF3CD; color: #664D03; padding: 0 .35em; border-radius: 6px; font-weight: 700; }
+.table-wrap { overflow-x: auto; margin-bottom: var(--sp-4); }
+.table-wrap table { border-collapse: collapse; width: 100%; min-width: 30rem; font-size: var(--fs-sm); }
+.table-wrap th, .table-wrap td { text-align: left; padding: var(--sp-3); border-bottom: 1px solid var(--color-border); vertical-align: top; }
+.table-wrap th { background: var(--color-accent-soft); }
+
+/* ---------- Página 404 ---------- */
+.not-found { text-align: center; padding-block: var(--sp-8); }
+.not-found .not-found__code { font-size: clamp(5rem, 22vw, 9rem); font-weight: 900; line-height: 1; color: var(--color-accent); margin: 0; }
+.not-found p { font-size: var(--fs-lg); color: var(--color-text-soft); max-width: 34rem; margin-inline: auto; }
+
+
+/* ---------- Aviso de cookies ---------- */
+.consent {
+  position: fixed; z-index: 90; left: var(--sp-3); right: var(--sp-3); bottom: var(--sp-3);
+  max-width: 38rem; padding: var(--sp-5); background: var(--color-surface);
+  border: 2px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+}
+.consent__title { margin: 0 0 var(--sp-2); font-size: var(--fs-lg); }
+.consent__text { margin: 0 0 var(--sp-4); font-size: var(--fs-sm); }
+.consent__actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+.consent__actions .btn { flex: 1 1 10rem; }
+/* El botón flotante de WhatsApp sube cuando el aviso está visible */
+body.has-consent-banner .wa-float { bottom: calc(var(--consent-h, 11rem) + var(--sp-5)); }

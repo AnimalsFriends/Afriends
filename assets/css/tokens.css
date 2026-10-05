@@ -1,0 +1,62 @@
+/* =====================================================================
+   TOKENS DE DISEÑO - Animal Friends
+   Única fuente de verdad para colores, tipografía, espacios y sombras.
+   Paleta oficial del manual de marca. Contrastes WCAG calculados.
+   ===================================================================== */
+:root {
+  /* ---- Paleta oficial (manual de marca) ---- */
+  --brand-terracota: #D15638;   /* Terracota Cálido */
+  --brand-gris:      #615951;   /* Gris Cálido      */
+  --brand-crema:     #FAF8F5;   /* Crema Suave      */
+
+  /* ---- Acento = Terracota oficial #D15638 ---------------------------
+     Contraste: blanco sobre #D15638 = 4.12:1 y #D15638 sobre crema = 3.88:1.
+     WCAG AA exige 3:1 para texto GRANDE (>= 18.66px en negrita) y para
+     gráficos/iconos, y 4.5:1 para texto normal. Regla del proyecto:
+       - #D15638 se usa en FONDOS (botones), iconos, bordes y subrayados.
+       - El texto sobre #D15638 es siempre blanco, en NEGRITA y >= 19px
+         (--fs-btn), por lo que cumple AA como texto grande.
+       - El texto pequeño NUNCA va en terracota: usa --color-text (gris).
+       - Hover = #B8452B (blanco 5.35:1, cumple AA incluso para texto normal).
+  ------------------------------------------------------------------- */
+  --color-accent:        #D15638;
+  --color-accent-strong: #B8452B;
+  --color-accent-soft:   rgba(209, 86, 56, 0.10);
+  --fs-btn: 1.1875rem;   /* 19px: con negrita = "texto grande" WCAG */
+
+  --color-bg:        var(--brand-crema);
+  --color-surface:   #FFFFFF;
+  --color-text:      var(--brand-gris);      /* 6.48:1 sobre crema (AA ok) */
+  --color-text-soft: #6F665E;                /* 5.2:1 sobre crema (AA ok)  */
+  --color-border:    #E6E0D8;
+  --color-on-accent: #FFFFFF;
+  --color-focus:     #1D4ED8;                /* anillo de foco muy visible */
+  --color-ok:        #2F855A;
+  --color-error:     #C53030;
+
+  /* ---- Tipografía (fuentes del sistema: 0 bytes, 0 bloqueo de render) ---- */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --fs-sm:   clamp(0.875rem, 0.85rem + 0.1vw, 0.9375rem);
+  --fs-base: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem);
+  --fs-lg:   clamp(1.125rem, 1.05rem + 0.4vw, 1.3125rem);
+  --fs-xl:   clamp(1.375rem, 1.2rem + 0.9vw, 1.75rem);
+  --fs-2xl:  clamp(1.75rem, 1.4rem + 1.8vw, 2.5rem);
+  --fs-3xl:  clamp(2rem, 1.5rem + 2.8vw, 3.25rem);
+  --lh-tight: 1.2;
+  --lh-base:  1.6;
+
+  /* ---- Espaciado (escala base 4px) ---- */
+  --sp-1: 0.25rem; --sp-2: 0.5rem;  --sp-3: 0.75rem; --sp-4: 1rem;
+  --sp-5: 1.5rem;  --sp-6: 2rem;    --sp-7: 3rem;    --sp-8: 4.5rem;
+
+  /* ---- Forma y profundidad ---- */
+  --radius-sm: 10px; --radius-md: 16px; --radius-lg: 24px; --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(97, 89, 81, .08);
+  --shadow-md: 0 8px 24px rgba(97, 89, 81, .12);
+
+  /* ---- Layout ---- */
+  --container: 72rem;       /* 1152px */
+  --gutter: clamp(1rem, 4vw, 2rem);
+  --tap-min: 44px;          /* tamaño táctil mínimo recomendado */
+  --header-h: 4.5rem;       /* alto reservado del header (evita saltos de diseño) */
+}

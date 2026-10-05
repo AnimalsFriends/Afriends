@@ -1,0 +1,7 @@
+# Copia este archivo como .dev.vars (está en .gitignore) para probar la Function en tu computador:
+#   npm run dev:functions
+# Claves de PRUEBA de Cloudflare Turnstile (siempre aprueban). En producción usa las reales.
+SUPABASE_URL=https://TU-PROYECTO.supabase.co
+SUPABASE_SERVICE_KEY=pega-aqui-la-clave-service_role-o-secret
+TURNSTILE_SECRET=1x0000000000000000000000000000000AA
+IP_SALT=cualquier-texto-largo-y-aleatorio-para-pruebas

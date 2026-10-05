@@ -1,0 +1,17 @@
+{
+  "name": "animal-friends",
+  "version": "0.4.0",
+  "private": true,
+  "type": "module",
+  "description": "Sitio web de Animal Friends (HTML + CSS + JS modular, datos en Supabase)",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "npx serve .",
+    "dev:functions": "npm run package && npx wrangler pages dev dist",
+    "build": "node scripts/build.mjs",
+    "audit": "node scripts/audit.mjs",
+    "test": "node --test",
+    "package": "node scripts/build.mjs && node scripts/package.mjs",
+    "check": "node scripts/build.mjs && node scripts/audit.mjs && node --test"
+  }
+}

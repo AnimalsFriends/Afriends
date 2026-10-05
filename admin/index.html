@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel de control | Animal Friends</title>
+  <meta name="description" content="Panel privado de administración de Animal Friends.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#D15638">
+  <link rel="icon" type="image/png" href="../assets/img/favicon.png">
+  <link rel="stylesheet" href="../assets/css/tokens.css">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+<body class="adm">
+  <a class="skip-link" href="#adm-main">Saltar al contenido</a>
+
+  <header class="adm-top">
+    <div class="adm-top__in">
+      <div class="adm-brand">Animal Friends<small>Panel de control de la página</small></div>
+      <div class="adm-top__actions">
+        <a class="adm-btn adm-btn--ghost adm-btn--sm" href="../index.html" target="_blank" rel="noopener noreferrer">Ver mi página ↗</a>
+        <span id="adm-userbox" class="adm-row" hidden>
+          <span id="adm-user" class="adm-user"></span>
+          <button id="adm-logout" class="adm-btn adm-btn--ghost adm-btn--sm" type="button">Cerrar sesión</button>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <h1 class="visually-hidden">Panel de control de Animal Friends</h1>
+
+  <!-- Acceso -->
+  <section id="adm-login" class="adm-login" aria-labelledby="adm-login-title" hidden>
+    <div class="adm-card">
+      <h2 id="adm-login-title">Bienvenido 🐾</h2>
+      <p class="adm-sub">Ingresa con tu correo y contraseña para editar tu página.</p>
+      <div class="adm-stack">
+        <label class="adm-f"><span class="adm-fl">Correo</span><input id="adm-email" type="email" autocomplete="username" placeholder="tucorreo@ejemplo.com"></label>
+        <label class="adm-f"><span class="adm-fl">Contraseña</span><input id="adm-pass" type="password" autocomplete="current-password"></label>
+        <p id="adm-login-error" class="adm-note adm-note--err" role="alert" hidden></p>
+        <button id="adm-login-btn" class="adm-btn adm-btn--primary" type="button">Entrar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Editor -->
+  <main id="adm-main" class="adm-wrap" hidden>
+    <div id="adm-note" aria-live="polite"></div>
+    <div id="adm-tabs" class="adm-tabs" role="tablist" aria-label="Secciones del panel">
+      <button class="adm-tab" role="tab" type="button" data-tab="negocio" aria-selected="true">Negocio</button>
+      <button class="adm-tab" role="tab" type="button" data-tab="servicios" aria-selected="false" tabindex="-1">Servicios y precios</button>
+      <button id="adm-leads-tab" class="adm-tab" role="tab" type="button" data-tab="leads" aria-selected="false" tabindex="-1" hidden>Mensajes<span id="adm-leads-count"></span></button>
+    </div>
+    <div id="adm-panel" role="tabpanel"></div>
+  </main>
+
+  <!-- Barra de acciones -->
+  <div id="adm-bar" class="adm-bar" hidden>
+    <div class="adm-bar__in">
+      <span id="adm-state" class="adm-state is-clean" role="status">Sin cambios</span>
+      <div class="adm-row adm-wrapx">
+        <button id="adm-reset" class="adm-btn adm-btn--ghost" type="button">Volver a valores originales</button>
+        <button id="adm-download" class="adm-btn adm-btn--ghost" type="button">Descargar respaldo</button>
+        <button id="adm-save" class="adm-btn adm-btn--primary" type="button">Guardar y publicar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="adm-toast" class="adm-toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="../src/admin/main.js"></script>
+</body>
+</html>
