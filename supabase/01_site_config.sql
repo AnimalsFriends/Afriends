@@ -2,7 +2,7 @@
 -- ANIMAL FRIENDS - Tabla de configuración del sitio (Supabase)
 -- =====================================================================
 -- 1. Supabase -> SQL Editor -> New query
--- 2. Cambia CORREO_DEL_CLIENTE@ejemplo.com (2 veces) por el correo del admin
+-- 2. Cambia petcommunity.133@gmail.com (2 veces) por el correo del admin
 -- 3. Pega y pulsa RUN
 -- =====================================================================
 
@@ -24,13 +24,13 @@ create policy "lectura publica"
 drop policy if exists "admin inserta" on public.site_config;
 create policy "admin inserta"
   on public.site_config for insert to authenticated
-  with check (lower(auth.jwt() ->> 'email') = lower('CORREO_DEL_CLIENTE@ejemplo.com'));
+  with check (lower(auth.jwt() ->> 'email') = lower('petcommunity.133@gmail.com'));
 
 drop policy if exists "admin actualiza" on public.site_config;
 create policy "admin actualiza"
   on public.site_config for update to authenticated
-  using      (lower(auth.jwt() ->> 'email') = lower('CORREO_DEL_CLIENTE@ejemplo.com'))
-  with check (lower(auth.jwt() ->> 'email') = lower('CORREO_DEL_CLIENTE@ejemplo.com'));
+  using      (lower(auth.jwt() ->> 'email') = lower('petcommunity.133@gmail.com'))
+  with check (lower(auth.jwt() ->> 'email') = lower('petcommunity.133@gmail.com'));
 
 grant select on public.site_config to anon, authenticated;
 grant insert, update on public.site_config to authenticated;
