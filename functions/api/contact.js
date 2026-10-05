@@ -56,7 +56,7 @@ export async function onRequestPost({ request, env }) {
   // 0) Configuración completa
   // Supabase recomienda las claves nuevas `sb_secret_...`; mantenemos
   // `SUPABASE_SERVICE_KEY` como compatibilidad con instalaciones antiguas.
-  const supabaseKey = env.SUPABASE_SECRET_KEY || supabaseKey;
+  const supabaseKey = env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_KEY;
   if (!env.SUPABASE_URL || !supabaseKey || !env.TURNSTILE_SECRET || !env.IP_SALT) {
     console.error("[contact] Faltan variables de entorno requeridas");
     return json(500, { error: "config" });
