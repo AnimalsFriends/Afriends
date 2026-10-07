@@ -51,6 +51,14 @@ Con `?debug=1` en la dirección ves si los datos vienen de Supabase o de los val
 
 > Si más adelante usas GitHub Actions (Fase 4), el despliegue puede hacerse con `wrangler` desde el workflow.
 
+## Base de datos del panel (Fase 1)
+El panel de gestión de la guardería (dueños, mascotas, rutas del colegio, hotel, agenda, gastos y cartera)
+se apoya en Supabase. La Fase 1 deja listo el modelo de datos y la seguridad:
+tablas nuevas, roles `admin` y `empleado` (tabla `empleados`) y RLS en todas las tablas; el empleado no puede
+ver nada de dinero. Aún **no hay pantallas nuevas**: eso viene en las siguientes fases.
+Todo el detalle, cómo aplicarlo y cómo deshacerlo está en **`supabase/README.md`**.
+Las migraciones nuevas están en `supabase/migrations/` y cada una tiene su rollback en `supabase/rollbacks/`.
+
 ## Cotizador y panel de administración (Fase 5)
 - **Cotizador** (`#cotizador`): la lógica vive en `src/models/QuoteModel.js` (pura y probada): precio fijo, por días y por noches,
   total, y mensaje de WhatsApp (los nombres se limpian para que no alteren el formato). Pestañas accesibles con teclado
@@ -72,7 +80,7 @@ Todo el paso a paso está en **`GUIA_FASE4_CONFIGURACION.md`**. Resumen:
 - **Analítica GA4 con consentimiento**: no se carga nada de Google hasta que el visitante acepte; aceptar y rechazar pesan igual;
   "Configurar cookies" en el pie permite cambiar la decisión. Sin `GA_MEASUREMENT_ID` no hay aviso ni analítica.
   Eventos: `generate_lead` y `whatsapp_click` (con la ubicación del botón).
-- **CI/CD**: cada PR y push a `main` ejecuta build, auditoría y 54 pruebas; si pasan, despliega a Cloudflare Pages (vista previa en PRs).
+- **CI/CD**: cada PR y push a `main` ejecuta build, auditoría y las pruebas automáticas; si pasan, despliega a Cloudflare Pages (vista previa en PRs).
 - **CSP** ampliada solo con lo necesario: Cloudflare Turnstile y Google Analytics.
 
 ## SEO, rendimiento y seguridad (Fase 3)
