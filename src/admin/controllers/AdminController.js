@@ -7,6 +7,7 @@ import { esc } from "../../utils/dom.js";
 import { Auth, AuthError } from "../services/authService.js";
 import { SiteConfigApi, LeadsApi, ApiError } from "../services/adminApi.js";
 import { AdminViews } from "../views/adminViews.js";
+import { GestionController } from "./GestionController.js";
 import {
   DIAS, clone, normalizeDraft, validateDraft, cleanPayload, buildDefaultsFile,
   setPath, move, blankService, blankCategory
@@ -26,6 +27,12 @@ export class AdminController {
     this.leadsError = null;
     this.remote = Auth.isConfigured();
     this.toastTimer = null;
+    // Dueños y mascotas (Fase 2): cada ficha se guarda sola, por eso va en su propio controlador.
+    this.gestion = new GestionController({
+      panel: () => $("adm-panel"),
+      toast: (...args) => this.toast(...args),
+      expire: () => this.expireSession()
+    });
   }
 
   /* ------------------------------ arranque ------------------------------ */
@@ -80,9 +87,10 @@ export class AdminController {
       $("adm-download").className = "adm-btn adm-btn--primary";
     }
     $("adm-leads-tab").hidden = !this.remote;
+    $("adm-gestion-tab").hidden = !this.remote;
     $("adm-note").innerHTML = note;
     if (!keepDraft) { this.openCat = null; this.setDirty(false); }
-    this.setTab(this.tab === "leads" && this.remote ? "leads" : "negocio");
+    this.setTab(["leads", "gestion"].includes(this.tab) && this.remote ? this.tab : "negocio");
   }
 
   setTab(tab) {
@@ -92,12 +100,14 @@ export class AdminController {
       b.setAttribute("aria-selected", String(active));
       b.tabIndex = active ? 0 : -1;
     });
-    $("adm-bar").hidden = tab === "leads";
-    this.render();
+    $("adm-bar").hidden = tab === "leads" || tab === "gestion";
+    this.gestion.setActive(tab === "gestion");
+    if (tab !== "gestion") this.render();
     if (tab === "leads") this.refreshLeads();
   }
 
   render() {
+    if (this.tab === "gestion") { this.gestion.render(); return; }
     const panel = $("adm-panel");
     if (this.tab === "negocio") panel.innerHTML = AdminViews.business(this.data);
     else if (this.tab === "servicios") panel.innerHTML = AdminViews.services(this.data, this.openCat);
@@ -161,13 +171,14 @@ export class AdminController {
   }
 
   expireSession() {
+    this.gestion.loaded = false;                          // al volver a entrar se recarga la lista
     Auth.logout();
     this.showLogin(this.dirty ? "Tu sesión venció. Entra de nuevo; tus cambios sin guardar siguen aquí." : "Tu sesión venció. Entra de nuevo.");
   }
 
   /* ------------------------------ eventos ------------------------------ */
   bindGlobal() {
-    window.addEventListener("beforeunload", (event) => { if (this.dirty) { event.preventDefault(); event.returnValue = ""; } });
+    window.addEventListener("beforeunload", (event) => { if (this.dirty || this.gestion.dirty) { event.preventDefault(); event.returnValue = ""; } });
 
     $("adm-login-btn").addEventListener("click", () => this.onLogin());
     $("adm-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") this.onLogin(); });
@@ -190,6 +201,7 @@ export class AdminController {
     panel.addEventListener("input", (e) => this.onInput(e));
     panel.addEventListener("change", (e) => this.onChange(e));
     panel.addEventListener("click", (e) => this.onClick(e));
+    this.gestion.bind(panel);
   }
 
   onTabKeys(event) {
@@ -214,6 +226,7 @@ export class AdminController {
   }
 
   onInput(event) {
+    if (this.tab === "gestion") return;                  // esa pestaña la maneja GestionController
     const t = event.target;
     if (!t.dataset.path) return;
     const value = t.type === "checkbox" ? t.checked : t.type === "number" ? (t.value === "" ? 0 : Number(t.value)) : t.value;
@@ -226,6 +239,7 @@ export class AdminController {
   }
 
   onChange(event) {
+    if (this.tab === "gestion") return;
     const t = event.target;
     if (t.matches("[data-lead-status]")) { this.changeLeadStatus(t.dataset.id, t.value); return; }
     if (t.dataset.dia) {
@@ -244,6 +258,7 @@ export class AdminController {
   }
 
   onClick(event) {
+    if (this.tab === "gestion") return;
     const b = event.target.closest("[data-action]");
     if (!b) return;
     const action = b.dataset.action;
