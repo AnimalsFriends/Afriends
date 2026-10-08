@@ -10,14 +10,14 @@ import { Auth, AuthError } from "./authService.js";
 
 const API = String(ENV.SUPABASE_URL || "").replace(/\/$/, "");
 const KEY = ENV.SUPABASE_ANON_KEY || "";
-const rest = (path) => `${API}/rest/v1/${path}`;
+export const rest = (path) => `${API}/rest/v1/${path}`;
 
 export class ApiError extends Error {
   constructor(code) { super(code); this.code = code; }     // perm | missing | fail | expired
 }
 
 /** fetch con el token del administrador; si vence, lo renueva una vez y reintenta. */
-async function authed(url, init = {}) {
+export async function authed(url, init = {}) {
   const send = async () => fetch(url, { ...init, headers: { apikey: KEY, Authorization: `Bearer ${await Auth.token()}`, ...(init.headers || {}) } });
   let response;
   try { response = await send(); }
