@@ -2,7 +2,7 @@
 -- ANIMAL FRIENDS - Mensajes del formulario de contacto (Supabase)
 -- =====================================================================
 -- 1. Supabase -> SQL Editor -> New query
--- 2. Cambia CORREO_DEL_CLIENTE@ejemplo.com (4 veces) por el correo del administrador
+-- 2. Cambia petcommunity.133@gmail.com (4 veces) por el correo del administrador
 -- 3. Pega todo y pulsa RUN
 --
 -- Seguridad: la tabla NO tiene políticas para visitantes anónimos. Solo la
@@ -41,13 +41,13 @@ grant select, update on public.contact_requests to authenticated;
 drop policy if exists "admin lee mensajes" on public.contact_requests;
 create policy "admin lee mensajes"
   on public.contact_requests for select to authenticated
-  using (lower(auth.jwt() ->> 'email') = lower('CORREO_DEL_CLIENTE@ejemplo.com'));
+  using (lower(auth.jwt() ->> 'email') = lower('petcommunity.133@gmail.com'));
 
 drop policy if exists "admin actualiza estado" on public.contact_requests;
 create policy "admin actualiza estado"
   on public.contact_requests for update to authenticated
-  using      (lower(auth.jwt() ->> 'email') = lower('CORREO_DEL_CLIENTE@ejemplo.com'))
-  with check (lower(auth.jwt() ->> 'email') = lower('CORREO_DEL_CLIENTE@ejemplo.com'));
+  using      (lower(auth.jwt() ->> 'email') = lower('petcommunity.133@gmail.com'))
+  with check (lower(auth.jwt() ->> 'email') = lower('petcommunity.133@gmail.com'));
 
 -- Retención (opcional, recomendado): borra mensajes de más de 24 meses.
 -- Ejecútalo a mano de vez en cuando, o prográmalo con pg_cron.

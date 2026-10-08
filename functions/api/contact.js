@@ -10,7 +10,7 @@
  *   6. guarda en Supabase con la clave de servicio (que vive SOLO aquí, como secreto)
  *
  * Variables / secretos (Cloudflare Pages → Settings → Variables and secrets):
- *   SUPABASE_URL · SUPABASE_SERVICE_KEY (secreto) · TURNSTILE_SECRET (secreto) · IP_SALT (secreto)
+ *   SUPABASE_URL · SUPABASE_SECRET_KEY (secreto, preferido) · SUPABASE_SERVICE_KEY (compatibilidad) · TURNSTILE_SECRET (secreto) · IP_SALT (secreto)
  */
 import { validateContact, POLICY_VERSION } from "../../src/shared/contactSchema.js";
 
@@ -54,8 +54,11 @@ async function verifyTurnstile({ secret, token, ip }) {
 
 export async function onRequestPost({ request, env }) {
   // 0) Configuración completa
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.TURNSTILE_SECRET || !env.IP_SALT) {
-    console.error("[contact] Faltan variables de entorno (SUPABASE_URL, SUPABASE_SERVICE_KEY, TURNSTILE_SECRET, IP_SALT)");
+  // Supabase recomienda las claves nuevas `sb_secret_...`; mantenemos
+  // `SUPABASE_SERVICE_KEY` como compatibilidad con instalaciones antiguas.
+  const supabaseKey = env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_KEY;
+  if (!env.SUPABASE_URL || !supabaseKey || !env.TURNSTILE_SECRET || !env.IP_SALT) {
+    console.error("[contact] Faltan variables de entorno requeridas");
     return json(500, { error: "config" });
   }
 
@@ -93,7 +96,7 @@ export async function onRequestPost({ request, env }) {
     const recent = await fetch(
       `${base}/rest/v1/contact_requests?select=ip_hash,telefono,created_at&created_at=gte.${encodeURIComponent(since)}` +
       `&or=(ip_hash.eq.${ipHash},telefono.eq.${clean.telefono})&limit=20`,
-      { headers: supabaseHeaders(env.SUPABASE_SERVICE_KEY), signal: AbortSignal.timeout(5000) }
+      { headers: supabaseHeaders(supabaseKey), signal: AbortSignal.timeout(5000) }
     );
     if (!recent.ok) throw new Error(`rate ${recent.status}`);
     const rows = await recent.json();
@@ -104,7 +107,7 @@ export async function onRequestPost({ request, env }) {
     // 6) Guardar
     const insert = await fetch(`${base}/rest/v1/contact_requests`, {
       method: "POST",
-      headers: supabaseHeaders(env.SUPABASE_SERVICE_KEY, { "Content-Type": "application/json", Prefer: "return=minimal" }),
+      headers: supabaseHeaders(supabaseKey, { "Content-Type": "application/json", Prefer: "return=minimal" }),
       body: JSON.stringify({
         nombre: clean.nombre,
         telefono: clean.telefono,
