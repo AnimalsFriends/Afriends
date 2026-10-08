@@ -88,7 +88,7 @@ export const QuoteView = {
         <p class="quote-total"><span>Total estimado</span> <strong id="qs-total" aria-live="polite"></strong></p>
         <p class="quote-note">Precios de referencia en ${esc(currency)}. Te confirmamos disponibilidad y valor final por WhatsApp.</p>
         <p id="qs-status" class="form__status" role="status" aria-live="polite"></p>
-        <a id="qs-wa" class="btn btn--primary" href="#cotizador" target="_blank" rel="noopener noreferrer" aria-disabled="true">Reservar por WhatsApp</a>
+        <a id="qs-wa" class="btn btn--primary" href="#cotizador" target="_blank" rel="noopener noreferrer" aria-disabled="true">Cotizar por WhatsApp</a>
       </aside>
     </div>`;
   },

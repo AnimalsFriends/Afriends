@@ -7,11 +7,11 @@
  * - Mientras estén vacías, el sitio funciona 100% con los valores de site.defaults.js.
  */
 export const ENV = Object.freeze({
-  // Dirección pública del sitio, SIN barra final. Ej: "https://www.animalfriends.com.co"
+  // URL pública, sin barra final. GitHub Pages publica este repo bajo /Afriends;
+  // conservar esa ruta evita canonical, sitemap y JSON-LD apuntando al sitio equivocado.
   // La usan el sitemap, robots.txt, las etiquetas canonical / Open Graph y los datos
-  // estructurados (SEO). También puede definirse con la variable de entorno SITE_URL
-  // en Cloudflare Pages (tiene prioridad). Vacío = esas piezas no se generan.
-  SITE_URL: "",
+  // estructurados (SEO). SITE_URL del entorno puede reemplazarla al desplegar.
+  SITE_URL: "https://animalsfriends.github.io/Afriends",
 
   SUPABASE_URL: "",
   SUPABASE_ANON_KEY: "",

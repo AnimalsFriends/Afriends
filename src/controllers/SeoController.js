@@ -9,7 +9,9 @@ export class SeoController {
     if (source !== "supabase") return;                    // con datos locales, el JSON-LD del build ya es correcto
     const el = document.getElementById("ld-business");
     if (!el) return;                                      // solo la home lo tiene
-    const schema = buildBusinessSchema({ negocio, categorias, siteUrl: location.origin });
+    // En GitHub Pages la app vive bajo /Afriends; conservar la carpeta evita romper URLs absolutas.
+    const siteUrl = new URL(".", location.href).href.replace(/\/$/, "");
+    const schema = buildBusinessSchema({ negocio, categorias, siteUrl });
     el.textContent = JSON.stringify(schema);
   }
 }

@@ -5,11 +5,9 @@
 import { esc } from "../utils/dom.js";
 
 export const HeaderView = {
-  render({ negocio, waUrl }) {
+  render({ negocio }) {
     const nombre = esc(negocio.nombre ?? "Animal Friends");
-    const cta = waUrl
-      ? `<a class="btn btn--primary" href="${esc(waUrl)}" target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a>`
-      : "";
+    const cta = '<a class="btn btn--primary" href="index.html#cotizador">Cotizar por WhatsApp</a>';
     return `
       <div class="site-header__bar container">
         <a class="site-header__logo" href="index.html" aria-label="${nombre}, ir al inicio">

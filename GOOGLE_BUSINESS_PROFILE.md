@@ -51,7 +51,15 @@ Una vez por semana: promociones, tips de cuidado, fotos de la guardería, con bo
 2. Agrega el enlace del perfil en las redes sociales.
 
 ## 9. Google Search Console (para que Google indexe la página)
-1. https://search.google.com/search-console → **Agregar propiedad** → tipo **Dominio**.
-2. Copia el registro **TXT** que te muestra y pégalo en el DNS (si el dominio está en Cloudflare: DNS → Add record → TXT).
-3. Cuando esté verificado, entra a **Sitemaps** y envía `sitemap.xml`.
-4. Revisa **Inspección de URL** → *Solicitar indexación* para la página principal.
+El sitio actual está publicado bajo una URL de GitHub Pages, no bajo un dominio propio.
+Por eso usa una propiedad **Prefijo de URL** (no "Dominio", que requiere acceso al DNS):
+1. Abre https://search.google.com/search-console → **Agregar propiedad** → **Prefijo de URL**.
+2. Escribe `https://animalsfriends.github.io/Afriends/` y elige el método **Etiqueta HTML**.
+3. El tag entregado por Google ya está en `index.html`. Si Google muestra un valor distinto,
+   reemplaza solo el contenido de `content`, publica de nuevo y pulsa **Verificar**.
+4. Cuando esté verificada, envía el sitemap `https://animalsfriends.github.io/Afriends/sitemap.xml`.
+5. Revisa **Inspección de URL** → *Solicitar indexación* para la página principal.
+
+Si el sitio pasa a un dominio propio, confirma la URL canónica y vuelve a verificarla en
+Search Console. Solo entonces conviene usar una propiedad de tipo **Dominio** y añadir el
+registro TXT que Google indique en el DNS del proveedor correspondiente.

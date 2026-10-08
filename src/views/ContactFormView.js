@@ -68,7 +68,8 @@ export const ContactFormView = {
       ${withCaptcha ? '<div id="cf-turnstile" class="turnstile-box"></div>' : ""}
 
       <p id="cf-status" class="form__status" role="status" aria-live="polite"></p>
-      <button id="cf-submit" class="btn btn--primary" type="submit">Enviar mensaje</button>
+      <!-- El formulario queda como alternativa secundaria a la cotización por WhatsApp. -->
+      <button id="cf-submit" class="btn btn--ghost" type="submit">Enviar mensaje</button>
     </form>`;
   },
 
@@ -77,7 +78,7 @@ export const ContactFormView = {
     <div class="form-success" id="cf-success" tabindex="-1" role="status">
       <h3>¡Gracias, ${esc(nombre)}! 🐾</h3>
       <p>Recibimos tu mensaje y te contactaremos muy pronto.${waUrl ? " Si quieres adelantar la conversación, escríbenos por WhatsApp:" : ""}</p>
-      ${waUrl ? `<p><a class="btn btn--primary" href="${esc(waUrl)}" target="_blank" rel="noopener noreferrer">Continuar por WhatsApp</a></p>` : ""}
+      ${waUrl ? `<p><a class="btn btn--ghost" href="${esc(waUrl)}" target="_blank" rel="noopener noreferrer">Continuar por WhatsApp</a></p>` : ""}
     </div>`;
   },
 

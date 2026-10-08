@@ -99,8 +99,19 @@ for (const [f, html] of Object.entries(pages)) {
 if (await exists(path.join(ROOT, "sitemap.xml"))) {
   const sm = await readFile(path.join(ROOT, "sitemap.xml"), "utf8");
   const locs = [...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
+  const sitemapUrl = robotsTxt.match(/^Sitemap:\s*(\S+)/m)?.[1];
+  const sitePrefix = sitemapUrl
+    ? new URL(sitemapUrl).pathname.replace(/\/sitemap\.xml$/, "").replace(/\/+$/, "")
+    : "";
   for (const p of locs) {
-    const file = p === "/" ? "index.html" : `${p.replace(/^\//, "")}.html`;
+    if (sitePrefix && !p.startsWith(`${sitePrefix}/`)) {
+      err("sitemap.xml", `URL fuera de la ruta base del sitio → ${p}`);
+      continue;
+    }
+    const localPath = sitePrefix ? p.slice(sitePrefix.length) || "/" : p;
+    const file = localPath === "/"
+      ? "index.html"
+      : localPath.replace(/^\//, "").replace(/\.html$/, "") + ".html";
     if (!(await exists(path.join(ROOT, file)))) err("sitemap.xml", `URL sin archivo → ${p}`);
   }
   if (locs.includes("/404") || locs.some((p) => p.startsWith("/admin"))) err("sitemap.xml", "no debe incluir la 404 ni el panel");

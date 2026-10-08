@@ -1,7 +1,8 @@
 # Animal Friends · plataforma web
 
 Sitio estático (HTML + CSS + JavaScript moderno) con datos en Supabase.
-Hosting recomendado: **Cloudflare Pages** conectado a este repositorio de GitHub.
+Hoy está publicado en **GitHub Pages** en `https://animalsfriends.github.io/Afriends/`.
+El repositorio también conserva una Function y un flujo de despliegue para Cloudflare Pages; no son el mismo entorno.
 
 ## Arquitectura (MVC para frontend)
 
@@ -40,16 +41,21 @@ animal-friends/
 Usa módulos ES: no abre con doble clic. En VS Code usa **Live Server**, o `npx serve .`.
 Con `?debug=1` en la dirección ves si los datos vienen de Supabase o de los valores locales.
 
-## Desplegar en Cloudflare Pages (recomendado)
-1. Sube el proyecto a un repositorio de GitHub.
-2. Cloudflare → Workers & Pages → Create → Pages → *Connect to Git* → elige el repositorio.
-3. **Recomendado: despliegue con GitHub Actions** (`.github/workflows/ci-cd.yml`): sigue `GUIA_FASE4_CONFIGURACION.md`.
-   Alternativa sin Actions: Framework preset **None** · Build command `node scripts/build.mjs` · Output directory `/`,
-   y la variable `SITE_URL`. (Con Git directo, la carpeta `functions/` también se despliega sola.)
-4. Cloudflare aplica `_headers`, sirve `404.html` y ejecuta `functions/api/contact.js` automáticamente.
-5. Conecta tu dominio en *Custom domains* (HTTPS automático) y verifica las cabeceras en https://securityheaders.com
+## Publicación y despliegue
+La publicación actual es GitHub Pages. La URL configurada para SEO es
+`https://animalsfriends.github.io/Afriends` (sin barra final); el build conserva la ruta
+`/Afriends/` y usa páginas `.html`, como requiere este hosting.
 
-> Si más adelante usas GitHub Actions (Fase 4), el despliegue puede hacerse con `wrangler` desde el workflow.
+El workflow `.github/workflows/ci-cd.yml` todavía apunta a Cloudflare Pages cuando tiene
+credenciales configuradas. **No lo cambies ni ejecutes un despliegue hasta decidir cuál
+será el hosting oficial**: GitHub Pages no ejecuta `functions/api/contact.js`, mientras
+que Cloudflare Pages sí puede hacerlo. Por eso el formulario servidor `/api/contact`
+requiere Cloudflare Pages o una API equivalente; esta diferencia sigue pendiente de
+resolver y probar en producción.
+
+GitHub Pages tampoco aplica `_headers`; por tanto sus cabeceras de seguridad no se
+configuran con ese archivo. Si el sitio se migra a Cloudflare Pages, configura el dominio,
+`SITE_URL`, los secretos y las reglas descritas en `GUIA_FASE4_CONFIGURACION.md`.
 
 ## Base de datos del panel (Fase 1)
 El panel de gestión de la guardería (dueños, mascotas, rutas del colegio, hotel, agenda, gastos y cartera)
@@ -86,7 +92,7 @@ Todo el paso a paso está en **`GUIA_FASE4_CONFIGURACION.md`**. Resumen:
 - **Analítica GA4 con consentimiento**: no se carga nada de Google hasta que el visitante acepte; aceptar y rechazar pesan igual;
   "Configurar cookies" en el pie permite cambiar la decisión. Sin `GA_MEASUREMENT_ID` no hay aviso ni analítica.
   Eventos: `generate_lead` y `whatsapp_click` (con la ubicación del botón).
-- **CI/CD**: cada PR y push a `main` ejecuta build, auditoría y las pruebas automáticas; si pasan, despliega a Cloudflare Pages (vista previa en PRs).
+- **CI/CD**: cada PR y push a `main` ejecuta build, auditoría y pruebas. El workflow de despliegue que hay hoy apunta a Cloudflare Pages, no a la publicación actual de GitHub Pages.
 - **CSP** ampliada solo con lo necesario: Cloudflare Turnstile y Google Analytics.
 
 ## SEO, rendimiento y seguridad (Fase 3)
@@ -99,8 +105,9 @@ Todo el paso a paso está en **`GUIA_FASE4_CONFIGURACION.md`**. Resumen:
 | `node scripts/audit.mjs` | Revisa enlaces rotos, anclas, imágenes sin `alt`, título/descripción, un solo `h1`, JSON-LD válido y que no haya código en línea (CSP) |
 | `npm run check` | Las dos anteriores seguidas (úsalo antes de cada `git push`) |
 
-- **Sin dominio no se inventa nada:** si `SITE_URL` está vacío, no se genera sitemap, canonical ni `og:image`
-  (las redes sociales exigen URL absoluta). Al definirlo y volver a correr el build, todo se completa solo.
+- **URL del sitio:** `src/config/env.js` tiene la URL pública actual de GitHub Pages. Si se usa un dominio propio,
+  configura `SITE_URL` en el entorno de build. El generador mantiene la ruta base `/Afriends/` y usa `.html`
+  para que canonical, Open Graph y sitemap apunten a URLs servidas por GitHub Pages.
 - **Datos estructurados:** `LocalBusiness` + `WebSite` en la home (con servicios y "precio desde" tomados de los datos),
   `WebPage` + migas de pan en las páginas legales. Solo se incluye lo que existe: dirección, correo y redes
   aparecen cuando se llenan. Si el panel publica datos nuevos en Supabase, la home actualiza su JSON-LD.
@@ -108,27 +115,40 @@ Todo el paso a paso está en **`GUIA_FASE4_CONFIGURACION.md`**. Resumen:
   precarga del logo, espacio reservado para las tarjetas (CLS), fuentes del sistema y cero scripts de terceros.
   Medición local de la home: ~65 KB en total, LCP ≈ 160 ms, CLS = 0. Son medidas de laboratorio sin red real:
   verifica con https://pagespeed.web.dev una vez publicada.
-- **URLs:** Cloudflare Pages quita el `.html` (`/aviso-legal.html` → `/aviso-legal`); por eso el sitemap y el canonical usan la forma sin extensión.
+- **URLs:** el sitio publicado en GitHub Pages usa sus nombres de archivo (`/Afriends/aviso-legal.html`).
+  El sitemap, canonical, Open Graph y JSON-LD se generan con la ruta base `/Afriends/`.
 
-**Ajustes en el panel de Cloudflare** (no se pueden poner en el código):
+**Ajustes del hosting** (no se pueden poner en el código):
+En GitHub Pages, `robots.txt` y `sitemap.xml` se publican como archivos estáticos. El archivo
+`_headers` no configura cabeceras en ese hosting. Si se migra a Cloudflare Pages, entonces:
 1. *SSL/TLS → Overview*: modo **Full (strict)**.
 2. *SSL/TLS → Edge Certificates*: activar **Always Use HTTPS** y **Automatic HTTPS Rewrites**; mínimo TLS **1.2**.
 3. HSTS ya se envía desde `_headers`. Si luego quieres *preload*, primero verifica que todos los subdominios usen HTTPS.
 4. *Rules → Redirect Rules*: redirige `www` → dominio principal (o al revés) para evitar contenido duplicado.
 5. Compresión Brotli y HTTP/3 vienen activadas por defecto.
 
-**Google:** sigue `GOOGLE_BUSINESS_PROFILE.md` (perfil de negocio y Search Console).
+**Google:** el tag de verificación de Search Console está en la página de inicio. Sigue
+`GOOGLE_BUSINESS_PROFILE.md` para verificar la propiedad URL-prefix y configurar el Perfil de Negocio.
+
+**Pendiente SEO:** no tenemos el ID real de GA4, por eso la analítica permanece desactivada.
+La razón social, el NIT y la dirección completa siguen vacíos en la configuración; la página
+legal marca esos campos para completar. Un asesor legal debe revisar los textos antes de publicar.
+La verificación de Google usa la etiqueta HTML ya puesta en la home.
+La descripción del repositorio se cambia desde GitHub (no forma parte de los archivos); una opción
+coherente es: “Sitio web de Animal Friends, guardería canina con colegio, hotel y servicios para mascotas”.
 
 ## Datos legales: completar antes de publicar
 Las páginas de **Aviso legal** y **Política de privacidad** muestran marcadores amarillos
 `[Completar: ...]` hasta que llenes estos campos en `src/config/site.defaults.js` (sección `negocio`):
 
-`razonSocial` · `nit` · `direccion` · `ciudad` · `correo` · `telefonoVisible`
+`razonSocial` · `nit` · `direccion`
 
-Los datos que faltan se piden al cliente con `DATOS_PENDIENTES_CLIENTE.md` (listo para enviarle).
+El correo, teléfono y ubicación visibles ya tienen valores en `src/config/site.defaults.js`;
+confírmalos antes de considerar publicados los textos legales. Los datos que faltan se piden
+con `DATOS_PENDIENTES_CLIENTE.md` (listo para enviarle).
 Los textos legales son un **documento base** (Ley 1581 de 2012 y Decreto 1377 de 2013, Colombia):
-haz que un asesor legal los revise. Cuando se instale analítica (Fase 4), actualiza la
-Política de cookies y agrega el aviso de consentimiento.
+haz que un asesor legal los revise. La Política de cookies y el aviso se muestran según la
+configuración de GA4; falta el ID real para activar y probar esa ruta.
 
 ## Color y accesibilidad
 - Acento oficial **#D15638**. Blanco sobre #D15638 = 4.12:1, por eso:

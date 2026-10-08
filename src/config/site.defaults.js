@@ -10,7 +10,7 @@ export const SITE_DEFAULTS = {
      1. DATOS DEL NEGOCIO
      ------------------------------------------------------------------ */
   negocio: {
-    nombre: "Animals Friends",
+    nombre: "Animal Friends",
 
     // Datos legales (los usan Aviso Legal y Política de Privacidad). Complétalos antes de publicar.
     razonSocial: "",       // Ej: "Animal Friends S.A.S." o nombre completo del titular

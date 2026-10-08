@@ -11,8 +11,9 @@
  *        - <link rel="modulepreload"> de todos los módulos JS (evita la "cascada" de peticiones)
  *        - precarga del logo (mejora LCP)
  *
- * Dirección del sitio (SITE_URL): variable de entorno SITE_URL  >  ENV.SITE_URL en src/config/env.js.
+ * Dirección del sitio (SITE_URL): variable de entorno SITE_URL > ENV.SITE_URL en src/config/env.js.
  * Si está vacía NO se inventa ningún dominio: se omiten sitemap, canonical y og:url / og:image.
+ * La ruta pública conserva el .html porque GitHub Pages no aplica las rutas limpias de Cloudflare Pages.
  */
 import { readFile, writeFile, readdir, stat, rm } from "node:fs/promises";
 import path from "node:path";
@@ -32,12 +33,12 @@ if (SITE_URL && !/^https:\/\//.test(SITE_URL)) {
   process.exit(1);
 }
 
-/* Páginas del sitio. path = URL pública "bonita" (Cloudflare Pages quita el .html). */
+/* Usamos las rutas de archivo reales para que también funcionen bajo GitHub Pages. */
 const PAGES = [
   { file: "index.html",               path: "/",                        kind: "home",   index: true },
-  { file: "aviso-legal.html",         path: "/aviso-legal",             kind: "legal",  index: true },
-  { file: "politica-privacidad.html", path: "/politica-privacidad",     kind: "legal",  index: true },
-  { file: "politica-cookies.html",    path: "/politica-cookies",        kind: "legal",  index: true },
+  { file: "aviso-legal.html",         path: "/aviso-legal.html",         kind: "legal",  index: true },
+  { file: "politica-privacidad.html", path: "/politica-privacidad.html", kind: "legal",  index: true },
+  { file: "politica-cookies.html",    path: "/politica-cookies.html",    kind: "legal",  index: true },
   { file: "404.html",                 path: null,                       kind: "error",  index: false }
 ];
 
