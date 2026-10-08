@@ -51,7 +51,8 @@ create index if not exists contact_requests_phone_idx on public.contact_requests
 create index if not exists contact_requests_state_idx on public.contact_requests (estado, created_at desc);
 
 alter table public.contact_requests enable row level security;
-revoke all on public.contact_requests from anon, authenticated;
+revoke all on public.contact_requests from anon;
+revoke all on public.contact_requests from authenticated;
 grant select, update on public.contact_requests to authenticated;
 
 drop policy if exists "admin lee mensajes" on public.contact_requests;
