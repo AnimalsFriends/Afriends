@@ -7,7 +7,7 @@ proyecto, lee esto primero.
 
 | Ruta | Qué es |
 |---|---|
-| `01_site_config.sql`, `02_contact_requests.sql` | Las dos tablas originales de la página pública (datos del sitio y mensajes del formulario). Se pegaron a mano en el SQL Editor; siguen igual. |
+| `01_site_config.sql`, `02_contact_requests.sql` | Scripts originales para crear las tablas del sitio público. Se usaron en el SQL Editor; las definiciones también están en la migración versionada `20261005143000`. |
 | `migrations/` | Migraciones versionadas. Se aplican en orden de nombre (la fecha va primero). Aquí está la Fase 1 del panel. |
 | `rollbacks/` | Para cada migración de la Fase 1, un archivo `_down.sql` que la deshace. **No se ejecutan solos**, los corres tú si hace falta. |
 | `manual/` | Scripts que NO son migraciones y que decides cuándo correr (hoy: retirar las políticas viejas por correo). |
@@ -88,8 +88,15 @@ supabase db push
 **Opción B, a mano:** en Supabase → SQL Editor, pega y ejecuta los archivos de
 `migrations/` en orden (de `20261007100000` a `20261007100600`).
 
-Las migraciones son idempotentes y solo suman: no tocan `site_config` ni
-`contact_requests`, y no borran nada.
+Las migraciones de Fase 1 son aditivas respecto a las tablas históricas: no borran
+ni recrean `site_config` o `contact_requests`. `site_config` permite al público
+leer la configuración que necesita la página; no permite escribirla. `contact_requests`
+no concede acceso anónimo: la Function de Cloudflare usa una clave de servidor.
+
+Los `_down.sql` de las tablas nuevas de gestión pueden borrar los datos guardados
+en esas tablas. No los ejecutes como una operación rutinaria ni sobre una base con
+datos que quieras conservar; saca una copia y revisa el impacto antes. Las políticas
+añadidas a las dos tablas históricas sí tienen rollback propio y no borran sus filas.
 
 ### Crear tu usuario admin (paso obligatorio)
 
@@ -125,8 +132,9 @@ para antes de tener datos reales, o después de sacar una copia.
 
 ## Pruebas
 
-`node --test tests/migrations.test.mjs` revisa que cada tabla nueva tenga RLS activo,
-no sea accesible para el público anónimo, tenga política de admin y su rollback, y que
+`node --test tests/migrations.test.mjs` revisa que cada tabla tenga RLS activo,
+acceso anónimo limitado a la lectura intencional de `site_config`, política de admin
+y rollback seguro, y que
 el empleado no tenga ninguna política sobre tablas de dinero. Es una revisión
 **estática** del texto de los `.sql`: no ejecuta nada ni comprueba que las políticas
 hagan lo correcto; eso se verifica con la lista de arriba.
