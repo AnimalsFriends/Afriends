@@ -8,6 +8,9 @@ create table if not exists public.site_config (
 
 alter table public.site_config enable row level security;
 
+-- Revocar privilegios por defecto y conceder únicamente lectura pública explícita.
+revoke all on public.site_config from anon;
+
 drop policy if exists "lectura publica" on public.site_config;
 create policy "lectura publica"
   on public.site_config for select
