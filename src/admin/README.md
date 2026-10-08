@@ -33,9 +33,11 @@ Solo aparece cuando el panel está conectado a Supabase y requiere haber aplicad
 - **Perro:** nombre, raza, género, tamaño, comida (tipo y veces al día), si es bravo (con
   nota de comportamiento), si está enfermo (con detalle), si toma medicamentos, foto,
   medicamentos (cuál, dosis, horario) y vacunas o desparasitación con fecha de vencimiento.
-- **Nada se borra de verdad:** dueños y perros se *desactivan* y se pueden reactivar. Solo
-  se pueden quitar los registros pequeños (vacunas, medicamentos, personas autorizadas),
-  con confirmación y para corregir errores.
+- **Nada se borra de verdad:** dueños y perros se *desactivan* y se pueden reactivar.
+  Además de ocultar el botón de borrado, la migración de Fase 2 quita el permiso `DELETE`
+  a sesiones autenticadas para esas dos tablas; así tampoco se borran con una llamada directa.
+  Vacunas, medicamentos y personas autorizadas sí se pueden quitar con confirmación,
+  solo para corregir un registro erróneo.
 - **Fotos:** se reducen a 800 px en el navegador, se guardan en el bucket privado
   `fotos-mascotas` y se muestran descargándolas con la sesión del administrador (así la
   política de seguridad del sitio no tiene que abrirse a imágenes externas).
@@ -44,7 +46,7 @@ Solo aparece cuando el panel está conectado a Supabase y requiere haber aplicad
 
 ```bash
 npm run check          # build + auditoría + todas las pruebas
-node --test tests/gestionModel.test.mjs tests/gestionViews.test.mjs tests/gestionApi.test.mjs
+node --test tests/gestionModel.test.mjs tests/gestionViews.test.mjs tests/gestionApi.test.mjs tests/gestionController.test.mjs
 ```
 
 Las pruebas cubren las reglas de validación, que las vistas escapen el texto y no usen

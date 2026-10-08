@@ -89,6 +89,15 @@ test("el empleado no tiene ninguna política sobre tablas de dinero", () => {
   }
 });
 
+test("dueños y mascotas no se pueden borrar desde sesiones autenticadas", () => {
+  const migracion = migraciones.find(({ f }) => f === "20261008190000_fase2_evitar_borrado_duenos_mascotas.sql");
+  const rollback = leer(ROLLBACKS).find(({ f }) => f === "20261008190000_fase2_evitar_borrado_duenos_mascotas_down.sql");
+  assert.ok(migracion, "falta la migración que protege el historial");
+  assert.match(migracion.sql, /revoke delete on table public\.duenos,\s*public\.mascotas from authenticated/i);
+  assert.ok(rollback, "falta el rollback de permisos");
+  assert.match(rollback.sql, /grant delete on table public\.duenos,\s*public\.mascotas to authenticated/i);
+});
+
 test("ninguna migración borra datos ni tablas (todo lo destructivo vive en rollbacks)", () => {
   assert.doesNotMatch(todo, /\bdrop\s+table\b/i);
   assert.doesNotMatch(todo, /\btruncate\b/i);

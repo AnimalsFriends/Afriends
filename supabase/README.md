@@ -27,6 +27,10 @@ puede tener varias) → `medicamentos_mascota`, `vacunas_mascota` (también
 desparasitación), `personas_autorizadas` y `planes_colegio` (qué días de la semana
 le toca colegio).
 
+La migración `20261008190000_fase2_evitar_borrado_duenos_mascotas.sql` revoca el permiso
+`DELETE` para `duenos` y `mascotas` a sesiones autenticadas. La app desactiva esos registros
+para preservar su historial; el rollback reabre el borrado y por eso trae una advertencia.
+
 **Colegio:** `rutas_colegio` → `paradas_ruta` (lista ordenada y permanente; cada
 parada es de `recogida` o de `entrega`, y cada sentido tiene su propio orden) →
 `paradas_dia` (el estado de cada parada en un día: pendiente, recogido, entregado o

@@ -69,7 +69,9 @@ Las migraciones nuevas están en `supabase/migrations/` y cada una tiene su roll
 La pestaña **Dueños y mascotas** de `/admin/` permite registrar dueños (con contacto de emergencia y personas
 autorizadas a recoger) y sus perros: datos, comida, si es bravo o está enfermo, medicamentos, vacunas con vencimiento y foto.
 Cada ficha se guarda al momento y nada se borra de verdad (se desactiva). Requiere haber aplicado la Fase 1 y
-tener el usuario admin creado en `empleados`. El detalle, cómo probarlo y lo pendiente está en **`src/admin/README.md`**.
+tener el usuario admin creado en `empleados`. La migración de Fase 2 también revoca `DELETE` para dueños y mascotas
+en sesiones autenticadas, para que no se pueda saltar la desactivación con una llamada directa. El detalle, cómo
+probarlo y lo pendiente está en **`src/admin/README.md`**.
 
 ## Cotizador y panel de administración (Fase 5)
 - **Cotizador** (`#cotizador`): la lógica vive en `src/models/QuoteModel.js` (pura y probada): precio fijo, por días y por noches,

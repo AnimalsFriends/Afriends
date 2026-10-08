@@ -90,9 +90,17 @@ export class GestionController {
     this.render();
   }
 
-  /** Vuelve a pedir la lista sin pantalla de carga (después de guardar algo). */
-  async refrescarLista() {
-    try { this.state.duenos = await GestionApi.listDuenos(); } catch { /* si falla, queda la lista anterior */ }
+  /** Refresca la lista tras guardar y avisa si la escritura sí ocurrió pero la lectura falló. */
+  async refrescarLista(mensajeError = "Se guardó el cambio, pero no se pudo actualizar la lista. Recarga el panel.") {
+    try {
+      this.state.duenos = await GestionApi.listDuenos();
+      return true;
+    } catch (error) {
+      if (this.sesionVencida(error)) return false;
+      this.toast(mensajeError, "err");
+      console.warn("[GestionController] No se pudo refrescar la lista:", error?.code ?? error?.name);
+      return false;
+    }
   }
 
   /* ------------------------------ errores y utilidades ------------------------------ */
@@ -210,7 +218,7 @@ export class GestionController {
         s.dueno.id = fila.id;
         s.dueno.form = formDesdeFila(fila, blankDueno);
         this.dirty = false;
-        await this.refrescarLista();
+        if (!await this.refrescarLista("El dueño se guardó, pero no se pudo actualizar la lista. Recarga el panel para ver los cambios.")) return;
         this.toast("Dueño guardado.", "ok");
         this.render();
       } catch (error) { this.fallo(error, "No se pudo guardar al dueño. Revisa tu conexión e inténtalo de nuevo."); }
@@ -225,7 +233,7 @@ export class GestionController {
       try {
         const fila = await GestionApi.setDuenoActivo(s.dueno.id, activo);
         if (!fila) { this.toast("No se pudo cambiar el estado: sin permiso o el dueño ya no existe.", "err"); return; }
-        await this.refrescarLista();
+        if (!await this.refrescarLista("Se actualizó el estado del dueño, pero no se pudo refrescar la lista. Recarga el panel.")) return;
         this.toast(activo ? "Dueño reactivado." : "Dueño desactivado.", "ok");
         this.render();
       } catch (error) { this.fallo(error, "No se pudo cambiar el estado del dueño."); }
@@ -272,7 +280,7 @@ export class GestionController {
         s.mascota.activa = fila.activa;
         s.mascota.form = formDesdeFila(fila, blankMascota);
         this.dirty = false;
-        await this.refrescarLista();
+        if (!await this.refrescarLista("El perro se guardó, pero no se pudo actualizar la lista. Recarga el panel para ver los cambios.")) return;
         this.toast("Perro guardado.", "ok");
         this.render();
       } catch (error) { this.fallo(error, "No se pudo guardar al perro. Revisa tu conexión e inténtalo de nuevo."); }
@@ -287,7 +295,7 @@ export class GestionController {
         const fila = await GestionApi.setMascotaActiva(s.mascota.id, activa);
         if (!fila) { this.toast("No se pudo cambiar el estado del perro.", "err"); return; }
         s.mascota.activa = fila.activa;
-        await this.refrescarLista();
+        if (!await this.refrescarLista("Se actualizó el estado del perro, pero no se pudo refrescar la lista. Recarga el panel.")) return;
         this.toast(activa ? "Perro reactivado." : "Perro desactivado.", "ok");
         this.render();
       } catch (error) { this.fallo(error, "No se pudo cambiar el estado del perro."); }
@@ -355,7 +363,7 @@ export class GestionController {
 
   /* ------------------------------ foto ------------------------------ */
   /** Descarga y muestra la foto sin repintar toda la ficha (para no quitar el cursor). */
-  async cargarFoto() {
+  async cargarFoto(mensajeError = "No se pudo cargar la foto. Revisa la conexión o los permisos y vuelve a abrir la ficha.") {
     const s = this.state;
     const id = s.mascota.id;
     s.fotoUrl = null;
@@ -364,11 +372,15 @@ export class GestionController {
         const url = await GestionApi.bajarFoto(s.mascota.foto_path);
         if (s.mascota.id === id) s.fotoUrl = url;
       } catch (error) {
-        if (this.sesionVencida(error)) return;      // si no carga la foto, se queda el dibujo por defecto
+        if (this.sesionVencida(error)) return false;
+        this.toast(mensajeError, "err");
+        console.warn("[GestionController] No se pudo cargar la foto:", error?.code ?? error?.name);
+        return false;
       }
     }
     const caja = document.getElementById("g-foto");
     if (caja && this.active && s.vista === "mascota" && s.mascota.id === id) caja.innerHTML = GestionViews.fotoHtml(s);
+    return true;
   }
 
   async subirFoto(archivo, input) {
@@ -382,7 +394,7 @@ export class GestionController {
       const fila = await GestionApi.updateMascota(id, { foto_path: ruta });
       if (!fila) throw Object.assign(new Error("sin-fila"), { code: "perm" });
       s.mascota.foto_path = ruta;
-      await this.cargarFoto();
+      if (!await this.cargarFoto("La foto se guardó, pero no pudimos mostrarla. Revisa la conexión o los permisos y vuelve a abrir la ficha.")) return;
       this.toast("Foto guardada.", "ok");
     } catch (error) {
       if (error?.message === "no-imagen") this.toast("Elige un archivo de imagen (JPG, PNG o WebP).", "err");
