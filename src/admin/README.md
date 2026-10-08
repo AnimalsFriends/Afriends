@@ -7,10 +7,10 @@ proyecto: cada archivo hace una sola cosa y las pantallas no hablan directo con 
 
 | Carpeta | Qué hay | Para qué sirve |
 |---|---|---|
-| `models/` | `siteDraft.js`, `gestionModel.js` | Lógica pura: validar, limpiar y buscar datos. **No toca pantalla ni red**, por eso se prueba fácil con `node --test`. |
-| `services/` | `authService.js`, `adminApi.js`, `gestionApi.js`, `imagen.js` | Hablan con Supabase (login, datos del sitio, mensajes, dueños y mascotas, fotos) y reducen las fotos antes de subirlas. |
-| `views/` | `adminViews.js`, `gestionViews.js` | Funciones que reciben datos y devuelven HTML escapado. Sin `style=` ni `onclick=` en línea (la CSP los bloquea). |
-| `controllers/` | `AdminController.js`, `GestionController.js` | Manejan los clics y el estado. `AdminController` es el director de orquesta y le delega a `GestionController` la pestaña de dueños y mascotas. |
+| `models/` | Reglas puras del sitio, gestión y operación | Validan, limpian y calculan datos sin pantalla ni red; se prueban con `node --test`. |
+| `services/` | Acceso a autenticación y Supabase | Hacen las peticiones y exponen acciones de dueños, mascotas, rutas y hotel. |
+| `views/` | Vistas del sitio, gestión y operación | Devuelven HTML escapado; sin `style=` ni `onclick=` en línea (la CSP los bloquea). |
+| `controllers/` | Coordinadores del panel | Manejan estado y clics, delegando secciones a controladores especializados. |
 
 ## Dos maneras de guardar (importante para no confundirse)
 
@@ -42,11 +42,27 @@ Solo aparece cuando el panel está conectado a Supabase y requiere haber aplicad
   `fotos-mascotas` y se muestran descargándolas con la sesión del administrador (así la
   política de seguridad del sitio no tiene que abrirse a imágenes externas).
 
+## Pestaña "Rutas y hotel" (Fase 3)
+
+Requiere la Fase 1 y la migración `20261009120000_fase3_rutas_hotel_operacion.sql`. La pestaña, visible para admin,
+incluye operación del día, rutas/planes y calendario/reservas del hotel.
+
+- Recogida y entrega tienen órdenes separados. Las paradas se agrupan por localidad y se reordenan manualmente,
+  dentro de una localidad o entre localidades. La sugerencia por distancia queda pendiente de elegir proveedor.
+- El servicio diario sale de los planes, ausencias y reservas. Una reserva marcada **Hotel + colegio** solo entra
+  a la ruta si el perro tiene plan ese día. Las reservas cruzadas se muestran como conflicto y no se agregan al recorrido.
+- Las noches del hotel son `[entrada, salida)`: el día de salida no ocupa cupo. La base valida el cupo y evita
+  reservas cruzadas del mismo perro; la capacidad inicial confirmada es 50.
+- El estado de cada parada se guarda por fecha en `paradas_dia`; el trigger de base registra quién y cuándo marcó.
+
+Pruebas focalizadas: `node --test tests/rutasModel.test.mjs tests/rutasApi.test.mjs tests/rutasViews.test.mjs`.
+Usan datos simulados: no prueban el login, RLS en una instancia real ni el uso en celular.
+
 ## Cómo probarlo
 
 ```bash
 npm run check          # build + auditoría + todas las pruebas
-node --test tests/gestionModel.test.mjs tests/gestionViews.test.mjs tests/gestionApi.test.mjs tests/gestionController.test.mjs
+node --test tests/gestionModel.test.mjs tests/gestionViews.test.mjs tests/gestionApi.test.mjs tests/gestionController.test.mjs tests/rutasModel.test.mjs tests/rutasApi.test.mjs tests/rutasViews.test.mjs
 ```
 
 Las pruebas cubren las reglas de validación, que las vistas escapen el texto y no usen

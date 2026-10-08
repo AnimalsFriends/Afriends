@@ -59,9 +59,9 @@ configuran con ese archivo. Si el sitio se migra a Cloudflare Pages, configura e
 
 ## Base de datos del panel (Fase 1)
 El panel de gestión de la guardería (dueños, mascotas, rutas del colegio, hotel, agenda, gastos y cartera)
-se apoya en Supabase. La Fase 1 deja listo el modelo de datos y la seguridad:
+se apoya en Supabase. La Fase 1 dejó listo el modelo de datos y la seguridad:
 tablas nuevas, roles `admin` y `empleado` (tabla `empleados`) y RLS en todas las tablas; el empleado no puede
-ver nada de dinero. Aún **no hay pantallas nuevas**: eso viene en las siguientes fases.
+ver nada de dinero. Las pantallas de operación se agregan por fases.
 Todo el detalle, cómo aplicarlo y cómo deshacerlo está en **`supabase/README.md`**.
 Las migraciones nuevas están en `supabase/migrations/` y cada una tiene su rollback en `supabase/rollbacks/`.
 
@@ -73,7 +73,17 @@ tener el usuario admin creado en `empleados`. La migración de Fase 2 también r
 en sesiones autenticadas, para que no se pueda saltar la desactivación con una llamada directa. El detalle, cómo
 probarlo y lo pendiente está en **`src/admin/README.md`**.
 
-## Cotizador y panel de administración (Fase 5)
+## Rutas del colegio y hotel (Fase 3)
+La pestaña **Rutas y hotel** permite armar los recorridos independientes de recogida y entrega, agrupar paradas por localidad
+y moverlas a mano, asignar un empleado, registrar planes y ausencias, y seguir estados diarios. El servicio de cada perro
+se calcula con el plan del colegio, sus ausencias y reservas de hotel; no se guarda un servicio fijo en su ficha. Una reserva
+puede marcarse **Hotel + colegio** si el perro tiene plan ese día. El hotel muestra calendario, entradas, salidas, ocupación
+y cupos: inicia con los 50 confirmados, editables más adelante. La validación de cupo y de reservas cruzadas también corre
+en Supabase para evitar sobreventa concurrente. Las localidades se ordenan a mano; la sugerencia geográfica sigue pendiente
+de elegir un proveedor de distancias. La migración de esta fase aún no se ha aplicado a una instancia real: instrucciones y
+límites de la prueba están en **`supabase/README.md`** y **`src/admin/README.md`**.
+
+## Cotizador y panel de administración
 - **Cotizador** (`#cotizador`): la lógica vive en `src/models/QuoteModel.js` (pura y probada): precio fijo, por días y por noches,
   total, y mensaje de WhatsApp (los nombres se limpian para que no alteren el formato). Pestañas accesibles con teclado
   (flechas, Inicio, Fin), resumen en vivo y botón de WhatsApp que es un **enlace real** (no lo bloquean los navegadores).
@@ -85,7 +95,7 @@ probarlo y lo pendiente está en **`src/admin/README.md`**.
 
 **Antes de publicar:** sigue `CHECKLIST_PUBLICACION.md` (qué falta, en orden).
 
-## Formulario, analítica y despliegue (Fase 4)
+## Formulario, analítica y despliegue
 Todo el paso a paso está en **`GUIA_FASE4_CONFIGURACION.md`**. Resumen:
 - **Formulario de contacto** (`#formulario` en la home): validación en el navegador y, sobre todo, en la **Cloudflare Function**.
   Antispam en capas: honeypot, tiempo mínimo de llenado, **Cloudflare Turnstile**, espera entre envíos y límites por IP (hash) y teléfono.
@@ -97,7 +107,7 @@ Todo el paso a paso está en **`GUIA_FASE4_CONFIGURACION.md`**. Resumen:
 - **CI/CD**: cada PR y push a `main` ejecuta build, auditoría y pruebas. El workflow de despliegue que hay hoy apunta a Cloudflare Pages, no a la publicación actual de GitHub Pages.
 - **CSP** ampliada solo con lo necesario: Cloudflare Turnstile y Google Analytics.
 
-## SEO, rendimiento y seguridad (Fase 3)
+## SEO, rendimiento y seguridad (auditoría del sitio público)
 
 **Comandos** (Node ≥ 18, sin instalar paquetes):
 

@@ -24,7 +24,7 @@ const uuid = (v) => {
   return v;
 };
 
-async function llamar(path, init = {}) {
+export async function llamar(path, init = {}) {
   const response = await authed(rest(path), init);
   if (response.status === 401 || response.status === 403) throw new ApiError("perm");
   if (response.status === 404) throw new ApiError("missing");

@@ -98,6 +98,20 @@ test("dueños y mascotas no se pueden borrar desde sesiones autenticadas", () =>
   assert.match(rollback.sql, /grant delete on table public\.duenos,\s*public\.mascotas to authenticated/i);
 });
 
+test("Fase 3 protege el cupo concurrente, el rango de noches y el orden de ruta", () => {
+  const migracion = migraciones.find(({ f }) => f === "20261009120000_fase3_rutas_hotel_operacion.sql");
+  const rollback = leer(ROLLBACKS).find(({ f }) => f === "20261009120000_fase3_rutas_hotel_operacion_down.sql");
+  assert.ok(migracion, "falta la migración de operación de Fase 3");
+  assert.match(migracion.sql, /add column if not exists localidad/i);
+  assert.match(migracion.sql, /set cupos_hotel = 50\s+where id = 1 and cupos_hotel is null/i);
+  assert.match(migracion.sql, /pg_advisory_xact_lock/i, "las reservas concurrentes deben serializarse");
+  assert.match(migracion.sql, /dia < new\.salida/i, "la noche de salida no debe ocupar cupo");
+  assert.match(migracion.sql, /create or replace function public\.reordenar_paradas/i);
+  assert.match(migracion.sql, /public\.es_admin\(\)/i);
+  assert.ok(rollback, "falta el rollback seguro de Fase 3");
+  assert.doesNotMatch(rollback.sql, /drop column|drop table|truncate/i, "el rollback no debe borrar datos de localidad o cupos");
+});
+
 test("ninguna migración borra datos ni tablas (todo lo destructivo vive en rollbacks)", () => {
   assert.doesNotMatch(todo, /\bdrop\s+table\b/i);
   assert.doesNotMatch(todo, /\btruncate\b/i);

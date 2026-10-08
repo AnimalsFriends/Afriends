@@ -50,8 +50,8 @@ privados `fotos-mascotas` y `recibos`.
 ### Decisiones que conviene recordar
 
 - **El servicio de un perro no se guarda.** "Hoy está en hotel / en colegio / sin
-  servicio" se calcula con las reservas y el plan de colegio. Esa lógica se
-  construye en la Fase 3.
+  servicio" se calcula con las reservas y el plan de colegio. La pantalla de
+  operación y ese cálculo se implementan en la Fase 3.
 - **Nada se borra de verdad.** Dueños, mascotas, rutas y paradas se desactivan
   (`activo` / `activa`). Las llaves foráneas con `ON DELETE RESTRICT` impiden borrar
   algo que ya tenga historial.
@@ -128,6 +128,19 @@ on conflict (user_id) do nothing;
 5. Solo cuando todo eso funcione, corre `manual/retirar_politicas_por_correo.sql`
    para quitar las políticas viejas.
 
+## Fase 3: operación de rutas y hotel
+
+Después de aplicar la Fase 1, ejecuta `migrations/20261009120000_fase3_rutas_hotel_operacion.sql`.
+La migración agrega localidad a las paradas, inicializa la capacidad del hotel en 50 solo si aún está vacía,
+permite reordenar una ruta completa en una transacción y valida en base los cupos y las reservas cruzadas.
+La fecha de salida queda fuera de las noches ocupadas. La sugerencia automática por distancia no está incluida:
+por ahora el orden se organiza manualmente y agrupado por localidad.
+
+Para deshacerla, ejecuta `rollbacks/20261009120000_fase3_rutas_hotel_operacion_down.sql`. Ese rollback quita
+el trigger y las funciones nuevas, pero **conserva la localidad y el cupo configurado** para no perder datos.
+La migración aún no se ha ejecutado contra Supabase real; pruébala primero en un proyecto de prueba y revisa
+el diff del esquema antes de producción. No hay datos reales de clientes cargados según la revisión del proyecto.
+
 ## Cómo deshacer
 
 Corre los archivos de `rollbacks/` en **orden inverso** (del `...100600_down` al
@@ -145,8 +158,8 @@ hagan lo correcto; eso se verifica con la lista de arriba.
 
 ## Pendiente
 
-- Función que calcule el estado de hoy de cada perro, reajuste de las rutas y
-  sugerencia por cercanía (Fase 3).
+- Elegir un proveedor de distancias para sugerir recorridos; el orden manual agrupado por localidad ya está disponible (Fase 3).
+- Confirmar cuántos perros puede llevar un empleado por ruta (Fase 4).
 - Choques de horario en la agenda (Fase 4).
 - Vistas de cartera, ingresos y utilidad (Fase 5).
 - Historial de cambios: quién editó o borró cada dato (Fase 7).
