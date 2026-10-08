@@ -61,7 +61,9 @@ privados `fotos-mascotas` y `recibos`.
 - **Quién marcó una parada y a qué hora lo escribe la base de datos**, no el
   celular del empleado.
 - **Las cifras no se inventan.** `cupos_hotel` y `perros_por_empleado` están en `NULL`
-  hasta que el admin las defina. El tamaño del perro es texto libre porque las
+  hasta que el admin las defina. Desde Fase 4 la planeación usa `rutas_colegio.capacidad_perros`,
+  configurable por recorrido y sin valor común por defecto; `perros_por_empleado` queda sin uso
+  para este cálculo. El tamaño del perro es texto libre porque las
   categorías las decide el negocio.
 - **Se agregó la tabla `abonos`** (no estaba en la lista acordada) para poder
   guardar los pagos parciales de un mismo cobro.
@@ -140,6 +142,18 @@ Para deshacerla, ejecuta `rollbacks/20261009120000_fase3_rutas_hotel_operacion_d
 el trigger y las funciones nuevas, pero **conserva la localidad y el cupo configurado** para no perder datos.
 La migración aún no se ha ejecutado contra Supabase real; pruébala primero en un proyecto de prueba y revisa
 el diff del esquema antes de producción. No hay datos reales de clientes cargados según la revisión del proyecto.
+
+## Fase 4: agenda y planeación
+
+Después de Fase 3, ejecuta `migrations/20261010120000_fase4_agenda_planeacion.sql`. Las citas ya existen en
+`citas` y conservan sus políticas RLS; no se crea una tabla duplicada. La migración añade
+`rutas_colegio.capacidad_perros`, nullable y positiva cuando se configura. No se asigna 35 ni otro valor
+automático: cada recorrido puede tener un límite distinto. La app consulta los choques en Supabase para el
+horario exacto de cada cita y permite al admin decidir si guarda de todas formas.
+
+El rollback está en `rollbacks/20261010120000_fase4_agenda_planeacion_down.sql`. Conserva la columna porque
+puede guardar capacidades definidas por el negocio; no elimina ese dato. La agenda usa hora de Bogotá y
+representa las noches ocupadas de cada reserva de hotel.
 
 ## Cómo deshacer
 

@@ -140,7 +140,9 @@ function formularioRuta(s) {
     <div class="adm-grid">
       ${label("Nombre de la ruta", "ruta.nombre", f.nombre, { max: 80 })}
       ${select("Empleado asignado (opcional)", "ruta.empleado_id", f.empleado_id, [["", "Sin asignar"], ...s.empleados.map((e) => [e.id, e.nombre])])}
+      ${label("Máximo por empleado en esta ruta", "ruta.capacidad_perros", f.capacidad_perros, { type: "number", min: 1, maxValue: 32767 })}
     </div>
+    <p class="adm-sub">La capacidad cambia según la ruta. Déjala vacía si todavía no está definida; la planeación avisará que no puede calcular ese recorrido.</p>
     <div class="adm-row adm-wrapx adm-mt">${button(f.id ? "Guardar ruta" : "Crear ruta", "r-guardar-ruta", "", "adm-btn--primary")}${f.id ? button("Cancelar edición", "r-cancelar-ruta") : ""}</div>
   </section>`;
 }

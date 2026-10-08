@@ -5,5 +5,6 @@ Desde la raíz puedes ejecutar `npm test`; para validar build, auditoría y toda
 
 Las pruebas de gestión cubren validación de fichas, HTML seguro, peticiones a Supabase y errores visibles
 del controlador. Las pruebas `rutas*.test.mjs` cubren el servicio diario, cupos/noches, peticiones REST,
-vistas y conflictos de reservas. `migrations.test.mjs` revisa RLS y guardas estáticas del SQL; no aplica
+vistas y conflictos de reservas. Las pruebas `agenda*.test.mjs` cubren rangos de Bogotá, choques,
+capacidad por ruta, peticiones y calendario. `migrations.test.mjs` revisa RLS y guardas estáticas del SQL; no aplica
 las migraciones ni sustituye una comprobación en un proyecto Supabase real.

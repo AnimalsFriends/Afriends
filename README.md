@@ -83,6 +83,14 @@ en Supabase para evitar sobreventa concurrente. Las localidades se ordenan a man
 de elegir un proveedor de distancias. La migración de esta fase aún no se ha aplicado a una instancia real: instrucciones y
 límites de la prueba están en **`supabase/README.md`** y **`src/admin/README.md`**.
 
+## Agenda y planeación (Fase 4)
+La pestaña **Agenda y planeación** ofrece vista de día, semana y mes. Registra citas con perro, servicio, empleado,
+hora de inicio y fin, estado y notas; avisa si se cruza otra cita del mismo perro o empleado, pero deja al admin decidir
+si continúa. Las reservas de hotel ocupan todas sus noches en el calendario. Desde una cita se abre WhatsApp con un texto
+preparado para confirmar o recordar al dueño. La planeación cuenta los perros con colegio para el día y calcula los
+empleados requeridos por recorrido. Cada ruta tiene una capacidad propia: como puede variar, no se asigna un valor común;
+si falta capacidad o una parada de recogida, el panel lo indica en vez de inventar un cálculo.
+
 ## Cotizador y panel de administración
 - **Cotizador** (`#cotizador`): la lógica vive en `src/models/QuoteModel.js` (pura y probada): precio fijo, por días y por noches,
   total, y mensaje de WhatsApp (los nombres se limpian para que no alteren el formato). Pestañas accesibles con teclado

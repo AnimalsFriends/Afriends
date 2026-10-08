@@ -45,7 +45,10 @@ test("las noches incluyen entrada y excluyen salida; entradas y salidas se cuent
 });
 
 test("las validaciones limpian rutas, paradas, planes, reservas y cupos", () => {
-  assert.equal(validarRuta({ nombre: "  Ruta Norte ", empleado_id: "" }).clean.nombre, "Ruta Norte");
+  assert.deepEqual(validarRuta({ nombre: "  Ruta Norte ", empleado_id: "", capacidad_perros: "35" }).clean, {
+    nombre: "Ruta Norte", empleado_id: null, capacidad_perros: 35
+  });
+  assert.equal(validarRuta({ nombre: "Ruta Norte", capacidad_perros: "0" }).errors.length, 1);
   assert.deepEqual(validarParada({
     ruta_id: ROUTE, mascota_id: DOG, sentido: "recogida", localidad: "  Usaquén ",
     direccion: " Calle 1 # 2 ", hora_estimada: ""

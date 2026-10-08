@@ -58,11 +58,24 @@ incluye operación del día, rutas/planes y calendario/reservas del hotel.
 Pruebas focalizadas: `node --test tests/rutasModel.test.mjs tests/rutasApi.test.mjs tests/rutasViews.test.mjs`.
 Usan datos simulados: no prueban el login, RLS en una instancia real ni el uso en celular.
 
+## Pestaña "Agenda y planeación" (Fase 4)
+
+Requiere la migración `20261010120000_fase4_agenda_planeacion.sql` y las tablas de Fase 1. La agenda se guarda
+en `citas` (ya existente), con vista de día, semana y mes; las reservas del hotel aparecen durante cada noche ocupada.
+Los choques entre citas del mismo empleado o perro se comprueban contra Supabase para el horario exacto (aunque
+caiga fuera del calendario visible); se advierten, pero el admin puede confirmar si decide conservarlos.
+El botón de WhatsApp abre una conversación con el mensaje de confirmación/recordatorio preparado; no lo envía solo.
+
+La planeación cuenta perros que tienen servicio de colegio ese día, incluidos los marcados **Hotel + colegio**.
+Cada ruta recibe una capacidad máxima de perros por empleado. Esa cifra queda vacía hasta que el admin la configure;
+si un perro no tiene una recogida en ruta activa o falta capacidad, el panel no inventa el total de empleados necesarios.
+Pruebas focalizadas: `node --test tests/agendaModel.test.mjs tests/agendaApi.test.mjs tests/agendaViews.test.mjs`.
+
 ## Cómo probarlo
 
 ```bash
 npm run check          # build + auditoría + todas las pruebas
-node --test tests/gestionModel.test.mjs tests/gestionViews.test.mjs tests/gestionApi.test.mjs tests/gestionController.test.mjs tests/rutasModel.test.mjs tests/rutasApi.test.mjs tests/rutasViews.test.mjs
+node --test tests/gestionModel.test.mjs tests/gestionViews.test.mjs tests/gestionApi.test.mjs tests/gestionController.test.mjs tests/rutasModel.test.mjs tests/rutasApi.test.mjs tests/rutasViews.test.mjs tests/agendaModel.test.mjs tests/agendaApi.test.mjs tests/agendaViews.test.mjs
 ```
 
 Las pruebas cubren las reglas de validación, que las vistas escapen el texto y no usen

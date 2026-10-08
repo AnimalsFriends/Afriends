@@ -22,7 +22,7 @@ const rangoMes = (mes) => {
   return { inicioMes: `${mes}-01`, finMes: new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 10) };
 };
 const formulariosNuevos = (fecha) => ({
-  ruta: { id: null, nombre: "", empleado_id: "" },
+  ruta: { id: null, nombre: "", empleado_id: "", capacidad_perros: "" },
   parada: { id: null, ruta_id: "", mascota_id: "", sentido: "recogida", localidad: "", direccion: "", hora_estimada: "" },
   plan: { mascota_id: "", dias_semana: [], desde: fecha, hasta: "" },
   reserva: { id: null, mascota_id: "", entrada: fecha, salida: fechaMas(fecha, 1), estado: "reservada", tambien_colegio: false, notas_comida: "", notas_medicacion: "", notas: "" },
@@ -215,7 +215,7 @@ export class RutasController {
       case "r-guardar-ruta": this.guardarRuta(); break;
       case "r-editar-ruta": this.editarRuta(id); break;
       case "r-toggle-ruta": this.alternarRuta(id); break;
-      case "r-cancelar-ruta": this.state.formularios.ruta = { id: null, nombre: "", empleado_id: "" }; this.setDirty("ruta", false); this.render(); break;
+      case "r-cancelar-ruta": this.state.formularios.ruta = { id: null, nombre: "", empleado_id: "", capacidad_perros: "" }; this.setDirty("ruta", false); this.render(); break;
       case "r-guardar-parada": this.guardarParada(); break;
       case "r-editar-parada": this.editarParada(id); break;
       case "r-toggle-parada": this.alternarParada(id); break;
@@ -243,7 +243,7 @@ export class RutasController {
     try {
       const row = f.id ? await RutasApi.actualizarRuta(f.id, clean) : await RutasApi.crearRuta(clean);
       if (!row) { this.toast("No se pudo guardar la ruta.", "err"); return; }
-      this.state.formularios.ruta = { id: null, nombre: "", empleado_id: "" };
+      this.state.formularios.ruta = { id: null, nombre: "", empleado_id: "", capacidad_perros: "" };
       this.setDirty("ruta", false);
       await this.recargarTrasCambio("Ruta guardada.");
     } catch (error) { this.fallo(error, "No se pudo guardar la ruta."); }
@@ -252,7 +252,10 @@ export class RutasController {
   editarRuta(id) {
     const route = this.state.rutas.find((r) => r.id === id);
     if (!route) return;
-    this.state.formularios.ruta = { id, nombre: route.nombre, empleado_id: route.empleado_id ?? "" };
+    this.state.formularios.ruta = {
+      id, nombre: route.nombre, empleado_id: route.empleado_id ?? "",
+      capacidad_perros: route.capacidad_perros == null ? "" : String(route.capacidad_perros)
+    };
     this.setDirty("ruta", false);
     this.state.vista = "rutas";
     this.render();

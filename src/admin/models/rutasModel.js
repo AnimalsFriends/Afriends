@@ -33,10 +33,15 @@ export function fechaValida(fecha) {
 export function validarRuta(form) {
   const nombre = texto(form.nombre);
   const empleadoId = String(form.empleado_id ?? "");
+  const capacidad = String(form.capacidad_perros ?? "").trim();
   const errors = [];
   if (nombre.length < 2 || nombre.length > 80) errors.push("El nombre de la ruta debe tener entre 2 y 80 caracteres.");
   if (empleadoId && !esUuid(empleadoId)) errors.push("El empleado elegido no es válido.");
-  return { errors, clean: { nombre, empleado_id: nulo(empleadoId) } };
+  const capacidadPerros = capacidad === "" ? null : Number(capacidad);
+  if (capacidadPerros !== null && (!Number.isInteger(capacidadPerros) || capacidadPerros < 1 || capacidadPerros > 32767)) {
+    errors.push("La capacidad por empleado debe ser un número entero mayor que cero.");
+  }
+  return { errors, clean: { nombre, empleado_id: nulo(empleadoId), capacidad_perros: capacidadPerros } };
 }
 
 export function validarParada(form) {

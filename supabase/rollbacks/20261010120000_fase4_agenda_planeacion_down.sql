@@ -1,0 +1,2 @@
+-- La capacidad pertenece a la configuración del negocio. Se conserva la columna
+-- al revertir la interfaz para no perder valores que ya se hayan configurado.

@@ -5,11 +5,12 @@ Aquí vive la coordinación del panel entre los formularios, las vistas y los se
 del formulario y muestra los errores de escritura, actualización de listas y carga de fotos.
 `RutasController.js` coordina la operación diaria: calcula el servicio desde planes, reservas y ausencias,
 y gestiona orden, marcación de paradas, reservas y capacidad del hotel.
+`AgendaController.js` navega día/semana/mes, valida y guarda citas y avisa de choques de horario antes de confirmar.
 
 Para cambiar una regla de validación, revisa también `../models/gestionModel.js`; para cambiar el HTML,
 revisa `../views/gestionViews.js`. Las pruebas relacionadas están en `../../../tests/gestionController.test.mjs`.
 Puedes ejecutar las pruebas focalizadas con:
 
 ```sh
-node --test tests/gestionController.test.mjs tests/gestionModel.test.mjs tests/gestionViews.test.mjs tests/gestionApi.test.mjs tests/rutasModel.test.mjs tests/rutasApi.test.mjs tests/rutasViews.test.mjs
+node --test tests/gestionController.test.mjs tests/gestionModel.test.mjs tests/gestionViews.test.mjs tests/gestionApi.test.mjs tests/rutasModel.test.mjs tests/rutasApi.test.mjs tests/rutasViews.test.mjs tests/agendaModel.test.mjs tests/agendaApi.test.mjs tests/agendaViews.test.mjs
 ```

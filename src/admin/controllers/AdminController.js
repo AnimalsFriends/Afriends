@@ -9,6 +9,7 @@ import { SiteConfigApi, LeadsApi, ApiError } from "../services/adminApi.js";
 import { AdminViews } from "../views/adminViews.js";
 import { GestionController } from "./GestionController.js";
 import { RutasController } from "./RutasController.js";
+import { AgendaController } from "./AgendaController.js";
 import {
   DIAS, clone, normalizeDraft, validateDraft, cleanPayload, buildDefaultsFile,
   setPath, move, blankService, blankCategory
@@ -35,6 +36,11 @@ export class AdminController {
       expire: () => this.expireSession()
     });
     this.rutas = new RutasController({
+      panel: () => $("adm-panel"),
+      toast: (...args) => this.toast(...args),
+      expire: () => this.expireSession()
+    });
+    this.agenda = new AgendaController({
       panel: () => $("adm-panel"),
       toast: (...args) => this.toast(...args),
       expire: () => this.expireSession()
@@ -95,29 +101,33 @@ export class AdminController {
     $("adm-leads-tab").hidden = !this.remote;
     $("adm-gestion-tab").hidden = !this.remote;
     $("adm-rutas-tab").hidden = !this.remote;
+    $("adm-agenda-tab").hidden = !this.remote;
     $("adm-note").innerHTML = note;
     if (!keepDraft) { this.openCat = null; this.setDirty(false); }
-    this.setTab(["leads", "gestion", "rutas"].includes(this.tab) && this.remote ? this.tab : "negocio");
+    this.setTab(["leads", "gestion", "rutas", "agenda"].includes(this.tab) && this.remote ? this.tab : "negocio");
   }
 
   setTab(tab) {
     if (this.tab === "rutas" && tab !== "rutas" && !this.rutas.puedeSalir()) return;
+    if (this.tab === "agenda" && tab !== "agenda" && !this.agenda.puedeSalir()) return;
     this.tab = tab;
     document.querySelectorAll("[data-tab]").forEach((b) => {
       const active = b.dataset.tab === tab;
       b.setAttribute("aria-selected", String(active));
       b.tabIndex = active ? 0 : -1;
     });
-    $("adm-bar").hidden = tab === "leads" || tab === "gestion" || tab === "rutas";
+    $("adm-bar").hidden = tab === "leads" || tab === "gestion" || tab === "rutas" || tab === "agenda";
     this.gestion.setActive(tab === "gestion");
     this.rutas.setActive(tab === "rutas");
-    if (tab !== "gestion" && tab !== "rutas") this.render();
+    this.agenda.setActive(tab === "agenda");
+    if (!["gestion", "rutas", "agenda"].includes(tab)) this.render();
     if (tab === "leads") this.refreshLeads();
   }
 
   render() {
     if (this.tab === "gestion") { this.gestion.render(); return; }
     if (this.tab === "rutas") { this.rutas.render(); return; }
+    if (this.tab === "agenda") { this.agenda.render(); return; }
     const panel = $("adm-panel");
     if (this.tab === "negocio") panel.innerHTML = AdminViews.business(this.data);
     else if (this.tab === "servicios") panel.innerHTML = AdminViews.services(this.data, this.openCat);
@@ -183,20 +193,22 @@ export class AdminController {
   expireSession() {
     this.gestion.loaded = false;                          // al volver a entrar se recarga la lista
     this.rutas.loaded = false;
+    this.agenda.loaded = false;
     Auth.logout();
-    const conservaBorrador = this.dirty || this.gestion.dirty || this.rutas.dirty;
+    const conservaBorrador = this.dirty || this.gestion.dirty || this.rutas.dirty || this.agenda.dirty;
     this.showLogin(conservaBorrador ? "Tu sesión venció. Entra de nuevo; tus cambios sin guardar siguen aquí." : "Tu sesión venció. Entra de nuevo.");
   }
 
   /* ------------------------------ eventos ------------------------------ */
   bindGlobal() {
-    window.addEventListener("beforeunload", (event) => { if (this.dirty || this.gestion.dirty || this.rutas.dirty) { event.preventDefault(); event.returnValue = ""; } });
+    window.addEventListener("beforeunload", (event) => { if (this.dirty || this.gestion.dirty || this.rutas.dirty || this.agenda.dirty) { event.preventDefault(); event.returnValue = ""; } });
 
     $("adm-login-btn").addEventListener("click", () => this.onLogin());
     $("adm-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") this.onLogin(); });
     $("adm-logout").addEventListener("click", () => {
-      if ((this.dirty || this.gestion.dirty || this.rutas.dirty) && !confirm("Tienes cambios sin guardar. ¿Cerrar sesión de todos modos?")) return;
-      this.setDirty(false); this.rutas.descartarBorradores(); this.rutas.loaded = false; Auth.logout(); this.showLogin();
+      if ((this.dirty || this.gestion.dirty || this.rutas.dirty || this.agenda.dirty) && !confirm("Tienes cambios sin guardar. ¿Cerrar sesión de todos modos?")) return;
+      this.setDirty(false); this.rutas.descartarBorradores(); this.rutas.loaded = false;
+      this.agenda.descartarBorrador(); this.agenda.loaded = false; Auth.logout(); this.showLogin();
     });
 
     $("adm-save").addEventListener("click", () => this.save());
@@ -215,6 +227,7 @@ export class AdminController {
     panel.addEventListener("click", (e) => this.onClick(e));
     this.gestion.bind(panel);
     this.rutas.bind(panel);
+    this.agenda.bind(panel);
   }
 
   onTabKeys(event) {
@@ -241,6 +254,7 @@ export class AdminController {
   onInput(event) {
     if (this.tab === "gestion") return;                  // esa pestaña la maneja GestionController
     if (this.tab === "rutas") return;                    // rutas y hotel tienen guardado propio
+    if (this.tab === "agenda") return;                   // agenda guarda cada cita al momento
     const t = event.target;
     if (!t.dataset.path) return;
     const value = t.type === "checkbox" ? t.checked : t.type === "number" ? (t.value === "" ? 0 : Number(t.value)) : t.value;
@@ -255,6 +269,7 @@ export class AdminController {
   onChange(event) {
     if (this.tab === "gestion") return;
     if (this.tab === "rutas") return;
+    if (this.tab === "agenda") return;
     const t = event.target;
     if (t.matches("[data-lead-status]")) { this.changeLeadStatus(t.dataset.id, t.value); return; }
     if (t.dataset.dia) {
@@ -273,7 +288,7 @@ export class AdminController {
   }
 
   onClick(event) {
-    if (this.tab === "gestion" || this.tab === "rutas") return;
+    if (this.tab === "gestion" || this.tab === "rutas" || this.tab === "agenda") return;
     const b = event.target.closest("[data-action]");
     if (!b) return;
     const action = b.dataset.action;

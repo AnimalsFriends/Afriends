@@ -112,6 +112,17 @@ test("Fase 3 protege el cupo concurrente, el rango de noches y el orden de ruta"
   assert.doesNotMatch(rollback.sql, /drop column|drop table|truncate/i, "el rollback no debe borrar datos de localidad o cupos");
 });
 
+test("Fase 4 guarda capacidad por ruta sin inventar un valor y conserva el dato en rollback", () => {
+  const migracion = migraciones.find(({ f }) => f === "20261010120000_fase4_agenda_planeacion.sql");
+  const rollback = leer(ROLLBACKS).find(({ f }) => f === "20261010120000_fase4_agenda_planeacion_down.sql");
+  assert.ok(migracion, "falta la migración de agenda y capacidad por ruta");
+  assert.match(migracion.sql, /add column if not exists capacidad_perros smallint/i);
+  assert.match(migracion.sql, /capacidad_perros is null or capacidad_perros > 0/i);
+  assert.doesNotMatch(migracion.sql, /set capacidad_perros\s*=/i, "no se debe asumir una capacidad común");
+  assert.ok(rollback, "falta la nota de rollback de Fase 4");
+  assert.doesNotMatch(rollback.sql, /drop column|drop table|truncate/i, "el rollback no debe borrar capacidades configuradas");
+});
+
 test("ninguna migración borra datos ni tablas (todo lo destructivo vive en rollbacks)", () => {
   assert.doesNotMatch(todo, /\bdrop\s+table\b/i);
   assert.doesNotMatch(todo, /\btruncate\b/i);
