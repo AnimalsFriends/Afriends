@@ -22,7 +22,7 @@ animal-friends/
 ├─ src/
 │  ├─ main.js                    ← punto de entrada (todas las páginas)
 │  ├─ config/  env.js · site.defaults.js
-│  ├─ admin/                     ← panel: models/siteDraft · services/auth+api · views · controllers
+│  ├─ admin/                     ← panel: models · services · views · controllers (ver src/admin/README.md)
 │  ├─ shared/contactSchema.js    ← validación del formulario (la usan navegador y Function)
 │  ├─ seo/structuredData.js      ← JSON-LD (mismo código en build y navegador)
 │  ├─ services/supabase.js       ← cliente REST sin librerías
@@ -58,6 +58,12 @@ tablas nuevas, roles `admin` y `empleado` (tabla `empleados`) y RLS en todas las
 ver nada de dinero. Aún **no hay pantallas nuevas**: eso viene en las siguientes fases.
 Todo el detalle, cómo aplicarlo y cómo deshacerlo está en **`supabase/README.md`**.
 Las migraciones nuevas están en `supabase/migrations/` y cada una tiene su rollback en `supabase/rollbacks/`.
+
+## Dueños y mascotas en el panel (Fase 2)
+La pestaña **Dueños y mascotas** de `/admin/` permite registrar dueños (con contacto de emergencia y personas
+autorizadas a recoger) y sus perros: datos, comida, si es bravo o está enfermo, medicamentos, vacunas con vencimiento y foto.
+Cada ficha se guarda al momento y nada se borra de verdad (se desactiva). Requiere haber aplicado la Fase 1 y
+tener el usuario admin creado en `empleados`. El detalle, cómo probarlo y lo pendiente está en **`src/admin/README.md`**.
 
 ## Cotizador y panel de administración (Fase 5)
 - **Cotizador** (`#cotizador`): la lógica vive en `src/models/QuoteModel.js` (pura y probada): precio fijo, por días y por noches,
