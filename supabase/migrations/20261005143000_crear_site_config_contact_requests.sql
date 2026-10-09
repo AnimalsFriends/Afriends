@@ -8,6 +8,9 @@ create table if not exists public.site_config (
 
 alter table public.site_config enable row level security;
 
+-- Revocar privilegios por defecto y conceder únicamente lectura pública explícita.
+revoke all on public.site_config from anon;
+
 drop policy if exists "lectura publica" on public.site_config;
 create policy "lectura publica"
   on public.site_config for select
@@ -48,7 +51,8 @@ create index if not exists contact_requests_phone_idx on public.contact_requests
 create index if not exists contact_requests_state_idx on public.contact_requests (estado, created_at desc);
 
 alter table public.contact_requests enable row level security;
-revoke all on public.contact_requests from anon, authenticated;
+revoke all on public.contact_requests from anon;
+revoke all on public.contact_requests from authenticated;
 grant select, update on public.contact_requests to authenticated;
 
 drop policy if exists "admin lee mensajes" on public.contact_requests;
