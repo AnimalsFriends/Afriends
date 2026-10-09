@@ -13,8 +13,12 @@ proyecto, lee esto primero.
 | `manual/` | Scripts que NO son migraciones y que decides cuándo correr (hoy: retirar las políticas viejas por correo). |
 | `config.toml` | Configuración de la CLI de Supabase para correr todo en local. |
 
-> `migrations/20261005121608_crear_tablas_iniciales.sql` está vacía. La dejé como
-> estaba (no se borra nada); simplemente no hace nada.
+> `migrations/20261005121608_crear_tablas_iniciales.sql` está vacía y se conserva
+> como registro histórico; no la rellenes ni la reutilices. La revisión de la historia
+> de migraciones remota del 2026-10-09 la registraba como aplicada, pero las tablas
+> `site_config` y `contact_requests` las define la migración
+> `20261005143000_crear_site_config_contact_requests.sql`. Antes de aplicar migraciones
+> en otro proyecto, compara primero su historial y esquema.
 
 ## Fase 1: el modelo de datos en una mirada
 
@@ -81,8 +85,10 @@ privados `fotos-mascotas` y `recibos`.
 
 ## Cómo aplicar la Fase 1
 
-Hazlo primero en un proyecto de pruebas o saca una copia antes. **No lo he podido
-correr contra una base real**, así que la primera vez conviene revisarlo con calma.
+Hazlo primero en un proyecto de pruebas o saca una copia antes. La revisión de la
+historia remota del 2026-10-09 registraba las migraciones de Fase 1 como aplicadas.
+Estas instrucciones sirven para preparar otros entornos: antes de aplicar cambios,
+compara el historial y el esquema del proyecto de destino y revisa cada diferencia.
 
 **Opción A, con la CLI** (recomendada):
 
@@ -140,8 +146,10 @@ por ahora el orden se organiza manualmente y agrupado por localidad.
 
 Para deshacerla, ejecuta `rollbacks/20261009120000_fase3_rutas_hotel_operacion_down.sql`. Ese rollback quita
 el trigger y las funciones nuevas, pero **conserva la localidad y el cupo configurado** para no perder datos.
-La migración aún no se ha ejecutado contra Supabase real; pruébala primero en un proyecto de prueba y revisa
-el diff del esquema antes de producción. No hay datos reales de clientes cargados según la revisión del proyecto.
+La historia de migraciones remota revisada el 2026-10-09 registra esta migración como aplicada.
+Antes de volver a aplicarla en cualquier entorno, valida el esquema, las funciones, los triggers
+y los datos existentes; no la ejecutes a ciegas. La revisión del proyecto no encontró datos reales
+de clientes cargados en ese momento.
 
 ## Fase 4: agenda y planeación
 
@@ -187,8 +195,9 @@ No se agregan permisos financieros a empleados.
 
 El rollback `rollbacks/20261012120000_fase7_alertas_asistencia_historial_down.sql` desactiva triggers y políticas
 de Fase 7, y revoca el acceso desde la app a esas tablas, pero **no borra sus tablas ni sus filas**. Si se vuelve
-a aplicar la migración, se reactivan. La migración y el rollback no se han ejecutado contra Supabase real:
-primero pruébalos en un proyecto separado, comprueba los roles admin/empleado y revisa los timestamps.
+a aplicar la migración, se reactivan. La historia de migraciones remota revisada el 2026-10-09 registra esta migración como aplicada.
+Valida el esquema, los roles admin/empleado y los timestamps antes de hacer cambios; no ejecutes
+el rollback solo para probarlo, porque modifica políticas y permisos existentes.
 
 ## Cómo deshacer
 
@@ -209,5 +218,6 @@ hagan lo correcto; eso se verifica con la lista de arriba.
 
 - Elegir un proveedor de distancias para sugerir recorridos; el orden manual agrupado por localidad ya está disponible (Fase 3).
 - Probar las pantallas y permisos con cuentas admin/empleado en un proyecto Supabase de pruebas.
-- Pasar `01_site_config.sql` y `02_contact_requests.sql` a `migrations/` cuando
-  confirmemos qué hay realmente creado en tu Supabase.
+- Comparar `01_site_config.sql` y `02_contact_requests.sql` con
+  `migrations/20261005143000_crear_site_config_contact_requests.sql` y documentar
+  las diferencias, manteniendo sincronizados el historial, el esquema y la documentación.
