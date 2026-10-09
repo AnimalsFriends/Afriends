@@ -4,7 +4,9 @@ Los servicios encapsulan las llamadas al API REST de Supabase y comparten la ses
 de errores. `rutasApi.js` consulta y modifica rutas, planes, ausencias, estados diarios y reservas;
 para mover paradas llama la función SQL transaccional `reordenar_paradas`. `agendaApi.js` carga
 citas, servicios y reservas del período, y guarda cambios en la tabla existente `citas`.
+`finanzasApi.js` consulta gastos, cobros y abonos; carga y descarga recibos usando el bucket privado
+`recibos` con la sesión admin.
 
-Las peticiones se prueban con `fetch` simulado: `node --test tests/rutasApi.test.mjs`. Esa prueba no
-confirman permisos ni comportamiento contra una instancia real de Supabase:
-`node --test tests/rutasApi.test.mjs tests/agendaApi.test.mjs`.
+Las peticiones se prueban con `fetch` simulado; por sí solas no confirman permisos ni comportamiento
+contra una instancia real de Supabase:
+`node --test tests/rutasApi.test.mjs tests/agendaApi.test.mjs tests/finanzasApi.test.mjs`.

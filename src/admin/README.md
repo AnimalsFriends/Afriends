@@ -71,11 +71,28 @@ Cada ruta recibe una capacidad máxima de perros por empleado. Esa cifra queda v
 si un perro no tiene una recogida en ruta activa o falta capacidad, el panel no inventa el total de empleados necesarios.
 Pruebas focalizadas: `node --test tests/agendaModel.test.mjs tests/agendaApi.test.mjs tests/agendaViews.test.mjs`.
 
+## Pestaña "Finanzas y cartera" (Fase 5)
+
+Requiere las tablas y el bucket privado `recibos` de Fase 1, y la migración
+`20261011120000_fase5_finanzas_integridad.sql`. Solo una cuenta admin puede cargar y ver estos datos; el controlador
+comprueba el rol antes de consultar y RLS sigue aplicándose en Supabase.
+
+En **Gastos** se registran categoría, fecha, valor, descripción y recibo JPG/PNG/WebP/PDF (hasta 8 MB), con opción de
+editar el registro y reemplazar el archivo. En **Cobros y abonos** se puede registrar un cobro para un dueño, opcionalmente
+asociado a un perro y servicio, y agregar pagos parciales. El formulario impide abonar más que el saldo y la migración
+evita el sobrepago también si llegan dos operaciones al mismo tiempo. Los recibos se guardan en el bucket privado y solo
+se descargan con sesión admin.
+
+La cartera suma los saldos de todos los cobros de cada dueño y ofrece un mensaje de WhatsApp con un único total. El
+informe selecciona mes y separa **cobros registrados** (fecha de `pagos`) de **recaudos** (fecha de `abonos`); la utilidad
+es cobros registrados menos gastos, no flujo de caja. El CSV lleva UTF-8 y separador regional compatible con Excel.
+Pruebas focalizadas: `node --test tests/finanzasModel.test.mjs tests/finanzasApi.test.mjs tests/finanzasViews.test.mjs`.
+
 ## Cómo probarlo
 
 ```bash
 npm run check          # build + auditoría + todas las pruebas
-node --test tests/gestionModel.test.mjs tests/gestionViews.test.mjs tests/gestionApi.test.mjs tests/gestionController.test.mjs tests/rutasModel.test.mjs tests/rutasApi.test.mjs tests/rutasViews.test.mjs tests/agendaModel.test.mjs tests/agendaApi.test.mjs tests/agendaViews.test.mjs
+node --test tests/gestionModel.test.mjs tests/gestionViews.test.mjs tests/gestionApi.test.mjs tests/gestionController.test.mjs tests/rutasModel.test.mjs tests/rutasApi.test.mjs tests/rutasViews.test.mjs tests/agendaModel.test.mjs tests/agendaApi.test.mjs tests/agendaViews.test.mjs tests/finanzasModel.test.mjs tests/finanzasApi.test.mjs tests/finanzasViews.test.mjs
 ```
 
 Las pruebas cubren las reglas de validación, que las vistas escapen el texto y no usen

@@ -222,3 +222,21 @@ body.adm { padding-bottom: 7rem; font-size: 1rem; }
   .adm-agenda-cell span { display: none; }
   .adm-agenda-status { min-width: 100%; }
 }
+
+/* Resumen de ingresos/gastos y tablas de movimientos */
+.adm-fin-month { margin: 12px 0; }
+.adm-fin-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.adm-fin-cards .adm-card { margin: 0; }
+.adm-fin-total { margin: 8px 0; color: var(--color-accent); font-size: 1.5rem; font-weight: 800; overflow-wrap: anywhere; }
+.adm-fin-cards small { color: var(--color-text-soft); }
+.adm-fin-breakdown { display: grid; gap: 8px; margin: 8px 0; padding-left: 22px; }
+.adm-fin-breakdown li { display: flex; justify-content: space-between; gap: 12px; }
+.adm-table-scroll { width: 100%; overflow-x: auto; }
+.adm-fin-table { width: 100%; border-collapse: collapse; }
+.adm-fin-table th, .adm-fin-table td { padding: 9px; border-bottom: 1px solid var(--color-border); text-align: left; vertical-align: middle; }
+.adm-fin-table th { color: var(--color-text-soft); font-size: .85rem; }
+.adm-fin-table td { min-width: 6rem; }
+@media (max-width: 760px) {
+  .adm-fin-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .adm-fin-breakdown li { align-items: start; flex-direction: column; gap: 2px; }
+}

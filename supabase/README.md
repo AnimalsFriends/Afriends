@@ -155,10 +155,27 @@ El rollback está en `rollbacks/20261010120000_fase4_agenda_planeacion_down.sql`
 puede guardar capacidades definidas por el negocio; no elimina ese dato. La agenda usa hora de Bogotá y
 representa las noches ocupadas de cada reserva de hotel.
 
+## Fase 5: gastos, cobros y cartera
+
+Las tablas `gastos`, `pagos` y `abonos`, el bucket privado `recibos` y las políticas RLS admin-only ya quedaron
+creadas en Fase 1; esta fase las reutiliza sin duplicarlas. Después de Fase 4, aplica
+`migrations/20261011120000_fase5_finanzas_integridad.sql`. Añade triggers para que los abonos no superen el total
+del cobro incluso si llegan operaciones concurrentes, y para que no se reduzca una factura por debajo de lo abonado.
+No borra ni migra filas existentes.
+
+En el panel, los gastos guardan fecha, categoría, valor, descripción y recibo en el bucket privado. La cartera agrupa
+los cobros por dueño, aunque tenga varios perros. Los informes usan la fecha del cobro (`pagos`) para ingresos por
+servicio y la fecha del gasto para costos; los abonos se muestran por separado según su propia fecha. La utilidad
+presentada es **cobros registrados menos gastos**, no una medida de caja. El informe mensual se descarga en CSV UTF-8
+que Excel puede abrir.
+
+El rollback `rollbacks/20261011120000_fase5_finanzas_integridad_down.sql` quita solo los triggers y funciones nuevos;
+no elimina cobros, abonos, gastos ni recibos.
+
 ## Cómo deshacer
 
-Corre los archivos de `rollbacks/` en **orden inverso** (del `...100600_down` al
-`...100000_down`). Ojo: los de los pasos 1 a 4 **borran tablas con sus datos**; son
+Corre los archivos de `rollbacks/` en **orden inverso**. Ojo: los rollbacks destructivos de los primeros pasos de Fase 1
+**borran tablas con sus datos**; son
 para antes de tener datos reales, o después de sacar una copia.
 
 ## Pruebas
@@ -173,9 +190,7 @@ hagan lo correcto; eso se verifica con la lista de arriba.
 ## Pendiente
 
 - Elegir un proveedor de distancias para sugerir recorridos; el orden manual agrupado por localidad ya está disponible (Fase 3).
-- Confirmar cuántos perros puede llevar un empleado por ruta (Fase 4).
-- Choques de horario en la agenda (Fase 4).
-- Vistas de cartera, ingresos y utilidad (Fase 5).
+- Probar las pantallas y permisos con cuentas admin/empleado en un proyecto Supabase de pruebas.
 - Historial de cambios: quién editó o borró cada dato (Fase 7).
 - Pasar `01_site_config.sql` y `02_contact_requests.sql` a `migrations/` cuando
   confirmemos qué hay realmente creado en tu Supabase.

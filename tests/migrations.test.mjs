@@ -123,6 +123,20 @@ test("Fase 4 guarda capacidad por ruta sin inventar un valor y conserva el dato 
   assert.doesNotMatch(rollback.sql, /drop column|drop table|truncate/i, "el rollback no debe borrar capacidades configuradas");
 });
 
+test("Fase 5 protege el saldo de abonos y su rollback conserva la contabilidad", () => {
+  const migracion = migraciones.find(({ f }) => f === "20261011120000_fase5_finanzas_integridad.sql");
+  const rollback = leer(ROLLBACKS).find(({ f }) => f === "20261011120000_fase5_finanzas_integridad_down.sql");
+  assert.ok(migracion, "falta la protección de integridad financiera");
+  assert.match(migracion.sql, /before insert or update on public\.abonos/i);
+  assert.match(migracion.sql, /for update/i, "los abonos concurrentes deben bloquear el cobro padre");
+  assert.match(migracion.sql, /v_abonado \+ new\.valor > v_total/i);
+  assert.match(migracion.sql, /before update of valor_total on public\.pagos/i);
+  assert.ok(rollback, "falta el rollback de las protecciones financieras");
+  assert.match(rollback.sql, /drop trigger if exists tg_abonos_no_sobrepagar/i);
+  assert.match(rollback.sql, /drop function if exists public\.tg_validar_abono_en_saldo/i);
+  assert.doesNotMatch(rollback.sql, /drop table|delete from|truncate/i, "el rollback no debe borrar movimientos financieros");
+});
+
 test("ninguna migración borra datos ni tablas (todo lo destructivo vive en rollbacks)", () => {
   assert.doesNotMatch(todo, /\bdrop\s+table\b/i);
   assert.doesNotMatch(todo, /\btruncate\b/i);

@@ -91,6 +91,14 @@ preparado para confirmar o recordar al dueño. La planeación cuenta los perros 
 empleados requeridos por recorrido. Cada ruta tiene una capacidad propia: como puede variar, no se asigna un valor común;
 si falta capacidad o una parada de recogida, el panel lo indica en vez de inventar un cálculo.
 
+## Finanzas y cartera (Fase 5)
+La pestaña privada **Finanzas y cartera** registra gastos por categoría y permite adjuntar recibos privados,
+crear cobros por dueño, registrar abonos parciales y consultar el saldo consolidado del dueño (aunque tenga varios perros).
+El informe mensual separa el valor de los cobros registrados del recaudo recibido; la utilidad se calcula como
+cobros registrados menos gastos. Se puede exportar el detalle del mes en CSV compatible con Excel. El acceso es solo
+para admin; RLS protege los datos y los recibos siguen en el bucket privado. Requiere aplicar la migración de integridad
+de Fase 5, explicada en **`supabase/README.md`**.
+
 ## Cotizador y panel de administración
 - **Cotizador** (`#cotizador`): la lógica vive en `src/models/QuoteModel.js` (pura y probada): precio fijo, por días y por noches,
   total, y mensaje de WhatsApp (los nombres se limpian para que no alteren el formato). Pestañas accesibles con teclado

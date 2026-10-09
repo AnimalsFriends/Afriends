@@ -5,6 +5,8 @@
 solo se muestra a cuentas admin cuando están aplicadas y disponibles las tablas de operación.
 La pestaña **Agenda y planeación** usa las citas y reservas existentes, y muestra el cálculo de personal
 según la capacidad configurable de cada ruta.
+**Finanzas y cartera** está limitada a admin: registra gastos con recibo privado, cobros y abonos; consolida la
+deuda por dueño y permite exportar el reporte mensual a CSV compatible con Excel.
 
 Para probarla localmente, ejecuta `npm run dev` desde la raíz y abre `/admin/`; los cambios de
 operación requieren una sesión conectada a Supabase. No publiques credenciales en este archivo.
