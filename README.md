@@ -99,6 +99,15 @@ cobros registrados menos gastos. Se puede exportar el detalle del mes en CSV com
 para admin; RLS protege los datos y los recibos siguen en el bucket privado. Requiere aplicar la migración de integridad
 de Fase 5, explicada en **`supabase/README.md`**.
 
+## Alertas, asistencia e historial (Fase 7)
+La pestaña privada **Alertas, asistencia e historial** muestra vacunas, desparasitaciones y SOAT vencidos o por vencer
+dentro de 30 días. Permite registrar un vehículo y actualizar su vencimiento al renovar el SOAT; cada cambio queda auditado.
+La asistencia se arma con el plan de colegio del día, incluye perros con **Hotel + colegio** y reutiliza `ausencias_colegio`
+para las faltas. Las horas de llegada y salida las fija Supabase y guardan quién las marcó.
+El historial conserva actor, acción y valores anteriores/nuevos de las tablas operativas, y solo una cuenta admin puede leerlo.
+La migración añade RLS y tablas sin borrar filas al revertir; no se ha aplicado a Supabase real. Consulta **`supabase/README.md`**
+y **`src/admin/README.md`** antes de probarla en un proyecto de prueba.
+
 ## Cotizador y panel de administración
 - **Cotizador** (`#cotizador`): la lógica vive en `src/models/QuoteModel.js` (pura y probada): precio fijo, por días y por noches,
   total, y mensaje de WhatsApp (los nombres se limpian para que no alteren el formato). Pestañas accesibles con teclado

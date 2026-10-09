@@ -6,6 +6,8 @@ reservas en calendario de día, semana y mes, además de la planeación por reco
 el texto externo con el helper compartido y emiten atributos `data-action` en vez de manejadores en línea.
 `finanzasViews.js` muestra gastos, recibos, cobros, abonos y resúmenes mensuales solo cuando el controlador
 confirma que la cuenta es admin.
+`seguimientoViews.js` presenta vencimientos, el registro diario del colegio y los snapshots de auditoría;
+escapa tanto los nombres como los valores históricos antes de incluirlos en el HTML.
 
 Para validar HTML seguro y los distintos estados de operación, ejecuta
-`node --test tests/rutasViews.test.mjs tests/agendaViews.test.mjs tests/finanzasViews.test.mjs`.
+`node --test tests/rutasViews.test.mjs tests/agendaViews.test.mjs tests/finanzasViews.test.mjs tests/seguimientoViews.test.mjs`.

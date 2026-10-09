@@ -11,6 +11,7 @@ import { GestionController } from "./GestionController.js";
 import { RutasController } from "./RutasController.js";
 import { AgendaController } from "./AgendaController.js";
 import { FinanzasController } from "./FinanzasController.js";
+import { SeguimientoController } from "./SeguimientoController.js";
 import {
   DIAS, clone, normalizeDraft, validateDraft, cleanPayload, buildDefaultsFile,
   setPath, move, blankService, blankCategory
@@ -53,6 +54,15 @@ export class AdminController {
       ocultarPestana: () => {
         $("adm-finanzas-tab").hidden = true;
         if (this.tab === "finanzas") this.setTab("negocio");
+      }
+    });
+    this.seguimiento = new SeguimientoController({
+      panel: () => $("adm-panel"),
+      toast: (...args) => this.toast(...args),
+      expire: () => this.expireSession(),
+      ocultarPestana: () => {
+        $("adm-seguimiento-tab").hidden = true;
+        if (this.tab === "seguimiento") this.setTab("negocio");
       }
     });
   }
@@ -113,27 +123,30 @@ export class AdminController {
     $("adm-rutas-tab").hidden = !this.remote;
     $("adm-agenda-tab").hidden = !this.remote;
     $("adm-finanzas-tab").hidden = !this.remote;
+    $("adm-seguimiento-tab").hidden = !this.remote;
     $("adm-note").innerHTML = note;
     if (!keepDraft) { this.openCat = null; this.setDirty(false); }
-    this.setTab(["leads", "gestion", "rutas", "agenda", "finanzas"].includes(this.tab) && this.remote ? this.tab : "negocio");
+    this.setTab(["leads", "gestion", "rutas", "agenda", "finanzas", "seguimiento"].includes(this.tab) && this.remote ? this.tab : "negocio");
   }
 
   setTab(tab) {
     if (this.tab === "rutas" && tab !== "rutas" && !this.rutas.puedeSalir()) return;
     if (this.tab === "agenda" && tab !== "agenda" && !this.agenda.puedeSalir()) return;
     if (this.tab === "finanzas" && tab !== "finanzas" && !this.finanzas.puedeSalir()) return;
+    if (this.tab === "seguimiento" && tab !== "seguimiento" && !this.seguimiento.puedeSalir()) return;
     this.tab = tab;
     document.querySelectorAll("[data-tab]").forEach((b) => {
       const active = b.dataset.tab === tab;
       b.setAttribute("aria-selected", String(active));
       b.tabIndex = active ? 0 : -1;
     });
-    $("adm-bar").hidden = ["leads", "gestion", "rutas", "agenda", "finanzas"].includes(tab);
+    $("adm-bar").hidden = ["leads", "gestion", "rutas", "agenda", "finanzas", "seguimiento"].includes(tab);
     this.gestion.setActive(tab === "gestion");
     this.rutas.setActive(tab === "rutas");
     this.agenda.setActive(tab === "agenda");
     this.finanzas.setActive(tab === "finanzas");
-    if (!["gestion", "rutas", "agenda", "finanzas"].includes(tab)) this.render();
+    this.seguimiento.setActive(tab === "seguimiento");
+    if (!["gestion", "rutas", "agenda", "finanzas", "seguimiento"].includes(tab)) this.render();
     if (tab === "leads") this.refreshLeads();
   }
 
@@ -142,6 +155,7 @@ export class AdminController {
     if (this.tab === "rutas") { this.rutas.render(); return; }
     if (this.tab === "agenda") { this.agenda.render(); return; }
     if (this.tab === "finanzas") { this.finanzas.render(); return; }
+    if (this.tab === "seguimiento") { this.seguimiento.render(); return; }
     const panel = $("adm-panel");
     if (this.tab === "negocio") panel.innerHTML = AdminViews.business(this.data);
     else if (this.tab === "servicios") panel.innerHTML = AdminViews.services(this.data, this.openCat);
@@ -210,21 +224,23 @@ export class AdminController {
     this.agenda.loaded = false;
     this.finanzas.loaded = false;
     Auth.logout();
-    const conservaBorrador = this.dirty || this.gestion.dirty || this.rutas.dirty || this.agenda.dirty || this.finanzas.dirty;
+    this.seguimiento.loaded = false;
+    const conservaBorrador = this.dirty || this.gestion.dirty || this.rutas.dirty || this.agenda.dirty || this.finanzas.dirty || this.seguimiento.dirty;
     this.showLogin(conservaBorrador ? "Tu sesión venció. Entra de nuevo; tus cambios sin guardar siguen aquí." : "Tu sesión venció. Entra de nuevo.");
   }
 
   /* ------------------------------ eventos ------------------------------ */
   bindGlobal() {
-    window.addEventListener("beforeunload", (event) => { if (this.dirty || this.gestion.dirty || this.rutas.dirty || this.agenda.dirty || this.finanzas.dirty) { event.preventDefault(); event.returnValue = ""; } });
+    window.addEventListener("beforeunload", (event) => { if (this.dirty || this.gestion.dirty || this.rutas.dirty || this.agenda.dirty || this.finanzas.dirty || this.seguimiento.dirty) { event.preventDefault(); event.returnValue = ""; } });
 
     $("adm-login-btn").addEventListener("click", () => this.onLogin());
     $("adm-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") this.onLogin(); });
     $("adm-logout").addEventListener("click", () => {
-      if ((this.dirty || this.gestion.dirty || this.rutas.dirty || this.agenda.dirty || this.finanzas.dirty) && !confirm("Tienes cambios sin guardar. ¿Cerrar sesión de todos modos?")) return;
+      if ((this.dirty || this.gestion.dirty || this.rutas.dirty || this.agenda.dirty || this.finanzas.dirty || this.seguimiento.dirty) && !confirm("Tienes cambios sin guardar. ¿Cerrar sesión de todos modos?")) return;
       this.setDirty(false); this.rutas.descartarBorradores(); this.rutas.loaded = false;
       this.agenda.descartarBorrador(); this.agenda.loaded = false;
-      this.finanzas.descartarBorradores(); this.finanzas.loaded = false; Auth.logout(); this.showLogin();
+      this.finanzas.descartarBorradores(); this.finanzas.loaded = false;
+      this.seguimiento.descartarBorrador(); this.seguimiento.loaded = false; Auth.logout(); this.showLogin();
     });
 
     $("adm-save").addEventListener("click", () => this.save());
@@ -245,6 +261,7 @@ export class AdminController {
     this.rutas.bind(panel);
     this.agenda.bind(panel);
     this.finanzas.bind(panel);
+    this.seguimiento.bind(panel);
   }
 
   onTabKeys(event) {
@@ -273,6 +290,7 @@ export class AdminController {
     if (this.tab === "rutas") return;                    // rutas y hotel tienen guardado propio
     if (this.tab === "agenda") return;                   // agenda guarda cada cita al momento
     if (this.tab === "finanzas") return;                 // finanzas guarda cada registro al momento
+    if (this.tab === "seguimiento") return;              // seguimiento tiene formulario propio
     const t = event.target;
     if (!t.dataset.path) return;
     const value = t.type === "checkbox" ? t.checked : t.type === "number" ? (t.value === "" ? 0 : Number(t.value)) : t.value;
@@ -289,6 +307,7 @@ export class AdminController {
     if (this.tab === "rutas") return;
     if (this.tab === "agenda") return;
     if (this.tab === "finanzas") return;
+    if (this.tab === "seguimiento") return;
     const t = event.target;
     if (t.matches("[data-lead-status]")) { this.changeLeadStatus(t.dataset.id, t.value); return; }
     if (t.dataset.dia) {
@@ -307,7 +326,7 @@ export class AdminController {
   }
 
   onClick(event) {
-    if (this.tab === "gestion" || this.tab === "rutas" || this.tab === "agenda" || this.tab === "finanzas") return;
+    if (this.tab === "gestion" || this.tab === "rutas" || this.tab === "agenda" || this.tab === "finanzas" || this.tab === "seguimiento") return;
     const b = event.target.closest("[data-action]");
     if (!b) return;
     const action = b.dataset.action;

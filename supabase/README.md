@@ -172,6 +172,24 @@ que Excel puede abrir.
 El rollback `rollbacks/20261011120000_fase5_finanzas_integridad_down.sql` quita solo los triggers y funciones nuevos;
 no elimina cobros, abonos, gastos ni recibos.
 
+## Fase 7: alertas, asistencia e historial
+
+Después de Fase 5, ejecuta `migrations/20261012120000_fase7_alertas_asistencia_historial.sql`. Reutiliza
+`vacunas_mascota`, `planes_colegio` y `ausencias_colegio`; agrega `soat_vehiculos`, `asistencia_colegio` y
+`historial_cambios`. Las alertas incluyen fechas vencidas y las que caen en los próximos 30 días, ventana que
+eligió el negocio.
+
+La asistencia guarda una fila por perro/día cuando llega al colegio. Las marcas de hora y empleado se ponen
+en la base de datos y no se pueden reiniciar desde el formulario; el estado de falta sigue en
+`ausencias_colegio`. Las dos tablas nuevas de operación tienen RLS admin-only. El historial también solo da
+lectura a admin: sus triggers guardan acción, actor y valores anterior/nuevo para las tablas públicas operativas.
+No se agregan permisos financieros a empleados.
+
+El rollback `rollbacks/20261012120000_fase7_alertas_asistencia_historial_down.sql` desactiva triggers y políticas
+de Fase 7, y revoca el acceso desde la app a esas tablas, pero **no borra sus tablas ni sus filas**. Si se vuelve
+a aplicar la migración, se reactivan. La migración y el rollback no se han ejecutado contra Supabase real:
+primero pruébalos en un proyecto separado, comprueba los roles admin/empleado y revisa los timestamps.
+
 ## Cómo deshacer
 
 Corre los archivos de `rollbacks/` en **orden inverso**. Ojo: los rollbacks destructivos de los primeros pasos de Fase 1
@@ -191,6 +209,5 @@ hagan lo correcto; eso se verifica con la lista de arriba.
 
 - Elegir un proveedor de distancias para sugerir recorridos; el orden manual agrupado por localidad ya está disponible (Fase 3).
 - Probar las pantallas y permisos con cuentas admin/empleado en un proyecto Supabase de pruebas.
-- Historial de cambios: quién editó o borró cada dato (Fase 7).
 - Pasar `01_site_config.sql` y `02_contact_requests.sql` a `migrations/` cuando
   confirmemos qué hay realmente creado en tu Supabase.

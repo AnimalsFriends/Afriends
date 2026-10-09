@@ -31,9 +31,14 @@ const sinComentarios = (sql) => sql.replace(/--.*$/gm, "");
 const migraciones = leer(DIR);
 const todo = sinComentarios(migraciones.map((m) => m.sql).join("\n"));
 const rollbacks = sinComentarios(leer(ROLLBACKS).map((m) => m.sql).join("\n"));
+const rollbacksPosterioresALasTablasPublicas = sinComentarios(leer(ROLLBACKS)
+  .filter(({ f }) => f !== "20261005143000_crear_site_config_contact_requests_down.sql")
+  .map((m) => m.sql).join("\n"));
 
 const tablas = [...todo.matchAll(/create table if not exists public\.(\w+)/gi)].map((m) => m[1]);
 const tablasHistoricas = new Set(["site_config", "contact_requests"]);
+const tablasConRollbackNoDestructivo = new Set(["soat_vehiculos", "asistencia_colegio", "historial_cambios"]);
+const rollbackFase7 = leer(ROLLBACKS).find(({ f }) => f === "20261012120000_fase7_alertas_asistencia_historial_down.sql");
 
 test("hay tablas nuevas que revisar", () => {
   assert.ok(tablas.length >= 18, `se esperaban al menos 18 tablas, hay ${tablas.length}`);
@@ -63,9 +68,14 @@ for (const t of tablas) {
       .some((m) => m[1] === t && /es_admin\(\)/.test(m[0]));
     assert.ok(hayAdmin, "falta una política que use es_admin()");
 
-    if (tablasHistoricas.has(t)) {
-      assert.doesNotMatch(rollbacks, new RegExp(`drop table if exists public\\.${t};`, "i"),
-        "el rollback de Fase 1 no debe borrar una tabla histórica");
+    if (tablasHistoricas.has(t) || tablasConRollbackNoDestructivo.has(t)) {
+      const comprobacion = tablasHistoricas.has(t) ? rollbacksPosterioresALasTablasPublicas : rollbacks;
+      assert.doesNotMatch(comprobacion, new RegExp(`drop table if exists public\\.${t};`, "i"),
+        "un rollback posterior no debe borrar tablas que pueden contener datos reales");
+      if (tablasConRollbackNoDestructivo.has(t)) {
+        assert.ok(rollbackFase7, "falta el rollback seguro de Fase 7");
+        assert.doesNotMatch(rollbackFase7.sql, /drop table|truncate|delete from/i, "Fase 7 conserva los datos operativos");
+      }
     } else {
       assert.match(rollbacks, new RegExp(`drop table if exists public\\.${t};`, "i"), "falta el drop en los rollbacks");
     }
@@ -135,6 +145,26 @@ test("Fase 5 protege el saldo de abonos y su rollback conserva la contabilidad",
   assert.match(rollback.sql, /drop trigger if exists tg_abonos_no_sobrepagar/i);
   assert.match(rollback.sql, /drop function if exists public\.tg_validar_abono_en_saldo/i);
   assert.doesNotMatch(rollback.sql, /drop table|delete from|truncate/i, "el rollback no debe borrar movimientos financieros");
+});
+
+test("Fase 7 registra cambios con RLS admin, asistencia fechada y SOAT sin rollback destructivo", () => {
+  const migracion = migraciones.find(({ f }) => f === "20261012120000_fase7_alertas_asistencia_historial.sql");
+  assert.ok(migracion, "falta la migración de alertas, asistencia e historial");
+  for (const table of ["soat_vehiculos", "asistencia_colegio", "historial_cambios"]) {
+    assert.match(migracion.sql, new RegExp(`create table if not exists public\\.${table}`));
+    assert.match(migracion.sql, new RegExp(`alter table public\\.${table} enable row level security`));
+    assert.match(migracion.sql, new RegExp(`on public\\.${table}[\\s\\S]*?public\\.es_admin\\(\\)`));
+  }
+  assert.match(migracion.sql, /unique \(mascota_id, fecha\)/i);
+  assert.match(migracion.sql, /statement_timestamp\(\)/i, "la hora de llegada y salida debe venir del servidor");
+  assert.match(migracion.sql, /after insert or update or delete/i);
+  assert.match(migracion.sql, /revoke all on public\.soat_vehiculos,\s*public\.asistencia_colegio,\s*public\.historial_cambios\s+from public, anon, authenticated/i);
+  assert.match(migracion.sql, /grant select on public\.historial_cambios to authenticated/i);
+  for (const table of ["duenos", "mascotas", "gastos", "pagos", "abonos", "rutas_colegio", "paradas_dia", "citas"]) {
+    assert.match(migracion.sql, new RegExp(`'public\\.${table}'`), `falta auditar ${table}`);
+  }
+  assert.ok(rollbackFase7, "falta el rollback de Fase 7");
+  assert.doesNotMatch(rollbackFase7.sql, /drop table|drop column|truncate|delete from/i);
 });
 
 test("ninguna migración borra datos ni tablas (todo lo destructivo vive en rollbacks)", () => {

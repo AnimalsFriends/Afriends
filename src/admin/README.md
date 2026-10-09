@@ -88,11 +88,30 @@ informe selecciona mes y separa **cobros registrados** (fecha de `pagos`) de **r
 es cobros registrados menos gastos, no flujo de caja. El CSV lleva UTF-8 y separador regional compatible con Excel.
 Pruebas focalizadas: `node --test tests/finanzasModel.test.mjs tests/finanzasApi.test.mjs tests/finanzasViews.test.mjs`.
 
+## Pestaña "Alertas, asistencia e historial" (Fase 7)
+
+Requiere `supabase/migrations/20261012120000_fase7_alertas_asistencia_historial.sql`. Las vacunas y desparasitaciones
+reutilizan `vacunas_mascota`; se muestran las vencidas y las que vencen dentro de los próximos 30 días. El SOAT se registra
+por vehículo y al renovarlo se actualiza la misma fila, dejando la fecha anterior en `historial_cambios`.
+
+La asistencia del día se calcula desde el plan de colegio y las reservas: incluye **Hotel + colegio**, pero no perros que
+solo están en el hotel. Las faltas se guardan en la tabla existente `ausencias_colegio`; llegada y salida se guardan en
+`asistencia_colegio`, con hora y empleado determinados por la base de datos. Corregir una falta requiere confirmación y
+queda auditado.
+
+Los triggers registran inserciones, cambios y bajas de las tablas públicas operativas con usuario, empleado, hora y valores
+anterior/nuevo. La tabla de historial no acepta escrituras desde clientes y solo admin puede consultarla. El empleado no
+obtiene acceso a alertas, asistencia ni registros financieros en esta fase; sus permisos siguen limitados por las políticas
+RLS existentes.
+
+Pruebas focalizadas: `node --test tests/seguimientoModel.test.mjs tests/seguimientoApi.test.mjs tests/seguimientoViews.test.mjs tests/migrations.test.mjs`.
+Son datos y peticiones simulados: todavía falta verificar login, permisos y marcas horarias en un Supabase de pruebas.
+
 ## Cómo probarlo
 
 ```bash
 npm run check          # build + auditoría + todas las pruebas
-node --test tests/gestionModel.test.mjs tests/gestionViews.test.mjs tests/gestionApi.test.mjs tests/gestionController.test.mjs tests/rutasModel.test.mjs tests/rutasApi.test.mjs tests/rutasViews.test.mjs tests/agendaModel.test.mjs tests/agendaApi.test.mjs tests/agendaViews.test.mjs tests/finanzasModel.test.mjs tests/finanzasApi.test.mjs tests/finanzasViews.test.mjs
+node --test tests/gestionModel.test.mjs tests/gestionViews.test.mjs tests/gestionApi.test.mjs tests/gestionController.test.mjs tests/rutasModel.test.mjs tests/rutasApi.test.mjs tests/rutasViews.test.mjs tests/agendaModel.test.mjs tests/agendaApi.test.mjs tests/agendaViews.test.mjs tests/finanzasModel.test.mjs tests/finanzasApi.test.mjs tests/finanzasViews.test.mjs tests/seguimientoModel.test.mjs tests/seguimientoApi.test.mjs tests/seguimientoViews.test.mjs
 ```
 
 Las pruebas cubren las reglas de validación, que las vistas escapen el texto y no usen
@@ -110,8 +129,6 @@ Supabase**: eso hay que verlo a mano (lista de comprobación abajo).
 ## Pendiente
 
 - Probado solo con pruebas automáticas: falta la prueba real en navegador y celular.
-- Los avisos de vacunas por vencer (cuántos días antes) se definen en la Fase 7; hoy solo se
-  marca "Vencida".
-- Los cambios no quedan en un historial de quién los hizo (Fase 7).
+- Probar la Fase 7 en navegador con una cuenta admin y comprobar RLS con una cuenta empleado.
 - Aún no se puede eliminar un dueño o perro (a propósito) ni mover un perro a otro dueño.
 - El tamaño del perro es texto libre hasta que se definan las categorías.
