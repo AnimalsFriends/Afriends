@@ -110,12 +110,14 @@ de Fase 5, explicada en **`supabase/README.md`**.
 - Todo cumple la CSP estricta (sin estilos ni scripts en línea) y la auditoría revisa también el panel.
 
 **Antes de publicar:** sigue `CHECKLIST_PUBLICACION.md` (qué falta, en orden).
+La acción principal de la página es “Cotizar por WhatsApp”; el enlace del encabezado
+y las demás salidas se muestran como acciones secundarias.
 
 ## Formulario, analítica y despliegue
 Todo el paso a paso está en **`GUIA_FASE4_CONFIGURACION.md`**. Resumen:
 - **Formulario de contacto** (`#formulario` en la home): validación en el navegador y, sobre todo, en la **Cloudflare Function**.
   Antispam en capas: honeypot, tiempo mínimo de llenado, **Cloudflare Turnstile**, espera entre envíos y límites por IP (hash) y teléfono.
-  Los mensajes se guardan en Supabase (`supabase/02_contact_requests.sql`) sin exponer ninguna clave en el navegador.
+  Los mensajes se guardan en Supabase (`supabase/02_contact_requests.sql`) sin exponer claves privadas en el navegador.
   Guarda la autorización de datos y la versión de la política aceptada. Si algo falla, el visitante siempre tiene salida por WhatsApp.
 - **Analítica GA4 con consentimiento**: no se carga nada de Google hasta que el visitante acepte; aceptar y rechazar pesan igual;
   "Configurar cookies" en el pie permite cambiar la decisión. Sin `GA_MEASUREMENT_ID` no hay aviso ni analítica.
@@ -162,8 +164,10 @@ En GitHub Pages, `robots.txt` y `sitemap.xml` se publican como archivos estátic
 La razón social, el NIT y la dirección completa siguen vacíos en la configuración; la página
 legal marca esos campos para completar. Un asesor legal debe revisar los textos antes de publicar.
 La verificación de Google usa la etiqueta HTML ya puesta en la home.
-La descripción del repositorio se cambia desde GitHub (no forma parte de los archivos); una opción
-coherente es: “Sitio web de Animal Friends, guardería canina con colegio, hotel y servicios para mascotas”.
+La URL pública actual es GitHub Pages. No hay un archivo suelto `git` en la raíz: `.git/`
+es metadata del repositorio y se conserva. La descripción se cambia desde GitHub (no forma
+parte de los archivos); una opción coherente es: “Sitio web de Animal Friends, guardería
+canina con colegio, hotel y servicios para mascotas”.
 
 ## Datos legales: completar antes de publicar
 Las páginas de **Aviso legal** y **Política de privacidad** muestran marcadores amarillos

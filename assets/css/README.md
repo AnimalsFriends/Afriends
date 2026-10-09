@@ -8,4 +8,5 @@ mantener legibles en celular las tarjetas de resumen y tablas de movimientos.
 
 Al editar, reutiliza los tokens de `tokens.css`, conserva foco visible y evita estilos en línea
 (la política CSP los bloquea). La revisión automatizada es `npm run check`; queda pendiente una
-prueba visual real en celular.
+prueba visual real en celular. El acceso flotante de WhatsApp queda como alternativa secundaria,
+con fondo claro e icono delineado; la acción principal es la cotización desde su sección.

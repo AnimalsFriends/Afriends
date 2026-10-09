@@ -64,10 +64,10 @@
   position: fixed; z-index: 80;
   right: max(var(--sp-4), env(safe-area-inset-right)); bottom: max(var(--sp-4), env(safe-area-inset-bottom));
   width: 3.5rem; height: 3.5rem; display: grid; place-items: center; border-radius: 50%;
-  background: #128C7E; color: #fff; box-shadow: var(--shadow-md);
-  transition: transform .15s ease, background-color .15s ease;
+  border: 2px solid #128C7E; background: var(--color-surface); color: #128C7E; box-shadow: var(--shadow-md);
+  transition: transform .15s ease, background-color .15s ease, color .15s ease;
 }
-.wa-float:hover { background: #0F7A6D; transform: scale(1.06); }
+.wa-float:hover { background: #EAF5F3; color: #0F7A6D; transform: scale(1.06); }
 .wa-float svg { width: 1.75rem; height: 1.75rem; fill: currentColor; }
 
 /* ---------- Páginas legales (texto largo) ---------- */

@@ -9,3 +9,5 @@ vistas y conflictos de reservas. Las pruebas `agenda*.test.mjs` cubren rangos de
 capacidad por ruta, peticiones y calendario. Las pruebas `finanzas*.test.mjs` cubren validaciones, cartera por dueño,
 ingresos/recaudos, exportación CSV, recibos y vistas financieras. `migrations.test.mjs` revisa RLS y guardas estáticas
 del SQL; no aplica las migraciones ni sustituye una comprobación en un proyecto Supabase real.
+`publicSite.test.mjs` protege la acción principal del cotizador y evita incluir claves privadas
+de Supabase en la configuración pública.

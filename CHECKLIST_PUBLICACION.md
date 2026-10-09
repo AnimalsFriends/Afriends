@@ -10,14 +10,16 @@ lo que solo ha pasado la auditoría local.
 - SEO (sitemap, robots, canonical, Open Graph, JSON-LD) configurado para la ruta `/Afriends/`.
 - Verificación HTML de Search Console en la home y guía para enviar el sitemap.
 - GA4 tiene consentimiento previo implementado, pero no está activo: falta el ID real.
-- Archivo `git` retirado. La descripción del repositorio aún requiere un cambio manual en GitHub.
+- No hay un archivo suelto `git` en la raíz; `.git/` es la metadata del repositorio y no se debe borrar.
+- La descripción del repositorio aún requiere un cambio manual desde GitHub.
 
 ## 🔴 Falta antes de publicar (bloqueante)
 
 ### A. Datos del cliente — enviar `DATOS_PENDIENTES_CLIENTE.md`
 - [ ] Razón social / nombre del titular, NIT o cédula y dirección completa. Los campos están marcados en las páginas legales.
 - [ ] Confirmar los datos de contacto y ubicación que ya aparecen en la configuración.
-- [ ] Dominio propio (por ahora el sitio usa el dominio de GitHub Pages).
+- [x] URL pública actual: `https://animalsfriends.github.io/Afriends/` (GitHub Pages).
+- [ ] Dominio propio, solo si decides dejar de usar la URL de GitHub Pages.
 - [ ] Enlaces de Instagram, Facebook y TikTok; Gmail para el Perfil de Google.
 - [ ] Confirmar horarios, servicios y precios, y si atienden **gatos** además de perros.
 - [ ] **Fotos reales** de las instalaciones y los peluditos (hoy el sitio usa solo el logo y una imagen para compartir provisional).
@@ -36,15 +38,20 @@ lo que solo ha pasado la auditoría local.
 - [ ] Si se conserva GitHub Pages: elegir una API compatible para `/api/contact`; GitHub Pages no ejecuta `functions/api/contact.js`.
 - [ ] Si se usa Cloudflare: configurar SSL *Full (strict)*, *Always Use HTTPS*, redirección `www` y, opcionalmente, Cloudflare Access para `/admin/*`.
 
-### D. Código: pegar las claves públicas en `src/config/env.js`
-- [ ] `SUPABASE_URL` y `SUPABASE_ANON_KEY` (clave **anon/publishable**, nunca la service_role)
+### D. Configuración pública (nunca pegar secretos en el frontend)
+- [ ] `SUPABASE_URL` y `SUPABASE_ANON_KEY` de tipo **anon/publishable**. No usar `sb_secret` ni `service_role`; la clave pública real todavía falta.
 - [ ] `TURNSTILE_SITE_KEY`
-- [ ] `GA_MEASUREMENT_ID` real (si quieren analítica; el aviso de consentimiento ya está implementado)
+- [ ] `GA_MEASUREMENT_ID` real (`G-...`) si quieren analítica; el consentimiento previo y el texto condicional de cookies ya están implementados.
 - [x] `SITE_URL` configurada para `https://animalsfriends.github.io/Afriends`
 
 ### E. GitHub
 - [ ] Cambiar el workflow o su configuración cuando se decida el hosting oficial. Hoy despliega a Cloudflare si hay credenciales.
-- [ ] Actualizar manualmente la descripción del repositorio en GitHub.
+- [ ] En **Settings → General → Description**, actualizar manualmente la descripción del repositorio. Sugerencia: “Sitio web de Animal Friends, guardería canina con colegio, hotel y servicios para mascotas”.
+
+### F. Pasos externos que quedan en manos del negocio
+- [ ] **Search Console:** verificar la propiedad Prefijo de URL de GitHub Pages con la etiqueta ya incluida en `index.html` y enviar el sitemap.
+- [ ] **Perfil de Negocio de Google:** crear o reclamar la ficha, verificarla y seguir `GOOGLE_BUSINESS_PROFILE.md`.
+- [ ] **Cloudflare Pages (si se elige ese hosting):** activar *Always Use HTTPS*, seleccionar SSL/TLS *Full (strict)* y crear una regla de redirección `www` hacia el dominio canónico. La guía completa está en `README.md`.
 
 ## 🟡 Después de publicar (verificar en producción)
 - [ ] Enviar un mensaje real por el formulario → aparece en el panel (pestaña Mensajes) y en Supabase.
@@ -58,6 +65,7 @@ lo que solo ha pasado la auditoría local.
 
 ## 🧪 Lo que NO pude verificar desde aquí (hazlo en el primer despliegue)
 - La ejecución real del workflow y el despliegue desde GitHub Pages o Cloudflare Pages.
+- La clave privada se retiró de la configuración local; revoca/rota en Supabase cualquier clave privada que se haya usado ahí y configura solo la clave pública anon/publishable antes de reconectar el panel.
 - La Function corriendo en Cloudflare (la probé con pruebas automáticas y simulaciones, no en su entorno real).
 - Las políticas de seguridad (RLS) contra una base de Supabase real: los SQL no se han ejecutado.
 - Turnstile y Google Analytics reales; falta activar GA4 con su ID y consentir en producción.
