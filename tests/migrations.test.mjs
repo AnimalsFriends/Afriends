@@ -181,3 +181,22 @@ test("los paréntesis de cada migración están balanceados", () => {
     assert.equal(abre, cierra, `${f}: paréntesis desbalanceados`);
   }
 });
+
+test("la migración inicial vacía se conserva como registro histórico", () => {
+  const inicial = migraciones.find(({ f }) => f === "20261005121608_crear_tablas_iniciales.sql");
+  const definicionReal = migraciones.find(({ f }) => f === "20261005143000_crear_site_config_contact_requests.sql");
+  assert.ok(inicial, "debe conservarse el archivo de migración inicial");
+  assert.equal(inicial.sql.trim(), "", "la migración histórica debe seguir vacía");
+  assert.ok(definicionReal, "la definición real de las tablas públicas debe estar versionada aparte");
+  assert.match(definicionReal.sql, /create table if not exists public\.site_config/i);
+  assert.match(definicionReal.sql, /create table if not exists public\.contact_requests/i);
+});
+
+test("la documentación refleja el historial de migraciones revisado", () => {
+  const readme = readFileSync("supabase/README.md", "utf8");
+  assert.match(readme, /20261005121608_crear_tablas_iniciales\.sql/);
+  assert.match(readme, /20261005143000_crear_site_config_contact_requests\.sql/);
+  assert.doesNotMatch(readme, /La migración aún no se ha ejecutado contra Supabase real/i);
+  assert.doesNotMatch(readme, /La migración y el rollback no se han ejecutado contra Supabase real/i);
+  assert.doesNotMatch(readme, /Pasar `01_site_config\.sql` y `02_contact_requests\.sql` a `migrations\//i);
+});
