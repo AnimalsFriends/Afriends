@@ -1,5 +1,19 @@
 # Base de datos (Supabase)
 
+## Proyecto nuevo (rama `feature/nueva-base-datos`)
+
+El proyecto aislado `AnimalsFriends-DB-Nueva` ya tiene aplicado el esquema inicial consolidado y no contiene datos de clientes. El esquema fuente que se revisa y versiona está en `bootstrap/esquema_inicial_animalsfriends.sql`.
+
+**Importante:** ese archivo es una instalación inicial consolidada para un proyecto vacío; no es una migración incremental. No lo ejecutes en el proyecto anterior ni encima de una base ya configurada. Tampoco ejecutes `supabase db push` desde la carpeta `migrations/` contra el proyecto nuevo hasta terminar de reorganizar el historial CLI: esa carpeta conserva migraciones históricas del proyecto anterior. El proyecto anterior permanece sin cambios.
+
+Configuración del frontend en esta rama: `src/config/env.js` apunta al proyecto nuevo y usa únicamente una clave pública publishable. No agregues claves secretas o `service_role` al código del navegador.
+
+Capacidades operativas iniciales confirmadas en el proyecto nuevo:
+- Hotel: 50 perros.
+- Carga prevista: 50 perros por empleado. La aplicación debe validar la carga combinada del empleado entre sus rutas, no solo el cupo individual de cada ruta.
+
+---
+
 Aquí vive todo lo que toca la base de datos de Animal's Friends. Si llegas nuevo al
 proyecto, lee esto primero.
 
