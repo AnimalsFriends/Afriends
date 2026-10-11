@@ -13,8 +13,8 @@ export const ENV = Object.freeze({
   // estructurados (SEO). SITE_URL del entorno puede reemplazarla al desplegar.
   SITE_URL: "https://animalsfriends.github.io/Afriends",
 
-  SUPABASE_URL: "https://gjosvubtqtrzvqaqrmrk.supabase.co",
-  SUPABASE_ANON_KEY: "",
+  SUPABASE_URL: "https://xjpivjxagyzeeqinlzkz.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_lSN4fF9cjtra9NwX6rLX-A_MuBBH-Rk",
   SITE_TABLE: "site_config",
 
   // --- Formulario de contacto (Fase 4) ---
