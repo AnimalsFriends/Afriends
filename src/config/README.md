@@ -10,6 +10,4 @@ si se cambia de dominio, ajusta el valor o proporciona la variable de entorno
 `SITE_URL` al build. El ID de GA4 queda vacío hasta recibir el valor real.
 
 Razón social, NIT y dirección completa siguen pendientes. Los textos legales muestran
-marcadores y deben pasar por revisión legal antes de publicarse. La clave pública de
-Supabase también debe configurarse antes de volver a conectar el panel con la base de
-datos; nunca uses una clave privada del proyecto en el navegador.
+marcadores y deben pasar por revisión legal antes de publicarse. En la rama `feature/nueva-base-datos`, `env.js` apunta al proyecto aislado `AnimalsFriends-DB-Nueva`. Al fusionar cambios en otra rama, revisa la URL y configura solo una clave pública `anon`/`publishable`; nunca uses una clave privada del proyecto en el navegador.
