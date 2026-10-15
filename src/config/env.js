@@ -14,7 +14,7 @@ export const ENV = Object.freeze({
   SITE_URL: "https://animalsfriends.github.io/Afriends",
 
   SUPABASE_URL: "https://gjosvubtqtrzvqaqrmrk.supabase.co",
-  SUPABASE_ANON_KEY: "",
+  SUPABASE_ANON_KEY: "sb_publishable_0L0pnm_oFe1GVXDqqSVPxQ_PVAErju3",
   SITE_TABLE: "site_config",
 
   // --- Formulario de contacto (Fase 4) ---
