@@ -73,7 +73,10 @@ export const SITE_DEFAULTS = {
 
      servicios: lista de servicios dentro de la categoría.
        activo: true / false   -> muestra u oculta ESE servicio
-       precio: número sin puntos
+       tipoPrecio: "fijo" | "gratis" | "cotizar" | "sin_definir"
+       precio: número positivo si es fijo; 0 solo si tipoPrecio es "gratis"
+       Los precios heredados mayores que cero se interpretan como "fijo";
+       cero o un precio ausente sin tipoPrecio se interpreta como "sin_definir".
        nombreMensaje (opcional): cómo aparece en el mensaje de WhatsApp
        descripcion  (opcional): texto pequeño debajo del nombre
 

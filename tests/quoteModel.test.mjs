@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { QuoteModel, cleanName } from "../src/models/QuoteModel.js";
 import { SiteConfigModel } from "../src/models/SiteConfigModel.js";
+import { QuoteView } from "../src/views/QuoteView.js";
 
 const fresh = () => new QuoteModel(SiteConfigModel.fromDefaults());
 
@@ -19,6 +20,48 @@ test("precio fijo: suma los servicios elegidos", () => {
   assert.equal(q.total, 35000 + 50000);
   q.setService("banos", "bano-normal", false);
   assert.equal(q.total, 50000);
+});
+
+test("gratis, cotizar y precio sin definir se mantienen distintos en el total y WhatsApp", () => {
+  const q = new QuoteModel({
+    negocio: { whatsapp: "573000000000" },
+    categorias: [{
+      id: "x",
+      tipo: "normal",
+      servicios: [
+        { id: "fixed", nombre: "Fijo", tipoPrecio: "fijo", precio: 25000 },
+        { id: "free", nombre: "Gratis", tipoPrecio: "gratis", precio: 0 },
+        { id: "quote", nombre: "Cotizar", tipoPrecio: "cotizar", precio: null },
+        { id: "unknown", nombre: "Por confirmar", tipoPrecio: "sin_definir", precio: null }
+      ]
+    }]
+  });
+  for (const id of ["fixed", "free", "quote", "unknown"]) q.setService("x", id, true);
+
+  assert.equal(q.total, 25000);
+  assert.equal(q.hasPricedItems, true);
+  assert.equal(q.hasPartialTotal, true);
+  assert.deepEqual(q.items.map(({ price }) => price), [25000, 0, null, null]);
+  assert.match(QuoteView.summaryItems(q.items, "COP"), /Gratis/);
+  assert.match(QuoteView.summaryItems(q.items, "COP"), /Por cotizar/);
+  assert.match(QuoteView.summaryItems(q.items, "COP"), /Precio por confirmar/);
+  assert.match(q.message(), /- Gratis \(Gratis\)/);
+  assert.match(q.message(), /- Cotizar \(Por cotizar\)/);
+  assert.match(q.message(), /\*Total estimado parcial:\* \$25\.000 COP\./);
+  assert.match(q.message(), /no incluye los servicios sin precio definido o por cotizar/);
+});
+
+test("un pedido compuesto solo por servicios por cotizar no se presenta como total cero", () => {
+  const q = new QuoteModel({
+    negocio: { whatsapp: "573000000000" },
+    categorias: [{ id: "x", tipo: "normal", servicios: [{ id: "quote", nombre: "Cotizar", tipoPrecio: "cotizar", precio: null }] }]
+  });
+  q.setService("x", "quote", true);
+
+  assert.equal(q.total, 0);
+  assert.equal(q.hasPricedItems, false);
+  assert.match(q.message(), /\*Total estimado parcial:\* Por cotizar\./);
+  assert.doesNotMatch(q.message(), /\$0 COP/);
 });
 
 test("por noches: precio x noches, ajustado al rango válido", () => {

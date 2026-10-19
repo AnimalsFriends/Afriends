@@ -16,6 +16,9 @@ proyecto: cada archivo hace una sola cosa y las pantallas no hablan directo con 
 
 - **Negocio y Servicios y precios** editan un borrador grande que se publica con un solo
   botón (**Guardar y publicar**). Lo maneja `AdminController`.
+- Cada servicio tiene un tipo de precio: fijo, gratis, por cotizar o sin definir. Los datos
+  heredados con precio cero, ausente o inválido quedan sin definir hasta que se clasifiquen;
+  no se publican como servicios gratuitos por defecto.
 - **Dueños y mascotas** (Fase 2) funciona distinto: cada ficha (dueño, perro, vacuna,
   medicamento, persona autorizada) es un registro propio y se guarda al momento con su
   propio botón. Lo maneja `GestionController`. Por eso la barra de "Guardar y publicar"
@@ -110,7 +113,7 @@ Son datos y peticiones simulados: todavía falta verificar login, permisos y mar
 ## Cómo probarlo
 
 ```bash
-npm run check          # build + auditoría + todas las pruebas
+npm run check          # build + empaquetado + auditoría del dist + todas las pruebas
 node --test tests/gestionModel.test.mjs tests/gestionViews.test.mjs tests/gestionApi.test.mjs tests/gestionController.test.mjs tests/rutasModel.test.mjs tests/rutasApi.test.mjs tests/rutasViews.test.mjs tests/agendaModel.test.mjs tests/agendaApi.test.mjs tests/agendaViews.test.mjs tests/finanzasModel.test.mjs tests/finanzasApi.test.mjs tests/finanzasViews.test.mjs tests/seguimientoModel.test.mjs tests/seguimientoApi.test.mjs tests/seguimientoViews.test.mjs
 ```
 

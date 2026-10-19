@@ -141,8 +141,8 @@ Todo el paso a paso está en **`GUIA_FASE4_CONFIGURACION.md`**. Resumen:
 | Comando | Qué hace |
 |---|---|
 | `node scripts/build.mjs` | Genera `sitemap.xml`, `robots.txt`; inyecta canonical, Open Graph, Twitter Cards, JSON-LD y `modulepreload` en el `<head>` |
-| `node scripts/audit.mjs` | Revisa enlaces rotos, anclas, imágenes sin `alt`, título/descripción, un solo `h1`, JSON-LD válido y que no haya código en línea (CSP) |
-| `npm run check` | Las dos anteriores seguidas (úsalo antes de cada `git push`) |
+| `npm run audit` | Construye `dist/` y revisa páginas, recursos, rutas, SEO, JSON-LD y CSP en el origen y el paquete final |
+| `npm run check` | Ejecuta build, empaquetado, auditoría del paquete y todas las pruebas (úsalo antes de cada `git push`) |
 
 - **URL del sitio:** `src/config/env.js` tiene la URL pública actual de GitHub Pages. Si se usa un dominio propio,
   configura `SITE_URL` en el entorno de build. El generador mantiene la ruta base `/Afriends/` y usa `.html`

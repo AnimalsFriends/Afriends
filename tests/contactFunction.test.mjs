@@ -22,10 +22,10 @@ function mockFetch({ turnstile = { success: true }, recent = [], insertStatus = 
   return calls;
 }
 
-const req = (body, { origin = ORIGIN, type = "application/json", ip = "1.2.3.4", raw } = {}) =>
+const req = (body, { origin = ORIGIN, type = "application/json", ip = "1.2.3.4", raw, headers = {} } = {}) =>
   new Request(`${ORIGIN}/api/contact`, {
     method: "POST",
-    headers: { ...(origin ? { Origin: origin } : {}), "Content-Type": type, "CF-Connecting-IP": ip },
+    headers: { ...(origin ? { Origin: origin } : {}), "Content-Type": type, "CF-Connecting-IP": ip, ...headers },
     body: raw ?? JSON.stringify(body)
   });
 const call = (request, env = ENV) => onRequestPost({ request, env });
@@ -137,6 +137,20 @@ test("tipo de contenido, JSON inválido y tamaño", async () => {
   assert.equal((await call(req(null, { raw: "{no json" }))).status, 400);
   assert.equal((await call(req(null, { raw: "[1,2]" }))).status, 400);
   assert.equal((await call(req(null, { raw: JSON.stringify({ ...GOOD, mensaje: "x".repeat(9000) }) }))).status, 413);
+});
+
+test("el límite del cuerpo usa bytes UTF-8 aunque falte o mienta Content-Length", async () => {
+  mockFetch();
+  const validUnicode = req({ ...GOOD, mensaje: "ñ".repeat(100) });
+  assert.equal(validUnicode.headers.get("Content-Length"), null);
+  assert.equal((await call(validUnicode)).status, 201);
+
+  const raw = JSON.stringify({ ...GOOD, mensaje: "🐶".repeat(2100) });
+  assert.ok(raw.length < 8 * 1024, "el texto tiene menos de 8 KiB en unidades UTF-16");
+  assert.ok(new TextEncoder().encode(raw).byteLength > 8 * 1024, "el cuerpo supera 8 KiB en UTF-8");
+  const oversized = req(null, { raw, headers: { "Content-Length": "1" } });
+  assert.equal(oversized.headers.get("Content-Length"), "1");
+  assert.equal((await call(oversized)).status, 413);
 });
 
 test("sin variables de entorno: 500 'config'", async () => {

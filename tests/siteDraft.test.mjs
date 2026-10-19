@@ -73,6 +73,42 @@ test("cleanPayload: precios numéricos, sin vacíos y sin campos de otro tipo", 
   assert.equal("dias" in p.categorias[0], false);
 });
 
+test("precios heredados ambiguos quedan sin definir; gratis y cotización son explícitos", () => {
+  const d = draft();
+  d.categorias[0].servicios = [
+    { id: "legacy-zero", nombre: "Precio cero", precio: 0 },
+    { id: "legacy-missing", nombre: "Precio ausente" },
+    { id: "legacy-invalid", nombre: "Precio inválido", precio: "no es un precio" },
+    { id: "free", nombre: "Gratis", tipoPrecio: "gratis", precio: 0 },
+    { id: "quote", nombre: "Cotizar", tipoPrecio: "cotizar", precio: 45000 },
+    { id: "fixed", nombre: "Fijo", precio: "25000" }
+  ];
+
+  const normalizedDraft = normalizeDraft(d);
+  const normalized = normalizedDraft.categorias[0].servicios;
+  assert.deepEqual(normalized.map(({ tipoPrecio, precio }) => [tipoPrecio, precio]), [
+    ["sin_definir", null],
+    ["sin_definir", null],
+    ["sin_definir", null],
+    ["gratis", 0],
+    ["cotizar", null],
+    ["fijo", "25000"]
+  ]);
+
+  const payload = cleanPayload(normalizedDraft).categorias[0].servicios;
+  assert.deepEqual(payload.map(({ tipoPrecio, precio }) => [tipoPrecio, precio]), [
+    ["sin_definir", null],
+    ["sin_definir", null],
+    ["sin_definir", null],
+    ["gratis", 0],
+    ["cotizar", null],
+    ["fijo", 25000]
+  ]);
+  const validation = validateDraft(normalizedDraft);
+  assert.equal(validation.errors.length, 0);
+  assert.equal(validation.warnings.length, 3);
+});
+
 test("los datos limpios sobreviven a un ciclo completo (publicar → volver a cargar)", () => {
   const once = cleanPayload(draft());
   const twice = cleanPayload(normalizeDraft(once));
@@ -101,7 +137,10 @@ test("categoría y servicio nuevos son válidos y con ids únicos", () => {
   const d = draft();
   const cat = blankCategory(d.categorias.map((c) => c.id));
   d.categorias.push(cat);
-  d.categorias[0].servicios.push(blankService(d.categorias[0]));
+  const service = blankService(d.categorias[0]);
+  d.categorias[0].servicios.push(service);
+  assert.equal(service.tipoPrecio, "sin_definir");
+  assert.equal(service.precio, null);
   assert.deepEqual(validateDraft(d).errors, []);
 });
 

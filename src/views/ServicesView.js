@@ -7,6 +7,7 @@
 import { esc } from "../utils/dom.js";
 import { formatMoney } from "../utils/format.js";
 import { SiteConfigModel } from "../models/SiteConfigModel.js";
+import { PRICE_TYPE } from "../shared/pricing.js";
 
 const renderBullet = (item) => {
   const text = typeof item === "string" ? item : item.texto;
@@ -17,6 +18,22 @@ const renderBullet = (item) => {
 const renderCard = (cat, currency) => {
   const t = cat.tarjeta ?? {};
   const unit = cat.unidadPrecio ? ` ${esc(cat.unidadPrecio)}` : "";
+  const minPrice = SiteConfigModel.minPrice(cat);
+  const hasOtherServices = cat.servicios.some((service) => service.tipoPrecio !== PRICE_TYPE.FREE);
+  const hasUnknownPrice = cat.servicios.some((service) => service.tipoPrecio === PRICE_TYPE.UNKNOWN);
+  const hasQuotePrice = cat.servicios.some((service) => service.tipoPrecio === PRICE_TYPE.QUOTE);
+  const priceLabel = minPrice === null
+    ? (hasUnknownPrice ? "Precio por confirmar" : "Por cotizar")
+    : minPrice === 0
+      ? (hasOtherServices ? "Desde Gratis" : "Gratis")
+      : `Desde ${formatMoney(minPrice, currency)}`;
+  const priceNote = minPrice !== null && hasUnknownPrice && hasQuotePrice
+    ? "Algunas opciones están por cotizar o confirmar."
+    : minPrice !== null && hasUnknownPrice
+      ? "Algunas opciones tienen precio por confirmar."
+      : minPrice !== null && hasQuotePrice
+        ? "Algunas opciones son por cotizar."
+        : "";
   return `
     <li>
       <article class="card" data-category="${esc(cat.id)}">
@@ -24,7 +41,7 @@ const renderCard = (cat, currency) => {
         <h3 class="card__title">${esc(t.titulo ?? cat.id)}</h3>
         <p class="card__text">${esc(t.descripcion)}</p>
         <ul class="card__list">${(t.puntos ?? []).map(renderBullet).join("")}</ul>
-        <p class="card__price">Desde <strong>${formatMoney(SiteConfigModel.minPrice(cat), currency)}</strong>${unit}</p>
+        <p class="card__price"><strong>${esc(priceLabel)}</strong>${minPrice === null ? "" : unit}${priceNote ? ` <small>${esc(priceNote)}</small>` : ""}</p>
         <a class="card__link" href="#cotizador" data-goto-category="${esc(cat.id)}" aria-label="Cotizar ${esc(t.titulo ?? cat.id)}">Cotizar este servicio →</a>
       </article>
     </li>`;

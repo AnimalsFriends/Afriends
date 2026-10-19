@@ -5,6 +5,7 @@
 import { esc } from "../../utils/dom.js";
 import { formatMoney } from "../../utils/format.js";
 import { DIAS, formatPhone, leadWhatsapp } from "../models/siteDraft.js";
+import { PRICE_TYPE } from "../../shared/pricing.js";
 
 const field = (label, path, value, o = {}) => {
   const attrs = `data-path="${path}"${o.ph ? ` placeholder="${esc(o.ph)}"` : ""}${o.min != null ? ` min="${o.min}"` : ""}`;
@@ -82,12 +83,31 @@ export const AdminViews = {
   /* ------------------------------ SERVICIOS ------------------------------ */
   service(c, ci, s, si) {
     const p = `categorias.${ci}.servicios.${si}`;
+    const priceTypes = [
+      [PRICE_TYPE.FIXED, "Precio fijo"],
+      [PRICE_TYPE.FREE, "Gratis"],
+      [PRICE_TYPE.QUOTE, "Por cotizar"],
+      [PRICE_TYPE.UNKNOWN, "Sin precio definido"]
+    ];
+    const priceLabels = {
+      [PRICE_TYPE.FREE]: "Gratis",
+      [PRICE_TYPE.QUOTE]: "Por cotizar",
+      [PRICE_TYPE.UNKNOWN]: "Sin precio definido"
+    };
+    const priceControl = s.tipoPrecio === PRICE_TYPE.FIXED
+      ? `<div class="adm-money"><b aria-hidden="true">$</b><input type="number" class="adm-price" data-path="${p}.precio" value="${esc(s.precio ?? "")}" min="1" step="500" inputmode="numeric" aria-label="Precio de ${esc(s.nombre)}"><span class="adm-pf">${Number(s.precio) > 0 ? `${formatMoney(s.precio, "COP")}${c.unidadPrecio ? ` ${esc(c.unidadPrecio)}` : ""}` : "Ingresa un valor mayor a cero."}</span></div>`
+      : `<span class="adm-pf">${priceLabels[s.tipoPrecio] || priceLabels[PRICE_TYPE.UNKNOWN]}</span>`;
     return `
     <div class="adm-svc${s.activo ? "" : " is-off"}">
       <div class="adm-svc__main">
         ${toggle(`${p}.activo`, s.activo, `Mostrar el servicio ${s.nombre}`)}
         <input type="text" data-path="${p}.nombre" value="${esc(s.nombre)}" placeholder="Nombre del servicio" aria-label="Nombre del servicio">
-        <div class="adm-money"><b aria-hidden="true">$</b><input type="number" class="adm-price" data-path="${p}.precio" value="${esc(s.precio)}" min="0" step="500" inputmode="numeric" aria-label="Precio de ${esc(s.nombre)}"><span class="adm-pf">${formatMoney(s.precio, "COP")}${c.unidadPrecio ? ` ${esc(c.unidadPrecio)}` : ""}</span></div>
+        <div class="adm-pricing">
+          <select class="adm-price-type" data-path="${p}.tipoPrecio" data-rerender="1" aria-label="Tipo de precio de ${esc(s.nombre)}">
+            ${priceTypes.map(([value, label]) => `<option value="${value}"${s.tipoPrecio === value ? " selected" : ""}>${label}</option>`).join("")}
+          </select>
+          ${priceControl}
+        </div>
         <div class="adm-acts">
           <button class="adm-btn adm-btn--ghost adm-btn--sm" type="button" data-action="up-svc" data-c="${ci}" data-i="${si}" aria-label="Subir servicio">↑</button>
           <button class="adm-btn adm-btn--ghost adm-btn--sm" type="button" data-action="down-svc" data-c="${ci}" data-i="${si}" aria-label="Bajar servicio">↓</button>

@@ -26,6 +26,32 @@ const json = (status, body, headers = {}) =>
     headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...headers }
   });
 
+async function readLimitedBody(request) {
+  const reader = request.body?.getReader();
+  if (!reader) return { tooLarge: false, text: "" };
+
+  const chunks = [];
+  let size = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > MAX_BODY_BYTES) {
+      await reader.cancel();
+      return { tooLarge: true };
+    }
+    chunks.push(value);
+  }
+
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return { tooLarge: false, text: new TextDecoder().decode(bytes) };
+}
+
 async function sha256Hex(text) {
   const bytes = new TextEncoder().encode(text);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -67,8 +93,8 @@ export async function onRequestPost({ request, env }) {
   if (!(request.headers.get("Content-Type") || "").toLowerCase().startsWith("application/json")) return json(415, { error: "content-type" });
   if (Number(request.headers.get("Content-Length") || 0) > MAX_BODY_BYTES) return json(413, { error: "size" });
 
-  const raw = await request.text();
-  if (raw.length > MAX_BODY_BYTES) return json(413, { error: "size" });
+  const { tooLarge, text: raw } = await readLimitedBody(request);
+  if (tooLarge) return json(413, { error: "size" });
   let body;
   try { body = JSON.parse(raw); } catch { return json(400, { error: "json" }); }
   if (!body || typeof body !== "object" || Array.isArray(body)) return json(400, { error: "json" });

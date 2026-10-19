@@ -4,17 +4,23 @@
  */
 import { esc } from "../utils/dom.js";
 import { formatMoney } from "../utils/format.js";
+import { normalizePrice, PRICE_TYPE } from "../shared/pricing.js";
 
 const DEFAULT_DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 const optionLabel = (cat, svc, currency) => {
+  const pricing = normalizePrice(svc);
   const unit = cat.unidadPrecio ? ` ${esc(cat.unidadPrecio)}` : "";
+  const priceLabel = pricing.tipoPrecio === PRICE_TYPE.FREE ? "Gratis"
+    : pricing.tipoPrecio === PRICE_TYPE.QUOTE ? "Por cotizar"
+      : pricing.precio === null ? "Precio por confirmar"
+        : formatMoney(pricing.precio, currency);
   return `
     <label class="quote-option">
       <input type="checkbox" data-quote-service data-cat="${esc(cat.id)}" data-svc="${esc(svc.id)}">
       <span class="quote-option__text">
         <span class="quote-option__name">${esc(svc.nombre)}</span>
-        <span class="quote-option__price">${formatMoney(svc.precio, currency)}${unit}</span>
+        <span class="quote-option__price">${esc(priceLabel)}${pricing.precio !== null ? unit : ""}</span>
         ${svc.descripcion ? `<span class="quote-option__desc">${esc(svc.descripcion)}</span>` : ""}
       </span>
     </label>`;
@@ -85,8 +91,8 @@ export const QuoteView = {
             <input id="qs-mascota" type="text" maxlength="60" data-quote-name="mascota"></div>
         </div>
         <ul id="qs-list" class="quote-list"></ul>
-        <p class="quote-total"><span>Total estimado</span> <strong id="qs-total" aria-live="polite"></strong></p>
-        <p class="quote-note">Precios de referencia en ${esc(currency)}. Te confirmamos disponibilidad y valor final por WhatsApp.</p>
+        <p class="quote-total"><span id="qs-total-label">Total estimado</span> <strong id="qs-total" aria-live="polite"></strong></p>
+        <p id="qs-note" class="quote-note">Precios de referencia en ${esc(currency)}. Te confirmamos disponibilidad y valor final por WhatsApp.</p>
         <p id="qs-status" class="form__status" role="status" aria-live="polite"></p>
         <a id="qs-wa" class="btn btn--primary" href="#cotizador" target="_blank" rel="noopener noreferrer" aria-disabled="true">Cotizar por WhatsApp</a>
       </aside>
@@ -95,6 +101,12 @@ export const QuoteView = {
 
   summaryItems(items, currency) {
     if (!items.length) return '<li class="quote-list__empty">Aún no has elegido servicios.</li>';
-    return items.map((i) => `<li><span>${esc(i.name)}</span><strong>${formatMoney(i.price, currency)}</strong></li>`).join("");
+    return items.map((i) => {
+      const price = i.tipoPrecio === PRICE_TYPE.FREE ? "Gratis"
+        : i.tipoPrecio === PRICE_TYPE.QUOTE ? "Por cotizar"
+          : i.price === null ? "Precio por confirmar"
+            : formatMoney(i.price, currency);
+      return `<li><span>${esc(i.name)}</span><strong>${esc(price)}</strong></li>`;
+    }).join("");
   }
 };

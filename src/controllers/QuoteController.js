@@ -7,6 +7,7 @@ import { QuoteModel } from "../models/QuoteModel.js";
 import { QuoteView } from "../views/QuoteView.js";
 import { formatMoney } from "../utils/format.js";
 import { mount } from "../utils/dom.js";
+import { PRICE_TYPE } from "../shared/pricing.js";
 
 export class QuoteController {
   constructor({ root, state }) {
@@ -26,6 +27,8 @@ export class QuoteController {
 
     this.list = this.root.querySelector("#qs-list");
     this.total = this.root.querySelector("#qs-total");
+    this.totalLabel = this.root.querySelector("#qs-total-label");
+    this.note = this.root.querySelector("#qs-note");
     this.status = this.root.querySelector("#qs-status");
     this.wa = this.root.querySelector("#qs-wa");
     this.tabs = [...this.root.querySelectorAll("[data-quote-tab]")];
@@ -108,9 +111,17 @@ export class QuoteController {
   }
 
   update() {
-    const { items, total, currency, isEmpty } = this.model;
+    const { items, total, currency, isEmpty, hasPricedItems, hasPartialTotal } = this.model;
     this.list.innerHTML = QuoteView.summaryItems(items, currency);
-    this.total.textContent = formatMoney(total, currency);
+    this.totalLabel.textContent = hasPartialTotal
+      ? hasPricedItems ? "Total estimado parcial" : "Total por confirmar"
+      : "Total estimado";
+    this.total.textContent = !items.length || hasPricedItems
+      ? formatMoney(total, currency)
+      : items.every((item) => item.tipoPrecio === PRICE_TYPE.QUOTE) ? "Por cotizar" : "Precio por confirmar";
+    this.note.textContent = hasPartialTotal
+      ? "El total parcial excluye servicios sin precio definido o por cotizar. Te confirmamos disponibilidad y valor final por WhatsApp."
+      : `Precios de referencia en ${currency}. Te confirmamos disponibilidad y valor final por WhatsApp.`;
     this.wa.href = this.model.url() || "#cotizador";
     this.wa.setAttribute("aria-disabled", String(isEmpty || !this.model.url()));
     if (!isEmpty) this.status.textContent = "";

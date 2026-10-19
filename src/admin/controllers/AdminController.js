@@ -297,7 +297,12 @@ export class AdminController {
     setPath(this.data, t.dataset.path, value);
     if (t.classList.contains("adm-price")) {
       const label = t.parentNode.querySelector(".adm-pf");
-      if (label) label.textContent = `$${Number(value).toLocaleString("es-CO")} COP${label.textContent.replace(/^\$[\d.,]+ COP/, "")}`;
+      if (label) {
+        const unit = label.textContent.replace(/^\$[\d.,]+ COP/, "");
+        label.textContent = Number(value) > 0
+          ? `$${Number(value).toLocaleString("es-CO")} COP${unit}`
+          : "Ingresa un valor mayor a cero.";
+      }
     }
     this.setDirty(true);
   }
@@ -316,6 +321,12 @@ export class AdminController {
       t.checked ? set.add(t.dataset.dia) : set.delete(t.dataset.dia);
       c.dias = DIAS.filter((d) => set.has(d));
       this.setDirty(true);
+      return;
+    }
+    if (t.tagName === "SELECT" && t.dataset.path) {
+      setPath(this.data, t.dataset.path, t.value);
+      this.setDirty(true);
+      if (t.dataset.rerender) this.render();
       return;
     }
     if (t.dataset.path === "negocio.whatsapp") {            // solo dígitos

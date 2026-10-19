@@ -15,7 +15,7 @@
  * Si está vacía NO se inventa ningún dominio: se omiten sitemap, canonical y og:url / og:image.
  * La ruta pública conserva el .html porque GitHub Pages no aplica las rutas limpias de Cloudflare Pages.
  */
-import { readFile, writeFile, readdir, stat, rm } from "node:fs/promises";
+import { readFile, writeFile, readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -137,8 +137,7 @@ const sitemapFile = path.join(ROOT, "sitemap.xml");
 if (SITE_URL) {
   const entries = [];
   for (const p of buildMeta.filter((p) => p.index)) {
-    const { mtime } = await stat(path.join(ROOT, p.file));
-    entries.push(`  <url>\n    <loc>${p.pageUrl}</loc>\n    <lastmod>${mtime.toISOString().slice(0, 10)}</lastmod>\n  </url>`);
+    entries.push(`  <url>\n    <loc>${p.pageUrl}</loc>\n  </url>`);
   }
   await writeFile(sitemapFile, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join("\n")}\n</urlset>\n`);
 } else {

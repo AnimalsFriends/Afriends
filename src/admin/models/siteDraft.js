@@ -3,6 +3,7 @@
  * Normaliza, valida, limpia para publicar y genera el archivo de respaldo.
  */
 import { slug } from "../../utils/dom.js";
+import { getPricingType, PRICE_TYPE } from "../../shared/pricing.js";
 
 export const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 export const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -23,7 +24,19 @@ export function normalizeDraft(source) {
     const cat = { activa: true, tipo: "normal", ...c };
     cat.tarjeta = { icono: "🐾", titulo: "", descripcion: "", puntos: [], textoBoton: "Seleccionar", ...(c.tarjeta || {}) };
     cat.tarjeta.puntos = (cat.tarjeta.puntos || []).map((p) => (typeof p === "string" ? { texto: p, destacado: false } : { texto: p.texto || "", destacado: Boolean(p.destacado) }));
-    cat.servicios = (c.servicios || []).map((s) => ({ activo: true, nombre: "", precio: 0, ...s }));
+    cat.servicios = (c.servicios || []).map((s) => {
+      const tipoPrecio = getPricingType(s);
+      return {
+        activo: true,
+        nombre: "",
+        precio: null,
+        ...s,
+        tipoPrecio,
+        precio: tipoPrecio === PRICE_TYPE.FREE ? 0
+          : tipoPrecio === PRICE_TYPE.FIXED ? s.precio
+            : null
+      };
+    });
     if (cat.tipo === "porDias" && !Array.isArray(cat.dias)) cat.dias = DIAS.slice(0, 6);
     return cat;
   });
@@ -52,7 +65,13 @@ export function validateDraft(data) {
     catIds.add(c.id);
     c.servicios.forEach((s) => {
       if (!String(s.nombre).trim()) errors.push(`En "${nombre}" hay un servicio sin nombre.`);
-      if (!(Number(s.precio) >= 0)) errors.push(`El precio de "${s.nombre}" no es válido.`);
+      if (!Object.values(PRICE_TYPE).includes(s.tipoPrecio)) errors.push(`El tipo de precio de "${s.nombre}" no es válido.`);
+      if (s.tipoPrecio === PRICE_TYPE.FIXED && !(Number.isFinite(Number(s.precio)) && Number(s.precio) > 0)) {
+        errors.push(`El precio de "${s.nombre}" debe ser mayor que cero.`);
+      }
+      if (s.activo && s.tipoPrecio === PRICE_TYPE.UNKNOWN) {
+        warnings.push(`"${s.nombre}" no tiene precio definido; se mostrará como "Precio por confirmar".`);
+      }
     });
     if (c.activa && !c.servicios.some((s) => s.activo)) warnings.push(`"${nombre}" está visible pero no tiene servicios activos, así que no se mostrará.`);
   });
@@ -81,7 +100,7 @@ export function setPath(obj, path, value) {
 }
 
 export function blankService(category) {
-  return { id: uniqueId("servicio", category.servicios.map((s) => s.id)), activo: true, nombre: "Nuevo servicio", precio: 0 };
+  return { id: uniqueId("servicio", category.servicios.map((s) => s.id)), activo: true, nombre: "Nuevo servicio", tipoPrecio: PRICE_TYPE.UNKNOWN, precio: null };
 }
 
 export function blankCategory(existingIds) {
@@ -89,11 +108,11 @@ export function blankCategory(existingIds) {
     id: uniqueId("categoria", existingIds), activa: true, tipo: "normal",
     tarjeta: { icono: "🐾", titulo: "Nueva categoría", descripcion: "Describe aquí el servicio.", puntos: [{ texto: "Primer beneficio", destacado: false }], textoBoton: "Seleccionar" },
     pestana: "🐾 Nueva categoría", tituloPanel: "Nueva categoría", descripcionPanel: "Selecciona los servicios que necesites.",
-    servicios: [{ id: "servicio-1", activo: true, nombre: "Nuevo servicio", precio: 0 }]
+    servicios: [{ id: "servicio-1", activo: true, nombre: "Nuevo servicio", tipoPrecio: PRICE_TYPE.UNKNOWN, precio: null }]
   };
 }
 
-/** Datos listos para guardar: sin campos vacíos sobrantes, ids únicos, precios numéricos. */
+/** Datos listos para guardar: sin campos vacíos sobrantes, ids únicos y precios tipados. */
 export function cleanPayload(data) {
   const p = clone(data);
   p.negocio.whatsapp = String(p.negocio.whatsapp || "").replace(/\D/g, "");
@@ -105,7 +124,10 @@ export function cleanPayload(data) {
     c.tarjeta.puntos = c.tarjeta.puntos.filter((x) => x.texto.trim());
     const svcIds = [];
     c.servicios.forEach((s) => {
-      s.precio = Number(s.precio) || 0;
+      s.tipoPrecio = getPricingType(s);
+      if (s.tipoPrecio === PRICE_TYPE.FREE) s.precio = 0;
+      else if (s.tipoPrecio === PRICE_TYPE.FIXED) s.precio = Number(s.precio);
+      else s.precio = null;
       if (!s.descripcion) delete s.descripcion;
       if (!s.nombreMensaje) delete s.nombreMensaje;
       s.id = uniqueId(s.id || s.nombre, svcIds);

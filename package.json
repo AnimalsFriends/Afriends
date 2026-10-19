@@ -9,9 +9,9 @@
     "dev": "npx serve .",
     "dev:functions": "npm run package && npx wrangler pages dev dist",
     "build": "node scripts/build.mjs",
-    "audit": "node scripts/audit.mjs",
+    "audit": "npm run package && node scripts/audit.mjs",
     "test": "node --test",
     "package": "node scripts/build.mjs && node scripts/package.mjs",
-    "check": "node scripts/build.mjs && node scripts/audit.mjs && node --test"
+    "check": "npm run audit && node --test"
   }
 }

@@ -8,6 +8,7 @@ import { ENV } from "../config/env.js";
 import { SITE_DEFAULTS } from "../config/site.defaults.js";
 import { db, isSupabaseConfigured } from "../services/supabase.js";
 import { slug } from "../utils/dom.js";
+import { normalizePrice } from "../shared/pricing.js";
 
 const isValid = (data) => Boolean(data && data.negocio && Array.isArray(data.categorias));
 
@@ -46,15 +47,18 @@ export class SiteConfigModel {
         id: slug(cat.id),
         servicios: (cat.servicios ?? [])
           .filter((svc) => svc && svc.activo !== false)
-          .map((svc) => ({ ...svc, id: slug(svc.id), precio: Number(svc.precio) || 0 }))
+          .map((svc) => ({ ...svc, id: slug(svc.id), ...normalizePrice(svc) }))
       }))
       .filter((cat) => cat.id && cat.servicios.length > 0);
 
     return { negocio, categorias };
   }
 
-  /** Precio más bajo de una categoría (para mostrar "Desde $X"). */
+  /** Precio más bajo publicado de una categoría; null cuando no hay precio conocido. */
   static minPrice(categoria) {
-    return Math.min(...categoria.servicios.map((svc) => svc.precio));
+    const prices = categoria.servicios
+      .map((svc) => normalizePrice(svc).precio)
+      .filter((price) => price !== null);
+    return prices.length ? Math.min(...prices) : null;
   }
 }

@@ -85,7 +85,9 @@ body.adm { padding-bottom: 7rem; font-size: 1rem; }
 .adm-svc { border: 1px solid var(--color-border); border-radius: 14px; padding: 12px; margin-bottom: 10px; background: #fffdfb; }
 .adm-svc.is-off { opacity: .65; background: #f5f2ed; }
 .adm-svc__main { display: grid; grid-template-columns: auto 1fr 180px auto; gap: 10px; align-items: center; }
-@media (max-width: 700px) { .adm-svc__main { grid-template-columns: auto 1fr; } .adm-svc__main .adm-money, .adm-svc__main .adm-acts { grid-column: 1 / -1; } .adm-acts { justify-content: flex-end; } }
+@media (max-width: 700px) { .adm-svc__main { grid-template-columns: auto 1fr; } .adm-svc__main .adm-pricing, .adm-svc__main .adm-acts { grid-column: 1 / -1; } .adm-acts { justify-content: flex-end; } }
+.adm-pricing { min-width: 0; }
+.adm-pricing select { width: 100%; }
 .adm-money { position: relative; }
 .adm-money > b { position: absolute; left: 12px; top: 11px; opacity: .6; }
 .adm .adm-money input { padding-left: 28px; font-weight: 700; }

@@ -74,7 +74,7 @@ Sin ID: no hay aviso de cookies ni se carga nada de Google.
 ```
 cp .dev.vars.example .dev.vars     # y completa los valores
 npm run dev:functions              # sirve el sitio + la Function en http://localhost:8788
-npm run check                      # build + auditoría + pruebas
+npm run check                      # build + empaquetado + auditoría del dist + pruebas
 ```
 Con las claves de prueba de Turnstile del archivo de ejemplo el widget siempre aprueba.
 

@@ -5,9 +5,11 @@
  *   "normal"    precio fijo por servicio
  *   "porDias"   precio x cantidad de días marcados (si no marca ninguno: 1 día base)
  *   "porNoches" precio x número de noches
+ * Cada servicio distingue precio fijo, gratis, por cotizar o sin precio definido.
  */
 import { formatMoney } from "../utils/format.js";
 import { whatsappUrl } from "../utils/whatsapp.js";
+import { normalizePrice, PRICE_TYPE } from "../shared/pricing.js";
 
 const DEFAULT_DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const MAX_NAME = 60;
@@ -89,13 +91,23 @@ export class QuoteModel {
           const days = this.selectedDays(cat);
           if (days.length) { qty = days.length; detail = ` (${days.join(", ")})`; } else { detail = " (1 día base)"; }
         }
-        items.push({ key: QuoteModel.key(cat.id, svc.id), catId: cat.id, name: `${svc.nombreMensaje || svc.nombre}${detail}`, qty, price: svc.precio * qty });
+        const pricing = normalizePrice(svc);
+        items.push({
+          key: QuoteModel.key(cat.id, svc.id),
+          catId: cat.id,
+          name: `${svc.nombreMensaje || svc.nombre}${detail}`,
+          qty,
+          tipoPrecio: pricing.tipoPrecio,
+          price: pricing.precio === null ? null : pricing.precio * qty
+        });
       }
     }
     return items;
   }
 
-  get total() { return this.items.reduce((sum, item) => sum + item.price, 0); }
+  get total() { return this.items.reduce((sum, item) => sum + (item.price ?? 0), 0); }
+  get hasPricedItems() { return this.items.some((item) => item.price !== null); }
+  get hasPartialTotal() { return this.items.some((item) => item.price === null); }
   get isEmpty() { return this.selected.size === 0; }
 
   get currency() { return this.negocio.moneda || "COP"; }
@@ -104,8 +116,21 @@ export class QuoteModel {
     const { saludo = "¡Hola!", cierre = "¿Me confirman disponibilidad por favor?" } = this.negocio.mensajeWhatsApp ?? {};
     const who = this.cliente ? `Mi nombre es *${this.cliente}* y quiero` : "Quiero";
     const pet = this.mascota ? ` para mi peludito *${this.mascota}*` : "";
-    const lines = this.items.map((i) => `- ${i.name} (${formatMoney(i.price, this.currency)})`).join("\n");
-    return `${saludo}\n${who} agendar servicios${pet}.\n\n*Servicios y detalles seleccionados:*\n${lines}\n\n*Total estimado:* ${formatMoney(this.total, this.currency)}.\n\n${cierre}`;
+    const lines = this.items.map((i) => {
+      const price = i.tipoPrecio === PRICE_TYPE.FREE ? "Gratis"
+        : i.tipoPrecio === PRICE_TYPE.QUOTE ? "Por cotizar"
+          : i.price === null ? "Precio por confirmar"
+            : formatMoney(i.price, this.currency);
+      return `- ${i.name} (${price})`;
+    }).join("\n");
+    const unpricedItems = this.items.filter((item) => item.price === null);
+    const total = this.hasPricedItems ? formatMoney(this.total, this.currency)
+      : unpricedItems.length && unpricedItems.every((item) => item.tipoPrecio === PRICE_TYPE.QUOTE) ? "Por cotizar"
+        : this.hasPartialTotal ? "Precio por confirmar"
+          : formatMoney(this.total, this.currency);
+    const totalLabel = this.hasPartialTotal ? "Total estimado parcial" : "Total estimado";
+    const note = this.hasPartialTotal ? "\nEl total parcial no incluye los servicios sin precio definido o por cotizar." : "";
+    return `${saludo}\n${who} agendar servicios${pet}.\n\n*Servicios y detalles seleccionados:*\n${lines}\n\n*${totalLabel}:* ${total}.${note}\n\n${cierre}`;
   }
 
   /** Enlace a WhatsApp con el pedido ("" si no hay número). Sin servicios: enlace al chat sin texto. */

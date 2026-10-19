@@ -6,6 +6,7 @@
  * Regla: solo se incluye lo que existe. Nunca se inventan datos.
  */
 import { safeUrl } from "../utils/dom.js";
+import { normalizePrice } from "../shared/pricing.js";
 
 const clean = (obj) =>
   Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== "" && v != null && !(Array.isArray(v) && !v.length)));
@@ -29,11 +30,18 @@ export function buildBusinessSchema({ negocio, categorias, siteUrl = "" }) {
     : undefined;
 
   const offers = (categorias ?? []).map((cat) => {
-    const min = Math.min(...cat.servicios.map((s) => Number(s.precio) || 0));
+    const prices = cat.servicios.map((service) => normalizePrice(service).precio);
+    const allServicesPriced = prices.every((price) => price !== null);
     return {
       "@type": "Offer",
       itemOffered: clean({ "@type": "Service", name: cat.tarjeta?.titulo ?? cat.id, description: cat.tarjeta?.descripcion }),
-      priceSpecification: { "@type": "PriceSpecification", minPrice: min, priceCurrency: n.moneda ?? "COP" }
+      ...(allServicesPriced && prices.length ? {
+        priceSpecification: {
+          "@type": "PriceSpecification",
+          minPrice: Math.min(...prices),
+          priceCurrency: n.moneda ?? "COP"
+        }
+      } : {})
     };
   });
 
