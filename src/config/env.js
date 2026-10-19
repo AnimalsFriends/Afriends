@@ -11,7 +11,7 @@ export const ENV = Object.freeze({
   // conservar esa ruta evita canonical, sitemap y JSON-LD apuntando al sitio equivocado.
   // La usan el sitemap, robots.txt, las etiquetas canonical / Open Graph y los datos
   // estructurados (SEO). SITE_URL del entorno puede reemplazarla al desplegar.
-  SITE_URL: "https://afriends.petcommunity-133.workers.dev/",
+  SITE_URL: "https://afriends.petcommunity-133.workers.dev",
 
   SUPABASE_URL: "https://xjpivjxagyzeeqinlzkz.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_lSN4fF9cjtra9NwX6rLX-A_MuBBH-Rk",
@@ -19,7 +19,7 @@ export const ENV = Object.freeze({
 
   // --- Formulario de contacto (Fase 4) ---
   CONTACT_ENDPOINT: "/api/contact",   // Cloudflare Worker route (worker.js -> functions/api/contact.js)
-  TURNSTILE_SITE_KEY: "1x0000000000000000000000000000000AA",             // clave PÚBLICA de Cloudflare Turnstile (antispam). Vacío = sin widget
+  TURNSTILE_SITE_KEY: "0x4AAAAAAFa1z5zxKG9BRcC7",             // clave PÚBLICA de Cloudflare Turnstile (antispam). Vacío = sin widget
                                       // Clave de prueba para desarrollo: "1x00000000000000000000AA"
 
   // --- Analítica (Fase 4) ---
