@@ -11,10 +11,10 @@ export const ENV = Object.freeze({
   // conservar esa ruta evita canonical, sitemap y JSON-LD apuntando al sitio equivocado.
   // La usan el sitemap, robots.txt, las etiquetas canonical / Open Graph y los datos
   // estructurados (SEO). SITE_URL del entorno puede reemplazarla al desplegar.
-  SITE_URL: "https://animalsfriends.github.io/Afriends",
+  SITE_URL: "https://afriends.petcommunity-133.workers.dev/",
 
-  SUPABASE_URL: "https://gjosvubtqtrzvqaqrmrk.supabase.co",
-  SUPABASE_ANON_KEY: "sb_publishable_0L0pnm_oFe1GVXDqqSVPxQ_PVAErju3",
+  SUPABASE_URL: "https://xjpivjxagyzeeqinlzkz.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_lSN4fF9cjtra9NwX6rLX-A_MuBBH-Rk",
   SITE_TABLE: "site_config",
 
   // --- Formulario de contacto (Fase 4) ---
