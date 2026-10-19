@@ -53,7 +53,7 @@ export function buildBusinessSchema({ negocio, categorias, siteUrl = "" }) {
     name: n.nombre ?? "Animal Friends",
     description: n.descripcionFooter,
     url: abs(siteUrl, "/"),
-    image: abs(siteUrl, "/assets/img/og-cover.jpg"),
+    image: abs(siteUrl, "/img/animalsfriends-social-preview.png"),
     logo: abs(siteUrl, "/assets/img/logo-icon.webp"),
     telephone: phone ? `+${phone}` : undefined,
     email: n.correo,

@@ -3,7 +3,8 @@
  *
  *   node scripts/package.mjs
  *
- * Se publica: páginas .html, robots.txt, sitemap.xml, _headers, assets/, src/ y admin/.
+ * Se publica: páginas .html, favicon.ico, site.webmanifest, robots.txt, sitemap.xml,
+ * _headers, assets/, img/, src/ y admin/.
  * NO se publica: scripts/, tests/, functions/ (se despliega aparte), docs, SQL, .github, package.json.
  */
 import { cp, rm, mkdir, readdir, stat } from "node:fs/promises";
@@ -17,9 +18,9 @@ const exists = (p) => stat(p).then(() => true, () => false);
 await rm(DIST, { recursive: true, force: true });
 await mkdir(DIST, { recursive: true });
 
-const rootFiles = (await readdir(ROOT)).filter((f) => f.endsWith(".html") || ["robots.txt", "sitemap.xml", "_headers"].includes(f));
+const rootFiles = (await readdir(ROOT)).filter((f) => f.endsWith(".html") || ["favicon.ico", "site.webmanifest", "robots.txt", "sitemap.xml", "_headers"].includes(f));
 for (const file of rootFiles) await cp(path.join(ROOT, file), path.join(DIST, file));
-for (const dir of ["assets", "src", "admin"]) {
+for (const dir of ["assets", "img", "src", "admin"]) {
   if (await exists(path.join(ROOT, dir))) await cp(path.join(ROOT, dir), path.join(DIST, dir), { recursive: true, filter: (src) => !src.endsWith(".DS_Store") });
 }
 console.log(`✔ dist/ listo: ${rootFiles.length} archivos en la raíz + assets/ + src/ + admin/`);

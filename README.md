@@ -19,7 +19,9 @@ animal-friends/
 ├─ scripts/  build.mjs · audit.mjs · package.mjs ← SEO + preload / auditoría / empaquetado (dist/)
 ├─ assets/
 │  ├─ css/  tokens · base · components · layout · admin
-│  └─ img/  logos en WebP + favicon
+│  └─ img/  logos en WebP
+├─ img/  favicons PNG, iconos para móvil y vista previa social
+├─ favicon.ico · site.webmanifest  ← variantes de icono y configuración para dispositivos
 ├─ src/
 │  ├─ main.js                    ← punto de entrada (todas las páginas)
 │  ├─ config/  env.js · site.defaults.js

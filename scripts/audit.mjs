@@ -24,6 +24,10 @@ const isDirectory = async (p) => {
   try { return (await stat(p)).isDirectory(); } catch { return false; }
 };
 const rel = (...parts) => path.posix.normalize(path.posix.join(...parts));
+const BRAND_ICONS = [
+  { src: "img/icon-192.png", sizes: "192x192" },
+  { src: "img/icon-512.png", sizes: "512x512" }
+];
 
 const errors = [], warnings = [];
 const err = (f, m) => errors.push(`${f}: ${m}`);
@@ -83,6 +87,34 @@ async function auditSitemap(baseDir, robotsTxt, label) {
   }
   if (locs.includes("/404") || locs.some((p) => p.startsWith("/admin"))) {
     err(`${prefix}sitemap.xml`, "no debe incluir la 404 ni el panel");
+  }
+}
+
+async function auditManifest(baseDir, label) {
+  const prefix = label === "dist" ? "dist/" : "";
+  const manifestPath = path.join(baseDir, "site.webmanifest");
+  if (!(await isFile(manifestPath))) {
+    err(`${prefix}site.webmanifest`, "falta el manifiesto de iconos");
+    return;
+  }
+
+  let manifest;
+  try {
+    manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+  } catch {
+    err(`${prefix}site.webmanifest`, "JSON inválido");
+    return;
+  }
+
+  for (const required of BRAND_ICONS) {
+    const icon = manifest.icons?.find((item) => item.src === required.src && item.sizes === required.sizes && item.type === "image/png");
+    if (!icon) {
+      err(`${prefix}site.webmanifest`, `falta el icono ${required.sizes} → ${required.src}`);
+      continue;
+    }
+    if (!(await isFile(path.join(baseDir, required.src)))) {
+      err(`${prefix}site.webmanifest`, `icono inexistente → ${required.src}`);
+    }
   }
 }
 
@@ -179,6 +211,7 @@ async function auditPages(baseDir, pageNames, label) {
     }
   }
 
+  await auditManifest(baseDir, label);
   if (!/^User-agent:/m.test(robotsTxt)) err(`${prefix}robots.txt`, "falta o es inválido");
   await auditSitemap(baseDir, robotsTxt, label);
   return { pages, robotsTxt };

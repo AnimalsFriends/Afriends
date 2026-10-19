@@ -6,7 +6,7 @@
  * Qué hace (es idempotente: puedes correrlo las veces que quieras):
  *   1. Genera sitemap.xml y robots.txt.
  *   2. En el <head> de cada página inyecta (entre marcadores):
- *        - <link rel="canonical">, Open Graph y Twitter Cards
+ *        - <link rel="canonical">, Open Graph y Twitter Cards con la imagen social de marca
  *        - JSON-LD (datos estructurados)
  *        - <link rel="modulepreload"> de todos los módulos JS (evita la "cascada" de peticiones)
  *        - precarga del logo (mejora LCP)
@@ -42,7 +42,7 @@ const PAGES = [
   { file: "404.html",                 path: null,                       kind: "error",  index: false }
 ];
 
-const OG_IMAGE = "/assets/img/og-cover.jpg";
+const OG_IMAGE = "/img/animalsfriends-social-preview.png";
 const PRELOAD_IMAGES = [{ href: "assets/img/logo-horizontal.webp", type: "image/webp" }];
 
 /* ---------- utilidades ---------- */
@@ -98,6 +98,7 @@ for (const page of PAGES) {
   if (SITE_URL) {
     seo.push(
       `  <meta property="og:image" content="${SITE_URL}${OG_IMAGE}">`,
+      `  <meta property="og:image:type" content="image/png">`,
       `  <meta property="og:image:width" content="1200">`,
       `  <meta property="og:image:height" content="630">`,
       `  <meta property="og:image:alt" content="Animal Friends: cuidamos a tu peludito con amor, respeto y alegría">`

@@ -55,6 +55,7 @@ test("con dominio genera URLs absolutas", () => {
   const b = business({}, "https://ejemplo.co");
   assert.equal(b["@id"], "https://ejemplo.co/#negocio");
   assert.equal(b.url, "https://ejemplo.co/");
+  assert.equal(b.image, "https://ejemplo.co/img/animalsfriends-social-preview.png");
 });
 
 test("sameAs descarta enlaces peligrosos o inválidos", () => {
