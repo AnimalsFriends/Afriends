@@ -2,7 +2,7 @@
 
 Sitio estático (HTML + CSS + JavaScript moderno) con datos en Supabase.
 Hoy está publicado en **GitHub Pages** en `https://animalsfriends.github.io/Afriends/`.
-El repositorio también conserva una Function y un flujo de despliegue para Cloudflare Pages; no son el mismo entorno.
+El destino Cloudflare confirmado es el Worker `https://afriends.petcommunity-133.workers.dev/`.
 
 ## Arquitectura (MVC para frontend)
 
@@ -13,6 +13,8 @@ animal-friends/
 ├─ _headers                      ← cabeceras de seguridad (CSP, HSTS, X-Frame-Options...)
 ├─ robots.txt · sitemap.xml      ← los genera scripts/build.mjs (sitemap solo si hay SITE_URL)
 ├─ functions/api/contact.js      ← Cloudflare Function del formulario (antispam + Supabase)
+├─ worker.js                     ← entrypoint de Workers: enruta /api/contact y sirve dist/
+├─ wrangler.jsonc                ← configuración del Worker y binding de recursos estáticos
 ├─ tests/                        ← pruebas automáticas (node --test)
 ├─ .github/workflows/ci-cd.yml   ← CI/CD: build + auditoría + pruebas + despliegue
 ├─ package.json                  ← scripts: build · audit · test · check · package · dev
@@ -44,20 +46,16 @@ Usa módulos ES: no abre con doble clic. En VS Code usa **Live Server**, o `npx 
 Con `?debug=1` en la dirección ves si los datos vienen de Supabase o de los valores locales.
 
 ## Publicación y despliegue
-La publicación actual es GitHub Pages. La URL configurada para SEO es
-`https://animalsfriends.github.io/Afriends` (sin barra final); el build conserva la ruta
-`/Afriends/` y usa páginas `.html`, como requiere este hosting.
+GitHub sigue siendo el repositorio del código. El destino configurado para el despliegue
+es Cloudflare Workers Static Assets en `https://afriends.petcommunity-133.workers.dev/`.
+El build genera `dist/`; Wrangler publica esos archivos junto con `worker.js`, que conecta
+`/api/contact` con `functions/api/contact.js`. No se usa el comando de Cloudflare Pages.
 
-El workflow `.github/workflows/ci-cd.yml` todavía apunta a Cloudflare Pages cuando tiene
-credenciales configuradas. **No lo cambies ni ejecutes un despliegue hasta decidir cuál
-será el hosting oficial**: GitHub Pages no ejecuta `functions/api/contact.js`, mientras
-que Cloudflare Pages sí puede hacerlo. Por eso el formulario servidor `/api/contact`
-requiere Cloudflare Pages o una API equivalente; esta diferencia sigue pendiente de
-resolver y probar en producción.
-
-GitHub Pages tampoco aplica `_headers`; por tanto sus cabeceras de seguridad no se
-configuran con ese archivo. Si el sitio se migra a Cloudflare Pages, configura el dominio,
-`SITE_URL`, los secretos y las reglas descritas en `GUIA_FASE4_CONFIGURACION.md`.
+El workflow ejecuta build, auditoría y pruebas en PRs; solo despliega producción desde
+`main` (push o ejecución manual). Requiere los secretos de despliegue de Cloudflare y la
+variable `SITE_URL`. Consulta `GUIA_FASE4_CONFIGURACION.md` para configurar los secretos
+del Worker, Turnstile y GitHub Actions. El despliegue real aún requiere configuración y
+una ejecución exitosa del workflow.
 
 ## Base de datos del panel (Fase 1)
 El panel de gestión de la guardería (dueños, mascotas, rutas del colegio, hotel, agenda, gastos y cartera)
@@ -133,7 +131,7 @@ Todo el paso a paso está en **`GUIA_FASE4_CONFIGURACION.md`**. Resumen:
 - **Analítica GA4 con consentimiento**: no se carga nada de Google hasta que el visitante acepte; aceptar y rechazar pesan igual;
   "Configurar cookies" en el pie permite cambiar la decisión. Sin `GA_MEASUREMENT_ID` no hay aviso ni analítica.
   Eventos: `generate_lead` y `whatsapp_click` (con la ubicación del botón).
-- **CI/CD**: cada PR y push a `main` ejecuta build, auditoría y pruebas. El workflow de despliegue que hay hoy apunta a Cloudflare Pages, no a la publicación actual de GitHub Pages.
+- **CI/CD**: cada PR y push a `main` ejecuta build, auditoría y pruebas; solo `main` puede actualizar el Worker de producción.
 - **CSP** ampliada solo con lo necesario: Cloudflare Turnstile y Google Analytics.
 
 ## SEO, rendimiento y seguridad (auditoría del sitio público)
@@ -146,9 +144,9 @@ Todo el paso a paso está en **`GUIA_FASE4_CONFIGURACION.md`**. Resumen:
 | `npm run audit` | Construye `dist/` y revisa páginas, recursos, rutas, SEO, JSON-LD y CSP en el origen y el paquete final |
 | `npm run check` | Ejecuta build, empaquetado, auditoría del paquete y todas las pruebas (úsalo antes de cada `git push`) |
 
-- **URL del sitio:** `src/config/env.js` tiene la URL pública actual de GitHub Pages. Si se usa un dominio propio,
-  configura `SITE_URL` en el entorno de build. El generador mantiene la ruta base `/Afriends/` y usa `.html`
-  para que canonical, Open Graph y sitemap apunten a URLs servidas por GitHub Pages.
+- **URL del sitio:** define `SITE_URL` en GitHub Actions como `https://afriends.petcommunity-133.workers.dev`
+  para que canonical, Open Graph y sitemap correspondan al Worker. El valor de respaldo del código se conserva
+  para GitHub Pages y desarrollo local.
 - **Datos estructurados:** `LocalBusiness` + `WebSite` en la home (con servicios y "precio desde" tomados de los datos),
   `WebPage` + migas de pan en las páginas legales. Solo se incluye lo que existe: dirección, correo y redes
   aparecen cuando se llenan. Si el panel publica datos nuevos en Supabase, la home actualiza su JSON-LD.
@@ -156,17 +154,15 @@ Todo el paso a paso está en **`GUIA_FASE4_CONFIGURACION.md`**. Resumen:
   precarga del logo, espacio reservado para las tarjetas (CLS), fuentes del sistema y cero scripts de terceros.
   Medición local de la home: ~65 KB en total, LCP ≈ 160 ms, CLS = 0. Son medidas de laboratorio sin red real:
   verifica con https://pagespeed.web.dev una vez publicada.
-- **URLs:** el sitio publicado en GitHub Pages usa sus nombres de archivo (`/Afriends/aviso-legal.html`).
-  El sitemap, canonical, Open Graph y JSON-LD se generan con la ruta base `/Afriends/`.
+- **URLs:** el Worker sirve rutas estáticas de `dist/`; el workflow genera sitemap, canonical,
+  Open Graph y JSON-LD con el `SITE_URL` configurado.
 
 **Ajustes del hosting** (no se pueden poner en el código):
-En GitHub Pages, `robots.txt` y `sitemap.xml` se publican como archivos estáticos. El archivo
-`_headers` no configura cabeceras en ese hosting. Si se migra a Cloudflare Pages, entonces:
+En Cloudflare Workers Static Assets, `_headers` configura cabeceras para los recursos publicados:
 1. *SSL/TLS → Overview*: modo **Full (strict)**.
 2. *SSL/TLS → Edge Certificates*: activar **Always Use HTTPS** y **Automatic HTTPS Rewrites**; mínimo TLS **1.2**.
 3. HSTS ya se envía desde `_headers`. Si luego quieres *preload*, primero verifica que todos los subdominios usen HTTPS.
-4. *Rules → Redirect Rules*: redirige `www` → dominio principal (o al revés) para evitar contenido duplicado.
-5. Compresión Brotli y HTTP/3 vienen activadas por defecto.
+4. Compresión Brotli y HTTP/3 vienen activadas por defecto.
 
 **Google:** el tag de verificación de Search Console está en la página de inicio. Sigue
 `GOOGLE_BUSINESS_PROFILE.md` para verificar la propiedad URL-prefix y configurar el Perfil de Negocio.
@@ -175,7 +171,7 @@ En GitHub Pages, `robots.txt` y `sitemap.xml` se publican como archivos estátic
 La razón social, el NIT y la dirección completa siguen vacíos en la configuración; la página
 legal marca esos campos para completar. Un asesor legal debe revisar los textos antes de publicar.
 La verificación de Google usa la etiqueta HTML ya puesta en la home.
-La URL pública actual es GitHub Pages. No hay un archivo suelto `git` en la raíz: `.git/`
+GitHub Pages permanece accesible mientras se actualiza el Worker. No hay un archivo suelto `git` en la raíz: `.git/`
 es metadata del repositorio y se conserva. La descripción se cambia desde GitHub (no forma
 parte de los archivos); una opción coherente es: “Sitio web de Animal Friends, guardería
 canina con colegio, hotel y servicios para mascotas”.

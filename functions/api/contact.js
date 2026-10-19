@@ -1,5 +1,5 @@
 /**
- * POST /api/contact  ->  Cloudflare Pages Function
+ * POST /api/contact -> manejador compatible con Cloudflare Workers y Pages Functions
  *
  * El navegador NUNCA habla directo con la tabla de mensajes. Esta función:
  *   1. valida origen, tipo de contenido y tamaño
@@ -9,7 +9,7 @@
  *   5. limita envíos por IP (hash) y por teléfono
  *   6. guarda en Supabase con la clave de servicio (que vive SOLO aquí, como secreto)
  *
- * Variables / secretos (Cloudflare Pages → Settings → Variables and secrets):
+ * Variables / secretos (Cloudflare Worker → Settings → Variables and Secrets):
  *   SUPABASE_URL · SUPABASE_SECRET_KEY (secreto, preferido) · SUPABASE_SERVICE_KEY (compatibilidad) · TURNSTILE_SECRET (secreto) · IP_SALT (secreto)
  */
 import { validateContact, POLICY_VERSION } from "../../src/shared/contactSchema.js";

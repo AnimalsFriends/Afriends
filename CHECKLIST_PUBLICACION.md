@@ -1,13 +1,14 @@
 # Lista para publicar · qué falta para el 100 %
 
-Estado: la web ya está publicada en GitHub Pages (`https://animalsfriends.github.io/Afriends/`).
-Todavía hay decisiones de hosting, datos del negocio y verificaciones reales pendientes; no des por probado
-lo que solo ha pasado la auditoría local.
+Estado: GitHub Pages sigue disponible y el frontend también responde en el Worker
+`https://afriends.petcommunity-133.workers.dev/`. El cambio de código para integrar
+`/api/contact` y el workflow de Workers está preparado localmente, pero aún no se ha
+desplegado. No des por probado lo que solo ha pasado la auditoría local.
 
 ## ✅ Ya está listo en el código
 - Sitio MVC: servicios, cotizador por WhatsApp, formulario con antispam, páginas legales, 404, WhatsApp flotante.
 - Panel `/admin/`: negocio, datos legales, servicios y precios, mensajes recibidos.
-- SEO (sitemap, robots, canonical, Open Graph, JSON-LD) configurado para la ruta `/Afriends/`.
+- SEO (sitemap, robots, canonical, Open Graph, JSON-LD) generado con `SITE_URL`.
 - Verificación HTML de Search Console en la home y guía para enviar el sitemap.
 - GA4 tiene consentimiento previo implementado, pero no está activo: falta el ID real.
 - No hay un archivo suelto `git` en la raíz; `.git/` es la metadata del repositorio y no se debe borrar.
@@ -18,8 +19,8 @@ lo que solo ha pasado la auditoría local.
 ### A. Datos del cliente — enviar `DATOS_PENDIENTES_CLIENTE.md`
 - [ ] Razón social / nombre del titular, NIT o cédula y dirección completa. Los campos están marcados en las páginas legales.
 - [ ] Confirmar los datos de contacto y ubicación que ya aparecen en la configuración.
-- [x] URL pública actual: `https://animalsfriends.github.io/Afriends/` (GitHub Pages).
-- [ ] Dominio propio, solo si decides dejar de usar la URL de GitHub Pages.
+- [x] URL existente del Worker: `https://afriends.petcommunity-133.workers.dev/`.
+- [ ] No se requiere dominio propio; conservar la URL gratuita `workers.dev`.
 - [ ] Enlaces de Instagram, Facebook y TikTok; Gmail para el Perfil de Google.
 - [ ] Confirmar horarios, servicios y precios, y si atienden **gatos** además de perros.
 - [ ] **Fotos reales** de las instalaciones y los peluditos (hoy el sitio usa solo el logo y una imagen para compartir provisional).
@@ -33,38 +34,40 @@ lo que solo ha pasado la auditoría local.
 - [ ] Recomendado: activar autenticación en dos pasos (MFA) para esa cuenta.
 
 ### C. Hosting y Function
-- [ ] Decidir el hosting oficial: la web está publicada en GitHub Pages, pero el workflow CI/CD y `/api/contact` están hechos para Cloudflare Pages.
-- [ ] Si se decide Cloudflare Pages: crear el proyecto y configurar la Function, Turnstile y los cuatro valores `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `TURNSTILE_SECRET`, `IP_SALT`.
-- [ ] Si se conserva GitHub Pages: elegir una API compatible para `/api/contact`; GitHub Pages no ejecuta `functions/api/contact.js`.
-- [ ] Si se usa Cloudflare: configurar SSL *Full (strict)*, *Always Use HTTPS*, redirección `www` y, opcionalmente, Cloudflare Access para `/admin/*`.
+- [x] Destino confirmado: Cloudflare Worker `afriends.petcommunity-133.workers.dev`; `wrangler.jsonc` publica estáticos de `dist/`.
+- [x] `worker.js` enruta `/api/contact` al manejador compartido `functions/api/contact.js`.
+- [ ] Configurar en el Worker los secretos `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (o `SUPABASE_SERVICE_KEY`), `TURNSTILE_SECRET` e `IP_SALT`.
+- [ ] Configurar dominio `afriends.petcommunity-133.workers.dev` en Turnstile y reemplazar la Site Key de prueba en `src/config/env.js`.
+- [ ] Configurar en GitHub Actions `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` y `SITE_URL=https://afriends.petcommunity-133.workers.dev`.
+- [ ] Ejecutar el workflow en `main` y verificar `/api/contact` y un envío de prueba controlado.
 
 ### D. Configuración pública (nunca pegar secretos en el frontend)
-- [ ] `SUPABASE_URL` y `SUPABASE_ANON_KEY` de tipo **anon/publishable**. No usar `sb_secret` ni `service_role`; la clave pública real todavía falta.
-- [ ] `TURNSTILE_SITE_KEY`
+- [ ] Verificar que `SUPABASE_URL` y `SUPABASE_ANON_KEY` sean los valores públicos correctos (anon/publishable); nunca usar `sb_secret` ni `service_role` en el frontend.
+- [ ] Sustituir la Site Key de prueba por la Site Key real de Turnstile, registrada para el hostname del Worker.
 - [ ] `GA_MEASUREMENT_ID` real (`G-...`) si quieren analítica; el consentimiento previo y el texto condicional de cookies ya están implementados.
-- [x] `SITE_URL` configurada para `https://animalsfriends.github.io/Afriends`
+- [ ] `SITE_URL` de GitHub Actions configurada para `https://afriends.petcommunity-133.workers.dev`
 
 ### E. GitHub
-- [ ] Cambiar el workflow o su configuración cuando se decida el hosting oficial. Hoy despliega a Cloudflare si hay credenciales.
+- [ ] Configurar secretos y variable requeridos para que el workflow publique el Worker solo desde `main`.
 - [ ] En **Settings → General → Description**, actualizar manualmente la descripción del repositorio. Sugerencia: “Sitio web de Animal Friends, guardería canina con colegio, hotel y servicios para mascotas”.
 
 ### F. Pasos externos que quedan en manos del negocio
-- [ ] **Search Console:** verificar la propiedad Prefijo de URL de GitHub Pages con la etiqueta ya incluida en `index.html` y enviar el sitemap.
+- [ ] **Search Console:** verificar la propiedad Prefijo de URL elegida y enviar el sitemap correspondiente.
 - [ ] **Perfil de Negocio de Google:** crear o reclamar la ficha, verificarla y seguir `GOOGLE_BUSINESS_PROFILE.md`.
-- [ ] **Cloudflare Pages (si se elige ese hosting):** activar *Always Use HTTPS*, seleccionar SSL/TLS *Full (strict)* y crear una regla de redirección `www` hacia el dominio canónico. La guía completa está en `README.md`.
+- [ ] **Cloudflare Worker:** revisar que el endpoint y sus secretos estén configurados en el Worker `afriends`.
 
 ## 🟡 Después de publicar (verificar en producción)
 - [ ] Enviar un mensaje real por el formulario → aparece en el panel (pestaña Mensajes) y en Supabase.
 - [ ] Probar que un envío con el campo trampa lleno responde "ok" pero **no** crea fila.
 - [ ] Entrar a `/admin/`, cambiar un precio, guardar y ver el cambio en la página.
-- [ ] https://securityheaders.com y https://pagespeed.web.dev después de resolver el hosting; GitHub Pages no aplica `_headers`.
-- [ ] Search Console: verificar la propiedad **Prefijo de URL** con la etiqueta HTML y enviar `https://animalsfriends.github.io/Afriends/sitemap.xml`.
+- [ ] https://securityheaders.com y https://pagespeed.web.dev en el Worker publicado.
+- [ ] Search Console: verificar la propiedad **Prefijo de URL** con la etiqueta HTML y enviar el sitemap del hosting elegido.
 - [ ] GA4 → Tiempo real: aceptar cookies genera eventos; rechazar no envía nada.
 - [ ] Crear/reclamar el Perfil de Negocio de Google (`GOOGLE_BUSINESS_PROFILE.md`) y pegar su enlace en el panel.
 - [ ] Probar en un celular real (iPhone y Android): menú, cotizador, formulario, WhatsApp.
 
-## 🧪 Lo que NO pude verificar desde aquí (hazlo en el primer despliegue)
-- La ejecución real del workflow y el despliegue desde GitHub Pages o Cloudflare Pages.
+## 🧪 Lo que NO pude verificar desde aquí (hazlo en el siguiente despliegue)
+- La ejecución del nuevo workflow y el despliegue actualizado del Worker.
 - La clave privada se retiró de la configuración local; revoca/rota en Supabase cualquier clave privada que se haya usado ahí y configura solo la clave pública anon/publishable antes de reconectar el panel.
 - La Function corriendo en Cloudflare (la probé con pruebas automáticas y simulaciones, no en su entorno real).
 - Las políticas de seguridad (RLS) contra una base de Supabase real: los SQL no se han ejecutado.

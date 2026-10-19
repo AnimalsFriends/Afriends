@@ -7,7 +7,7 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "dev": "npx serve .",
-    "dev:functions": "npm run package && npx wrangler pages dev dist",
+    "dev:worker": "npm run package && npx wrangler dev --config wrangler.jsonc",
     "build": "node scripts/build.mjs && node scripts/package.mjs",
     "audit": "npm run package && node scripts/audit.mjs",
     "test": "node --test",

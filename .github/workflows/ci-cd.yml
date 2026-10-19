@@ -1,7 +1,7 @@
 # =====================================================================
 # CI/CD de Animal Friends
 #   - En cada Pull Request y en cada push a main: build, auditoría y pruebas.
-#   - Si todo pasa: despliega a Cloudflare Pages (producción en main, vista previa en PRs).
+#   - Solo un push a main o una ejecución manual en main puede desplegar producción.
 # Configuración necesaria: ver GUIA_FASE4_CONFIGURACION.md (sección 5).
 # =====================================================================
 name: CI/CD
@@ -35,30 +35,45 @@ jobs:
         run: npm run check
 
   deploy:
-    name: Desplegar a Cloudflare Pages
+    name: Desplegar a Cloudflare Workers
     needs: checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Las PR de forks no tienen acceso a secretos: no se despliegan.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     env:
       SITE_URL: ${{ vars.SITE_URL }}
-      CF_PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: Construir y empaquetar (dist/)
-        run: node scripts/build.mjs && node scripts/package.mjs
-      - name: Publicar en Cloudflare Pages
-        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CF_PAGES_PROJECT != '' }}
+        run: npm run build
+      - name: Validar URL del Worker y Site Key de producción
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' && env.SITE_URL != '' }}
+        run: |
+          node --input-type=module -e '
+            import { ENV } from "./src/config/env.js";
+            const site = new URL(process.env.SITE_URL);
+            if (site.protocol !== "https:" || site.hostname !== "afriends.petcommunity-133.workers.dev" || site.pathname !== "/") {
+              console.error("SITE_URL debe coincidir con la URL workers.dev confirmada, sin rutas.");
+              process.exit(1);
+            }
+            const testKeys = new Set(["1x0000000000000000000000000000000AA", "1x00000000000000000000AA"]);
+            if (!ENV.TURNSTILE_SITE_KEY || testKeys.has(ENV.TURNSTILE_SITE_KEY)) {
+              console.error("Reemplaza TURNSTILE_SITE_KEY por la Site key real antes de desplegar.");
+              process.exit(1);
+            }
+          '
+      - name: Publicar Worker de producción
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' && env.SITE_URL != '' }}
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=${{ vars.CF_PAGES_PROJECT }} --branch=${{ github.head_ref || github.ref_name }}
+          command: deploy --config wrangler.jsonc
       - name: Aviso si faltan credenciales
-        if: ${{ env.CLOUDFLARE_API_TOKEN == '' || env.CF_PAGES_PROJECT == '' }}
-        run: echo "::warning::Despliegue omitido. Configura el secreto CLOUDFLARE_API_TOKEN y la variable CF_PAGES_PROJECT (ver GUIA_FASE4_CONFIGURACION.md)."
+        if: ${{ env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == '' || env.SITE_URL == '' }}
+        run: echo "::warning::Despliegue omitido. Configura CLOUDFLARE_API_TOKEN y CLOUDFLARE_ACCOUNT_ID como secretos, y SITE_URL como variable (ver GUIA_FASE4_CONFIGURACION.md)."

@@ -5,9 +5,10 @@ GA4 y Turnstile). `site.defaults.js` contiene los datos visibles del negocio y l
 servicios usados como respaldo si Supabase no está disponible.
 
 No pongas aquí claves secretas: `SUPABASE_ANON_KEY` solo puede contener la clave
-pública anon/publishable. La URL actual de GitHub Pages está en `SITE_URL`;
-si se cambia de dominio, ajusta el valor o proporciona la variable de entorno
-`SITE_URL` al build. El ID de GA4 queda vacío hasta recibir el valor real.
+pública anon/publishable. El workflow debe recibir `SITE_URL` como variable con la URL
+confirmada del Worker para generar canonical, sitemap y metadatos de producción. El
+valor del archivo es solo respaldo para el build local. El ID de GA4 queda vacío hasta
+recibir el valor real.
 
 Razón social, NIT y dirección completa siguen pendientes. Los textos legales muestran
 marcadores y deben pasar por revisión legal antes de publicarse. La clave pública de

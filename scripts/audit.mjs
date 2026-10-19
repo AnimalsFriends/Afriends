@@ -233,10 +233,30 @@ if (!(await isDirectory(DIST))) {
   if (await isFile(envFile)) {
     const envSource = await readFile(envFile, "utf8");
     if (/CONTACT_ENDPOINT\s*:\s*["']\/api\/contact["']/.test(envSource)) {
-      if (!(await isFile(path.join(ROOT, "functions/api/contact.js")))) {
+      const handlerFile = path.join(ROOT, "functions/api/contact.js");
+      const workerFile = path.join(ROOT, "worker.js");
+      const configFile = path.join(ROOT, "wrangler.jsonc");
+      if (!(await isFile(handlerFile))) {
         err("functions/api/contact.js", "src/config/env.js referencia /api/contact pero no existe el handler");
-      } else {
-        warn("dist", "/api/contact requiere la Cloudflare Pages Function en functions/api/contact.js; el handler no forma parte del paquete estático y su inclusión en el despliegue debe verificarse.");
+      }
+      if (!(await isFile(workerFile))) err("worker.js", "/api/contact no tiene un Worker entrypoint");
+      else {
+        const workerSource = await readFile(workerFile, "utf8");
+        if (!workerSource.includes('from "./functions/api/contact.js"') || !workerSource.includes('url.pathname === "/api/contact"')) {
+          err("worker.js", "no enruta /api/contact al handler existente");
+        }
+      }
+      if (!(await isFile(configFile))) err("wrangler.jsonc", "falta la configuración de despliegue del Worker");
+      else {
+        try {
+          const config = JSON.parse(await readFile(configFile, "utf8"));
+          if (config.main !== "./worker.js") err("wrangler.jsonc", "main debe apuntar a ./worker.js");
+          if (config.assets?.directory !== "./dist") err("wrangler.jsonc", "assets.directory debe apuntar a ./dist");
+          if (config.assets?.binding !== "ASSETS") err("wrangler.jsonc", "falta el binding ASSETS para los archivos estáticos");
+          if (!config.assets?.run_worker_first?.includes("/api/*")) err("wrangler.jsonc", "run_worker_first debe incluir /api/*");
+        } catch {
+          err("wrangler.jsonc", "JSON inválido");
+        }
       }
     }
   } else {

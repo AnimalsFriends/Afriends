@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { onRequestPost, onRequest } from "../functions/api/contact.js";
+import worker from "../worker.js";
 import { POLICY_VERSION } from "../src/shared/contactSchema.js";
 
 const ORIGIN = "https://animalfriends.test";
@@ -29,6 +30,31 @@ const req = (body, { origin = ORIGIN, type = "application/json", ip = "1.2.3.4",
     body: raw ?? JSON.stringify(body)
   });
 const call = (request, env = ENV) => onRequestPost({ request, env });
+
+test("Worker enruta POST /api/contact al mismo manejador y conserva errores de configuración", async () => {
+  const request = new Request(`${ORIGIN}/api/contact`, {
+    method: "POST",
+    headers: { Origin: ORIGIN, "Content-Type": "application/json" },
+    body: JSON.stringify(GOOD)
+  });
+  const response = await worker.fetch(request, {});
+  assert.equal(response.status, 500);
+  assert.deepEqual(await response.json(), { error: "config" });
+});
+
+test("Worker devuelve 405 para otros métodos y delega recursos estáticos", async () => {
+  const methodResponse = await worker.fetch(new Request(`${ORIGIN}/api/contact`), {});
+  assert.equal(methodResponse.status, 405);
+  assert.equal(methodResponse.headers.get("Allow"), "POST");
+
+  let forwarded;
+  const assetResponse = new Response("static asset");
+  const response = await worker.fetch(new Request(`${ORIGIN}/admin/`), {
+    ASSETS: { fetch: async (request) => { forwarded = request.url; return assetResponse; } }
+  });
+  assert.equal(response, assetResponse);
+  assert.equal(forwarded, `${ORIGIN}/admin/`);
+});
 
 test("éxito: guarda con la clave de servicio, hash de IP y versión de política", async () => {
   const calls = mockFetch();

@@ -4,9 +4,9 @@ Hazla en este orden. Tiempo total estimado: 40–60 minutos.
 
 ## Cómo funciona (en 30 segundos)
 ```
-Visitante → formulario → /api/contact (Cloudflare Function) → Supabase (tabla contact_requests)
+Visitante → formulario → /api/contact (Worker) → Supabase (tabla contact_requests)
                               │ valida · Turnstile · límites · guarda con clave secreta
-GitHub (push a main) → Actions: build + auditoría + pruebas → despliegue a Cloudflare Pages
+GitHub (push a main) → Actions: build + auditoría + pruebas → wrangler deploy
 Analítica (GA4): solo se carga si el visitante la acepta en el aviso de cookies
 ```
 Capas antispam: trampa oculta (honeypot) · tiempo mínimo de llenado · Cloudflare Turnstile ·
@@ -21,21 +21,21 @@ espera entre envíos · máximo 3 mensajes por IP cada 10 min y 1 por teléfono 
 
 ## 2. Cloudflare Turnstile (antispam gratis)
 1. Cloudflare → **Turnstile** → *Add widget*.
-2. Nombre: Animal Friends · Dominios: tu dominio (y `localhost` para pruebas) · Modo: **Managed**.
+2. Nombre: Animal Friends · Dominios: `afriends.petcommunity-133.workers.dev` (y `localhost` para pruebas) · Modo: **Managed**.
 3. Copia la **Site key** (pública) a `src/config/env.js` → `TURNSTILE_SITE_KEY`.
 4. Copia la **Secret key** para el paso 4.
 
-## 3. Proyecto en Cloudflare Pages (una sola vez)
-Crea el proyecto vacío para que Actions pueda desplegar en él:
-```
-npx wrangler login
-npx wrangler pages project create animal-friends --production-branch=main
-```
-(o desde el panel: Workers & Pages → Create → Pages → *Direct Upload*). Anota el nombre del proyecto.
-Luego conecta tu dominio en **Custom domains**.
+## 3. Worker existente
+El destino confirmado es `afriends.petcommunity-133.workers.dev`; el Worker se llama
+`afriends` y su configuración está en `wrangler.jsonc`. No crees un proyecto Pages ni
+un dominio personalizado.
+
+El Worker publica estáticos desde `dist/` y el script `worker.js`. La ruta
+`/api/contact` llama al manejador compartido `functions/api/contact.js`; no copies
+`functions/` dentro de `dist/`.
 
 ## 4. Secretos de la Function (en Cloudflare)
-Pages → tu proyecto → **Settings → Variables and secrets** (agrégalas en *Production* y *Preview*):
+Workers & Pages → Worker **afriends** → **Settings → Variables and Secrets**:
 
 | Nombre | Tipo | Valor |
 |---|---|---|
@@ -51,16 +51,16 @@ Repositorio → **Settings → Secrets and variables → Actions**:
 
 | Nombre | Dónde | Valor |
 |---|---|---|
-| `CLOUDFLARE_API_TOKEN` | Secret | Cloudflare → My Profile → API Tokens → *Create* → permiso **Account · Cloudflare Pages · Edit** |
+| `CLOUDFLARE_API_TOKEN` | Secret | Cloudflare → My Profile → API Tokens → *Create* → permiso para desplegar Workers |
 | `CLOUDFLARE_ACCOUNT_ID` | Secret | Cloudflare → Workers & Pages → panel derecho |
-| `CF_PAGES_PROJECT` | Variable | nombre del proyecto del paso 3 |
-| `SITE_URL` | Variable | `https://tu-dominio.com` (sin barra final) |
+| `SITE_URL` | Variable | `https://afriends.petcommunity-133.workers.dev` (sin barra final) |
 
 Flujo resultante:
-- **Pull Request** → build, auditoría y pruebas + despliegue de **vista previa**.
-- **Push a `main`** → lo mismo + despliegue a **producción**.
+- **Pull Request** → build, auditoría y pruebas; no despliega.
+- **Push a `main`** o ejecución manual en `main` → build + despliegue del Worker de producción.
 - Si una prueba o la auditoría fallan, **no se despliega**.
-- Sin credenciales el workflow no falla: solo avisa que omitió el despliegue.
+- Sin token, Account ID o `SITE_URL`, el workflow avisa y omite el despliegue.
+- Antes de desplegar, el workflow rechaza `SITE_URL` distinta del hostname confirmado y una Site Key de Turnstile de prueba.
 
 ## 6. Google Analytics 4 (opcional hasta tener dominio)
 1. analytics.google.com → crear propiedad → flujo de datos **Web** → copia el **ID de medición** (`G-XXXXXXXXXX`).
@@ -73,10 +73,10 @@ Sin ID: no hay aviso de cookies ni se carga nada de Google.
 ## 7. Probar en tu computador
 ```
 cp .dev.vars.example .dev.vars     # y completa los valores
-npm run dev:functions              # sirve el sitio + la Function en http://localhost:8788
+npm run dev:worker                 # sirve el Worker y los estáticos con Wrangler
 npm run check                      # build + empaquetado + auditoría del dist + pruebas
 ```
-Con las claves de prueba de Turnstile del archivo de ejemplo el widget siempre aprueba.
+El archivo de ejemplo usa valores de prueba: no los copies a producción.
 
 ## 8. Ver los mensajes recibidos
 Desde el panel (`/admin/` → pestaña **Mensajes**) o en Supabase → **Table Editor → contact_requests**. Cambia `estado` a *contactado* o *cerrado* al atenderlos.

@@ -18,7 +18,7 @@ export const ENV = Object.freeze({
   SITE_TABLE: "site_config",
 
   // --- Formulario de contacto (Fase 4) ---
-  CONTACT_ENDPOINT: "/api/contact",   // Cloudflare Pages Function (functions/api/contact.js)
+  CONTACT_ENDPOINT: "/api/contact",   // Cloudflare Worker route (worker.js -> functions/api/contact.js)
   TURNSTILE_SITE_KEY: "1x0000000000000000000000000000000AA",             // clave PÚBLICA de Cloudflare Turnstile (antispam). Vacío = sin widget
                                       // Clave de prueba para desarrollo: "1x00000000000000000000AA"
 
