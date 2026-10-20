@@ -12,9 +12,9 @@ Aparecen en el Aviso legal y la Política de privacidad.
 - [ ] Ciudad
 - [ ] Correo electrónico para atender consultas y reclamos de datos personales
 
-## 2. Dirección web (dominio)
-- [x] Dirección actual: `https://animalsfriends.github.io/Afriends/`.
-- [ ] Si quieres usar un dominio propio (por ejemplo, `animalfriends.com.co`), comparte cuál es y quién administra su DNS. No hace falta para seguir usando GitHub Pages.
+## 2. Dirección web
+- [ ] Confirmar la URL pública del Worker `afriends` después de verificar el último despliegue en GitHub Actions y Cloudflare.
+- [ ] No se necesita dominio propio para continuar con la URL `workers.dev`. Si más adelante quieres un dominio propio, comparte cuál es y quién administra su DNS.
 
 ## 3. Redes sociales y Google
 - [ ] Enlace de tu Instagram
@@ -35,5 +35,10 @@ Aparecen en el Aviso legal y la Política de privacidad.
 
 ## 6. Medición de visitas (opcional)
 - [ ] Si quieres activar Google Analytics 4, crea una propiedad con el correo de Google del negocio y comparte el ID de medición `G-...` (no compartas contraseñas ni claves privadas).
+
+## 7. Antes de publicar
+- [ ] Confirmar que los datos legales y comerciales estén completos y sean correctos.
+- [ ] Revisar con un asesor legal los textos de aviso legal, privacidad y cookies.
+- [ ] Confirmar que el formulario y el panel se hayan probado en el entorno publicado; no compartir contraseñas ni claves privadas.
 
 Gracias por ayudarnos a cuidar la imagen de tu negocio como tú cuidas a cada peludito. 💛
