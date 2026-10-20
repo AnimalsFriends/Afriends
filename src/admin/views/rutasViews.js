@@ -83,11 +83,11 @@ function tarjetaParada(s, parada, indice, sentido) {
       </div>
       ${diario?.motivo ? `<small class="adm-r-reason">${esc(diario.motivo)}</small>` : ""}
     </div>
-    <div class="adm-r-actions">
-      ${button(sentido === "recogida" ? "Recogido" : "Entregado", "r-marcar-parada", ` data-id="${esc(diario?.id ?? "")}" data-estado="${estadoRuta}"`, "adm-btn--primary")}
-      ${button("No se pudo", "r-marcar-parada", ` data-id="${esc(diario?.id ?? "")}" data-estado="no_se_pudo"`, "adm-btn--danger")}
-      ${diario?.estado !== "pendiente" ? button("Reiniciar", "r-marcar-parada", ` data-id="${esc(diario.id)}" data-estado="pendiente"`) : ""}
-      ${button("Falta hoy", "r-registrar-ausencia", ` data-mascota-id="${esc(parada.mascota_id)}"`, "adm-btn--danger")}
+    <div class="adm-r-actions">${s.isEmpleado
+      ? diario?.id
+        ? `${button(sentido === "recogida" ? "Recogido" : "Entregado", "r-marcar-parada", ` data-id="${esc(diario.id)}" data-estado="${estadoRuta}"`, "adm-btn--primary")}${button("No se pudo", "r-marcar-parada", ` data-id="${esc(diario.id)}" data-estado="no_se_pudo"`, "adm-btn--danger")}`
+        : '<small>Estado diario pendiente de preparar. Informa al administrador.</small>'
+      : `${button(sentido === "recogida" ? "Recogido" : "Entregado", "r-marcar-parada", ` data-id="${esc(diario?.id ?? "")}" data-estado="${estadoRuta}"`, "adm-btn--primary")}${button("No se pudo", "r-marcar-parada", ` data-id="${esc(diario?.id ?? "")}" data-estado="no_se_pudo"`, "adm-btn--danger")}${diario?.estado !== "pendiente" ? button("Reiniciar", "r-marcar-parada", ` data-id="${esc(diario.id)}" data-estado="pendiente"`) : ""}${button("Falta hoy", "r-registrar-ausencia", ` data-mascota-id="${esc(parada.mascota_id)}"`, "adm-btn--danger")}`}
     </div>
   </article>`;
 }
@@ -132,6 +132,33 @@ function panelDia(s) {
     </div>
     ${hotel}
   </section>${avisoConflictos}${contenido}${ausencias}`;
+}
+
+function panelDiaEmpleado(s) {
+  const routes = s.rutas.filter((route) => route.activa);
+  const contenido = routes.length ? routes.map((route) => {
+    const sentidos = SENTIDOS.map(([sentido, texto]) => {
+      const elegibles = s.paradas.filter((parada) => {
+        if (!parada.activa || parada.ruta_id !== route.id || parada.sentido !== sentido) return false;
+        const mascota = ownerDog(s, parada.mascota_id);
+        const servicio = servicioMascotaEnFecha(mascota, s.fecha, s.planes, s.reservas, s.ausencias);
+        return servicio.codigo === "colegio" || servicio.codigo === "hotel_colegio";
+      }).sort((a, b) => a.orden - b.orden);
+      const grupos = new Map();
+      elegibles.forEach((parada) => {
+        const localidad = parada.localidad || "Localidad sin registrar";
+        if (!grupos.has(localidad)) grupos.set(localidad, []);
+        grupos.get(localidad).push(parada);
+      });
+      let indice = 0;
+      const filas = [...grupos.entries()].map(([localidad, paradas]) =>
+        `<section class="adm-r-locality"><h4>${esc(localidad)}</h4>${paradas.map((parada) => tarjetaParada(s, parada, indice++, sentido)).join("")}</section>`
+      ).join("");
+      return `<section class="adm-r-direction"><h3>${esc(texto)} <span>${elegibles.length} ${elegibles.length === 1 ? "parada" : "paradas"}</span></h3>${filas || '<p class="adm-sub">No tienes paradas asignadas para este recorrido.</p>'}</section>`;
+    }).join("");
+    return `<article class="adm-card"><h2>${esc(route.nombre)}</h2>${sentidos}</article>`;
+  }).join("") : '<section class="adm-card"><p class="adm-sub">No tienes rutas asignadas.</p></section>';
+  return `<section class="adm-card"><div class="adm-row adm-between adm-wrapx"><div><h2>Tareas de ruta asignadas</h2><p class="adm-sub">Consulta tus recogidas y entregas del día y actualiza su estado.</p></div><label class="adm-f"><span class="adm-fl">Fecha</span><input type="date" data-r-date="fecha" value="${esc(s.fecha)}"></label></div></section>${contenido}`;
 }
 
 function formularioRuta(s) {
@@ -299,7 +326,8 @@ export const RutasViews = {
   render(s) {
     if (s.loading) return '<section class="adm-card"><p class="adm-sub">Cargando rutas y reservas…</p></section>';
     if (s.error) return `${note(s.error === "missing" ? "Faltan las tablas de la Fase 1 en Supabase. Revisa supabase/README.md." : "No se pudieron cargar las rutas. Revisa conexión y permisos, y vuelve a intentar.", "err")}${button("Reintentar", "r-recargar")}`;
-    if (s.isAdmin === false) return note("Esta sección solo está disponible para una cuenta admin.", "err");
+    if (s.isEmpleado) return panelDiaEmpleado(s);
+    if (s.isAdmin === false) return note("Esta sección no está disponible para esta cuenta.", "err");
     const content = s.vista === "rutas" ? panelRutas(s) : s.vista === "hotel" ? panelHotel(s) : panelDia(s);
     return `${tabs(s)}${content}`;
   }

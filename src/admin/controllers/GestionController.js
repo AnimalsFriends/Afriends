@@ -16,6 +16,7 @@ import { AuthError } from "../services/authService.js";
 import { GestionApi } from "../services/gestionApi.js";
 import { reducirImagen } from "../services/imagen.js";
 import { GestionViews } from "../views/gestionViews.js";
+import { puedeEjecutarAccion } from "../models/permissions.js";
 import {
   blankDueno, blankMascota, blankVacuna, blankMedicamento, blankAutorizada,
   formDesdeFila, validarDueno, validarMascota, validarVacuna, validarMedicamento, validarAutorizada
@@ -39,8 +40,9 @@ export class GestionController {
     this.active = false;      // ¿está abierta esta pestaña?
     this.loaded = false;      // ¿ya se cargó la lista con éxito?
     this.dirty = false;       // ¿hay cambios sin guardar en la ficha abierta?
+    this.sessionVersion = 0;
     this.state = {
-      loading: false, error: null, isAdmin: null,
+      loading: false, error: null, isAdmin: null, isEmpleado: false,
       duenos: [], q: "", verInactivos: false,
       vista: "lista",         // "lista" | "dueno" | "mascota"
       dueno: { id: null, form: blankDueno(), autorizadas: [] },
@@ -65,6 +67,15 @@ export class GestionController {
     else this.render();
   }
 
+  invalidateSession() {
+    this.sessionVersion += 1;
+    this.active = false; this.loaded = false; this.dirty = false;
+    this.state = { ...this.state, loading: false, error: null, isAdmin: null, isEmpleado: false,
+      duenos: [], q: "", verInactivos: false, vista: "lista",
+      dueno: { id: null, form: blankDueno(), autorizadas: [] },
+      mascota: nuevaMascotaVacia(), fotoUrl: null, sub: subformsVacios() };
+  }
+
   render() {
     if (!this.active) return;
     this.getPanel().innerHTML = GestionViews.render(this.state);
@@ -72,19 +83,33 @@ export class GestionController {
 
   /* ------------------------------ carga de datos ------------------------------ */
   async cargar() {
+    const version = this.sessionVersion;
     const s = this.state;
     s.loading = true; s.error = null;
     this.render();
     try {
-      s.isAdmin = await GestionApi.esAdmin();
+      const contexto = await GestionApi.contextoActual();
+      if (version !== this.sessionVersion) return;
+      s.isAdmin = contexto?.rol === "admin";
+      s.isEmpleado = contexto?.rol === "empleado";
       if (s.isAdmin) {
         s.duenos = await GestionApi.listDuenos();
+        if (version !== this.sessionVersion) return;
         this.loaded = true;
+      } else if (s.isEmpleado) {
+        s.vista = "lista";
+        s.duenos = await GestionApi.listDuenosAsignados();
+        if (version !== this.sessionVersion) return;
+        this.loaded = true;
+      } else {
+        s.duenos = [];
       }
     } catch (error) {
+      if (version !== this.sessionVersion) return;
       if (this.sesionVencida(error)) return;
       s.error = ["perm", "missing"].includes(error?.code) ? error.code : "fail";
     } finally {
+      if (version !== this.sessionVersion) return;
       s.loading = false;
     }
     this.render();
@@ -92,10 +117,14 @@ export class GestionController {
 
   /** Refresca la lista tras guardar y avisa si la escritura sí ocurrió pero la lectura falló. */
   async refrescarLista(mensajeError = "Se guardó el cambio, pero no se pudo actualizar la lista. Recarga el panel.") {
+    const version = this.sessionVersion;
     try {
-      this.state.duenos = await GestionApi.listDuenos();
+      const duenos = await GestionApi.listDuenos();
+      if (version !== this.sessionVersion) return false;
+      this.state.duenos = duenos;
       return true;
     } catch (error) {
+      if (version !== this.sessionVersion) return false;
       if (this.sesionVencida(error)) return false;
       this.toast(mensajeError, "err");
       console.warn("[GestionController] No se pudo refrescar la lista:", error?.code ?? error?.name);
@@ -121,11 +150,12 @@ export class GestionController {
 
   /** Bloquea el botón mientras se guarda, para evitar dobles clics. */
   async conBoton(boton, textoOcupado, tarea) {
+    const version = this.sessionVersion;
     const original = boton.textContent;
     boton.disabled = true;
     boton.textContent = textoOcupado;
-    try { await tarea(); }
-    finally { boton.disabled = false; boton.textContent = original; }
+    try { await tarea(version); }
+    finally { if (version === this.sessionVersion) { boton.disabled = false; boton.textContent = original; } }
   }
 
   /** Si hay cambios sin guardar, pregunta antes de abandonar la ficha. */
@@ -142,12 +172,14 @@ export class GestionController {
 
   /* ------------------------------ navegación ------------------------------ */
   verLista() {
+    if (!this.state.isAdmin) return;
     if (!this.puedeSalir()) return;
     this.state.vista = "lista";
     this.render();
   }
 
   nuevoDueno() {
+    if (!this.state.isAdmin) return;
     if (!this.puedeSalir()) return;
     const s = this.state;
     s.dueno = { id: null, form: blankDueno(), autorizadas: [] };
@@ -157,7 +189,9 @@ export class GestionController {
   }
 
   async abrirDueno(id) {
+    if (!this.state.isAdmin) return;
     if (!this.puedeSalir()) return;
+    const version = this.sessionVersion;
     const s = this.state;
     const fila = s.duenos.find((d) => d.id === id);
     if (!fila) return;
@@ -167,11 +201,13 @@ export class GestionController {
     this.render();
     try {
       const autorizadas = await GestionApi.listAutorizadas(id);
+      if (version !== this.sessionVersion) return;
       if (s.dueno.id === id && s.vista === "dueno") { s.dueno.autorizadas = autorizadas; this.render(); }
-    } catch (error) { this.fallo(error, "No se pudieron cargar las personas autorizadas."); }
+    } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudieron cargar las personas autorizadas."); }
   }
 
   nuevaMascota() {
+    if (!this.state.isAdmin) return;
     if (!this.puedeSalir()) return;
     const s = this.state;
     s.mascota = nuevaMascotaVacia();
@@ -182,10 +218,13 @@ export class GestionController {
   }
 
   async abrirMascota(id) {
+    if (!this.state.isAdmin) return;
     if (!this.puedeSalir()) return;
+    const version = this.sessionVersion;
     const s = this.state;
     try {
       const fila = await GestionApi.getMascota(id);
+      if (version !== this.sessionVersion) return;
       if (!fila) { this.toast("No se encontró ese perro.", "err"); return; }
       s.mascota = {
         id, form: formDesdeFila(fila, blankMascota), activa: fila.activa, foto_path: fila.foto_path,
@@ -197,10 +236,11 @@ export class GestionController {
       s.vista = "mascota";
       this.render();
       this.cargarFoto();
-    } catch (error) { this.fallo(error, "No se pudo abrir la ficha del perro."); }
+    } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudo abrir la ficha del perro."); }
   }
 
   volverADueno() {
+    if (!this.state.isAdmin) return;
     if (!this.puedeSalir()) return;
     this.state.vista = "dueno";
     this.render();
@@ -208,170 +248,203 @@ export class GestionController {
 
   /* ------------------------------ dueños ------------------------------ */
   async guardarDueno(boton) {
+    if (!this.state.isAdmin) return;
     const s = this.state;
     const { errors, clean } = validarDueno(s.dueno.form);
     if (errors.length) { this.toast("Revisa estos puntos:", "err", errors); return; }
-    await this.conBoton(boton, "Guardando…", async () => {
+    await this.conBoton(boton, "Guardando…", async (version) => {
       try {
         const fila = s.dueno.id ? await GestionApi.updateDueno(s.dueno.id, clean) : await GestionApi.createDueno(clean);
+        if (version !== this.sessionVersion) return;
         if (!fila) { this.toast("No se pudo guardar: sin permiso o el dueño ya no existe.", "err"); return; }
         s.dueno.id = fila.id;
         s.dueno.form = formDesdeFila(fila, blankDueno);
         this.dirty = false;
         if (!await this.refrescarLista("El dueño se guardó, pero no se pudo actualizar la lista. Recarga el panel para ver los cambios.")) return;
+        if (version !== this.sessionVersion) return;
         this.toast("Dueño guardado.", "ok");
         this.render();
-      } catch (error) { this.fallo(error, "No se pudo guardar al dueño. Revisa tu conexión e inténtalo de nuevo."); }
+      } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudo guardar al dueño. Revisa tu conexión e inténtalo de nuevo."); }
     });
   }
 
   async cambiarActivoDueno(boton, activo) {
+    if (!this.state.isAdmin) return;
     const s = this.state;
     const nombre = s.dueno.form.nombre || "este dueño";
     if (!activo && !confirm(`¿Desactivar a ${nombre}? Dejará de aparecer en la lista, pero su historial se conserva y puedes reactivarlo.`)) return;
-    await this.conBoton(boton, "Un momento…", async () => {
+    await this.conBoton(boton, "Un momento…", async (version) => {
       try {
         const fila = await GestionApi.setDuenoActivo(s.dueno.id, activo);
+        if (version !== this.sessionVersion) return;
         if (!fila) { this.toast("No se pudo cambiar el estado: sin permiso o el dueño ya no existe.", "err"); return; }
         if (!await this.refrescarLista("Se actualizó el estado del dueño, pero no se pudo refrescar la lista. Recarga el panel.")) return;
+        if (version !== this.sessionVersion) return;
         this.toast(activo ? "Dueño reactivado." : "Dueño desactivado.", "ok");
         this.render();
-      } catch (error) { this.fallo(error, "No se pudo cambiar el estado del dueño."); }
+      } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudo cambiar el estado del dueño."); }
     });
   }
 
   async agregarAutorizada(boton) {
+    if (!this.state.isAdmin) return;
     const s = this.state;
     const { errors, clean } = validarAutorizada(s.sub.autorizada);
     if (errors.length) { this.toast("Revisa estos puntos:", "err", errors); return; }
-    await this.conBoton(boton, "Agregando…", async () => {
+    await this.conBoton(boton, "Agregando…", async (version) => {
       try {
         const fila = await GestionApi.addAutorizada(s.dueno.id, clean);
+        if (version !== this.sessionVersion) return;
         if (!fila) { this.toast("No se pudo agregar a la persona.", "err"); return; }
         s.dueno.autorizadas.push(fila);
         s.sub.autorizada = blankAutorizada();
         this.render();
-      } catch (error) { this.fallo(error, "No se pudo agregar a la persona autorizada."); }
+      } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudo agregar a la persona autorizada."); }
     });
   }
 
   async quitarAutorizada(id) {
+    if (!this.state.isAdmin) return;
+    const version = this.sessionVersion;
     const persona = this.state.dueno.autorizadas.find((a) => a.id === id);
     if (!persona || !confirm(`¿Quitar a ${persona.nombre} de las personas autorizadas?`)) return;
     try {
       await GestionApi.deleteAutorizada(id);
+      if (version !== this.sessionVersion) return;
       this.state.dueno.autorizadas = this.state.dueno.autorizadas.filter((a) => a.id !== id);
       this.render();
-    } catch (error) { this.fallo(error, "No se pudo quitar a la persona."); }
+    } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudo quitar a la persona."); }
   }
 
   /* ------------------------------ mascotas ------------------------------ */
   async guardarMascota(boton) {
+    if (!this.state.isAdmin) return;
     const s = this.state;
     const { errors, clean } = validarMascota(s.mascota.form);
     if (errors.length) { this.toast("Revisa estos puntos:", "err", errors); return; }
-    await this.conBoton(boton, "Guardando…", async () => {
+    await this.conBoton(boton, "Guardando…", async (version) => {
       try {
         const fila = s.mascota.id
           ? await GestionApi.updateMascota(s.mascota.id, clean)
           : await GestionApi.createMascota(s.dueno.id, clean);
+        if (version !== this.sessionVersion) return;
         if (!fila) { this.toast("No se pudo guardar: sin permiso o el perro ya no existe.", "err"); return; }
         s.mascota.id = fila.id;
         s.mascota.activa = fila.activa;
         s.mascota.form = formDesdeFila(fila, blankMascota);
         this.dirty = false;
         if (!await this.refrescarLista("El perro se guardó, pero no se pudo actualizar la lista. Recarga el panel para ver los cambios.")) return;
+        if (version !== this.sessionVersion) return;
         this.toast("Perro guardado.", "ok");
         this.render();
-      } catch (error) { this.fallo(error, "No se pudo guardar al perro. Revisa tu conexión e inténtalo de nuevo."); }
+      } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudo guardar al perro. Revisa tu conexión e inténtalo de nuevo."); }
     });
   }
 
   async cambiarActivaMascota(boton, activa) {
+    if (!this.state.isAdmin) return;
     const s = this.state;
     if (!activa && !confirm(`¿Desactivar a ${s.mascota.form.nombre || "este perro"}? Su historial se conserva y puedes reactivarlo.`)) return;
-    await this.conBoton(boton, "Un momento…", async () => {
+    await this.conBoton(boton, "Un momento…", async (version) => {
       try {
         const fila = await GestionApi.setMascotaActiva(s.mascota.id, activa);
+        if (version !== this.sessionVersion) return;
         if (!fila) { this.toast("No se pudo cambiar el estado del perro.", "err"); return; }
         s.mascota.activa = fila.activa;
         if (!await this.refrescarLista("Se actualizó el estado del perro, pero no se pudo refrescar la lista. Recarga el panel.")) return;
+        if (version !== this.sessionVersion) return;
         this.toast(activa ? "Perro reactivado." : "Perro desactivado.", "ok");
         this.render();
-      } catch (error) { this.fallo(error, "No se pudo cambiar el estado del perro."); }
+      } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudo cambiar el estado del perro."); }
     });
   }
 
   /* ------------------------------ vacunas y medicamentos ------------------------------ */
   async agregarVacuna(boton) {
+    if (!this.state.isAdmin) return;
     const s = this.state;
     const { errors, clean } = validarVacuna(s.sub.vacuna);
     if (errors.length) { this.toast("Revisa estos puntos:", "err", errors); return; }
-    await this.conBoton(boton, "Agregando…", async () => {
+    await this.conBoton(boton, "Agregando…", async (version) => {
       try {
         const fila = await GestionApi.addVacuna(s.mascota.id, clean);
+        if (version !== this.sessionVersion) return;
         if (!fila) { this.toast("No se pudo agregar.", "err"); return; }
         s.mascota.vacunas.push(fila);
         s.sub.vacuna = blankVacuna();
         this.render();
-      } catch (error) { this.fallo(error, "No se pudo agregar la vacuna."); }
+      } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudo agregar la vacuna."); }
     });
   }
 
   async quitarVacuna(id) {
+    if (!this.state.isAdmin) return;
+    const version = this.sessionVersion;
     if (!confirm("¿Quitar este registro? Úsalo solo si lo anotaste por error.")) return;
     try {
       await GestionApi.deleteVacuna(id);
+      if (version !== this.sessionVersion) return;
       this.state.mascota.vacunas = this.state.mascota.vacunas.filter((v) => v.id !== id);
       this.render();
-    } catch (error) { this.fallo(error, "No se pudo quitar el registro."); }
+    } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudo quitar el registro."); }
   }
 
   async agregarMedicamento(boton) {
+    if (!this.state.isAdmin) return;
     const s = this.state;
     const { errors, clean } = validarMedicamento(s.sub.medicamento);
     if (errors.length) { this.toast("Revisa estos puntos:", "err", errors); return; }
-    await this.conBoton(boton, "Agregando…", async () => {
+    await this.conBoton(boton, "Agregando…", async (version) => {
       try {
         const fila = await GestionApi.addMedicamento(s.mascota.id, clean);
+        if (version !== this.sessionVersion) return;
         if (!fila) { this.toast("No se pudo agregar.", "err"); return; }
         s.mascota.medicamentos.push(fila);
         s.sub.medicamento = blankMedicamento();
         this.render();
-      } catch (error) { this.fallo(error, "No se pudo agregar el medicamento."); }
+      } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudo agregar el medicamento."); }
     });
   }
 
   async alternarMedicamento(id) {
+    if (!this.state.isAdmin) return;
+    const version = this.sessionVersion;
     const med = this.state.mascota.medicamentos.find((x) => x.id === id);
     if (!med) return;
     try {
       const fila = await GestionApi.setMedicamentoActivo(id, !med.activo);
+      if (version !== this.sessionVersion) return;
       if (fila) med.activo = fila.activo;
       this.render();
-    } catch (error) { this.fallo(error, "No se pudo cambiar el medicamento."); }
+    } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudo cambiar el medicamento."); }
   }
 
   async quitarMedicamento(id) {
+    if (!this.state.isAdmin) return;
+    const version = this.sessionVersion;
     if (!confirm("¿Quitar este medicamento? Si solo terminó el tratamiento, mejor usa Suspender para conservar el registro.")) return;
     try {
       await GestionApi.deleteMedicamento(id);
+      if (version !== this.sessionVersion) return;
       this.state.mascota.medicamentos = this.state.mascota.medicamentos.filter((x) => x.id !== id);
       this.render();
-    } catch (error) { this.fallo(error, "No se pudo quitar el medicamento."); }
+    } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudo quitar el medicamento."); }
   }
 
   /* ------------------------------ foto ------------------------------ */
   /** Descarga y muestra la foto sin repintar toda la ficha (para no quitar el cursor). */
   async cargarFoto(mensajeError = "No se pudo cargar la foto. Revisa la conexión o los permisos y vuelve a abrir la ficha.") {
+    const version = this.sessionVersion;
     const s = this.state;
     const id = s.mascota.id;
     s.fotoUrl = null;
     if (s.mascota.foto_path) {
       try {
         const url = await GestionApi.bajarFoto(s.mascota.foto_path);
+        if (version !== this.sessionVersion) return false;
         if (s.mascota.id === id) s.fotoUrl = url;
       } catch (error) {
+        if (version !== this.sessionVersion) return false;
         if (this.sesionVencida(error)) return false;
         this.toast(mensajeError, "err");
         console.warn("[GestionController] No se pudo cargar la foto:", error?.code ?? error?.name);
@@ -384,23 +457,29 @@ export class GestionController {
   }
 
   async subirFoto(archivo, input) {
+    if (!this.state.isAdmin) return;
+    const version = this.sessionVersion;
     const s = this.state;
     const id = s.mascota.id;
     if (!id || !archivo) return;
     try {
       this.toast("Subiendo foto…");
       const blob = await reducirImagen(archivo);
+      if (version !== this.sessionVersion) return;
       const ruta = await GestionApi.subirFoto(id, blob);
+      if (version !== this.sessionVersion) return;
       const fila = await GestionApi.updateMascota(id, { foto_path: ruta });
+      if (version !== this.sessionVersion) return;
       if (!fila) throw Object.assign(new Error("sin-fila"), { code: "perm" });
       s.mascota.foto_path = ruta;
       if (!await this.cargarFoto("La foto se guardó, pero no pudimos mostrarla. Revisa la conexión o los permisos y vuelve a abrir la ficha.")) return;
       this.toast("Foto guardada.", "ok");
     } catch (error) {
+      if (version !== this.sessionVersion) return;
       if (error?.message === "no-imagen") this.toast("Elige un archivo de imagen (JPG, PNG o WebP).", "err");
       else this.fallo(error, "No se pudo subir la foto. Prueba con otra imagen.");
     } finally {
-      input.value = "";
+      if (version === this.sessionVersion) input.value = "";
     }
   }
 
@@ -410,11 +489,15 @@ export class GestionController {
     const s = this.state;
 
     if (t.matches("[data-g-search]")) {                       // buscador: solo repinta la lista, no el campo
+      if (!puedeEjecutarAccion(s.isAdmin ? "admin" : s.isEmpleado ? "empleado" : null, "gestion", "buscar")) return;
       s.q = t.value;
       const caja = document.getElementById("g-lista");
-      if (caja) caja.innerHTML = GestionViews.itemsLista(s.duenos, s.q, s.verInactivos);
+      if (caja) caja.innerHTML = s.isEmpleado
+        ? GestionViews.itemsListaEmpleado(s.duenos, s.q)
+        : GestionViews.itemsLista(s.duenos, s.q, s.verInactivos);
       return;
     }
+    if (!s.isAdmin) return;
     if (t.dataset.g) {                                        // campo de la ficha abierta
       this.formActual()[t.dataset.g] = t.type === "checkbox" ? t.checked : t.value;
       this.dirty = true;
@@ -427,6 +510,7 @@ export class GestionController {
   }
 
   onChange(event) {
+    if (!this.state.isAdmin) return;
     const t = event.target;
     const s = this.state;
     if (t.matches("[data-g-inactivos]")) {
@@ -442,6 +526,9 @@ export class GestionController {
   onClick(event) {
     const b = event.target.closest("[data-action]");
     if (!b || !b.dataset.action.startsWith("g-")) return;
+    const permiso = this.state.isAdmin ? "admin" : this.state.isEmpleado ? "empleado" : null;
+    const accion = b.dataset.action === "g-recargar" ? "recargar" : b.dataset.action === "g-buscar" ? "buscar" : "mutar";
+    if (!puedeEjecutarAccion(permiso, "gestion", accion)) return;
     const id = b.dataset.id;
     switch (b.dataset.action) {
       case "g-recargar": this.cargar(); break;

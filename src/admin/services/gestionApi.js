@@ -45,9 +45,23 @@ export const GestionApi = {
     return (await response.json()) === true;
   },
 
+  /** Contexto resuelto por las funciones SQL; nunca se infiere desde el correo. */
+  async contextoActual() {
+    if (await this.esAdmin()) return { rol: "admin", empleadoId: null };
+    const response = await authed(rest("rpc/empleado_actual_id"), {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: "{}"
+    });
+    if (response.status === 404) throw new ApiError("missing");
+    if (!response.ok) throw new ApiError(response.status === 401 || response.status === 403 ? "perm" : "fail");
+    const empleadoId = await response.json();
+    return empleadoId ? { rol: "empleado", empleadoId } : null;
+  },
+
   /* ------------------------------ dueños ------------------------------ */
   /** Todos los dueños con el nombre de sus perros (basta para listar y buscar). */
   listDuenos: () => llamar("duenos?select=*,mascotas(id,nombre,raza,activa,es_bravo,esta_enfermo,toma_medicamentos)&order=nombre.asc&limit=1000"),
+  /** Lista mínima de dueños y perros que RLS ya autoriza a este empleado. */
+  listDuenosAsignados: () => llamar("duenos?select=id,nombre,telefono,mascotas(id,nombre,raza,activa)&order=nombre.asc&limit=1000"),
   createDueno: (datos) => primero(escribir("POST", "duenos", datos)),
   updateDueno: (id, datos) => primero(escribir("PATCH", `duenos?id=eq.${uuid(id)}`, datos)),
   setDuenoActivo: (id, activo) => primero(escribir("PATCH", `duenos?id=eq.${uuid(id)}`, { activo })),

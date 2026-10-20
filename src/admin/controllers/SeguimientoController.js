@@ -30,6 +30,7 @@ export class SeguimientoController {
     this.loaded = false;
     this.dirty = false;
     this.busy = false;
+    this.sessionVersion = 0;
     this.state = {
       loading: false, error: null, errorHistorial: false, isAdmin: null,
       vista: "alertas", fecha: hoyBogota(), mascotas: [], planes: [], reservas: [],
@@ -52,6 +53,14 @@ export class SeguimientoController {
     else this.render();
   }
 
+  invalidateSession() {
+    this.sessionVersion += 1; this.active = false; this.loaded = false; this.dirty = false; this.busy = false;
+    this.state = { ...this.state, loading: false, error: null, errorHistorial: false, isAdmin: null,
+      vista: "alertas", fecha: hoyBogota(), mascotas: [], planes: [], reservas: [], ausencias: [],
+      registros: [], vacunas: [], soat: [], empleados: [], historial: [], historialMas: false,
+      historialCargando: false, formSoat: soatVacio() };
+  }
+
   render() {
     if (this.active) this.getPanel().innerHTML = SeguimientoViews.render(this.state);
   }
@@ -65,25 +74,30 @@ export class SeguimientoController {
   }
 
   async cargar() {
+    const version = this.sessionVersion;
     const s = this.state;
     s.loading = true;
     s.error = null;
     this.render();
     try {
       s.isAdmin = await GestionApi.esAdmin();
+      if (version !== this.sessionVersion) return false;
       if (!s.isAdmin) {
         this.ocultarPestana?.();
         return false;
       }
       const datos = await SeguimientoApi.cargar(s.fecha, fechaLimite(s.fecha, DIAS_ALERTA_VENCIMIENTO));
+      if (version !== this.sessionVersion) return false;
       Object.assign(s, datos);
       this.loaded = true;
       return true;
     } catch (error) {
+      if (version !== this.sessionVersion) return false;
       if (this.sesionVencida(error)) return false;
       s.error = error?.code === "perm" ? "perm" : error?.code === "missing" ? "missing" : "fail";
       return false;
     } finally {
+      if (version !== this.sessionVersion) return;
       s.loading = false;
       this.render();
     }
@@ -151,6 +165,7 @@ export class SeguimientoController {
 
   async guardarSoat() {
     if (this.busy) return;
+    const version = this.sessionVersion;
     const form = this.state.formSoat;
     const { errors, clean } = validarSoat(form, this.state.soat);
     if (errors.length) {
@@ -162,14 +177,17 @@ export class SeguimientoController {
       const row = form.id
         ? await SeguimientoApi.actualizarSoat(form.id, clean)
         : await SeguimientoApi.crearSoat(clean);
+      if (version !== this.sessionVersion) return;
       if (!row) {
         this.toast("No se pudo guardar el SOAT.", "err");
         return;
       }
       this.descartarBorrador();
-      if (await this.cargar()) this.toast("SOAT guardado.", "ok");
+      if (await this.cargar() && version === this.sessionVersion) this.toast("SOAT guardado.", "ok");
+      else if (version !== this.sessionVersion) return;
       else this.toast("El SOAT se guardó, pero no pude recargar la lista. Usa Actualizar para comprobarlo.", "err");
     } catch (error) {
+      if (version !== this.sessionVersion) return;
       if (this.sesionVencida(error)) return;
       const mensaje = error?.code === "conflict"
         ? "Ya existe un vehículo con ese nombre o placa."
@@ -177,7 +195,7 @@ export class SeguimientoController {
           : "No se pudo guardar el SOAT. Revisa si la migración de Fase 7 está aplicada.";
       this.toast(mensaje, "err");
     } finally {
-      this.busy = false;
+      if (version === this.sessionVersion) this.busy = false;
     }
   }
 
@@ -201,18 +219,22 @@ export class SeguimientoController {
 
   async cambiarAsistencia(accion, exito) {
     if (this.busy) return;
+    const version = this.sessionVersion;
     this.busy = true;
     try {
       await accion();
-      if (await this.cargar()) this.toast(exito, "ok");
+      if (version !== this.sessionVersion) return;
+      if (await this.cargar() && version === this.sessionVersion) this.toast(exito, "ok");
+      else if (version !== this.sessionVersion) return;
       else this.toast("El cambio se guardó, pero no pude recargar la lista. Usa Actualizar para comprobarlo.", "err");
     } catch (error) {
+      if (version !== this.sessionVersion) return;
       if (this.sesionVencida(error)) return;
       this.toast(error?.code === "perm"
         ? "No tienes permiso para cambiar la asistencia."
         : "No se pudo guardar el cambio de asistencia. Inténtalo de nuevo.", "err");
     } finally {
-      this.busy = false;
+      if (version === this.sessionVersion) this.busy = false;
     }
   }
 
@@ -250,6 +272,7 @@ export class SeguimientoController {
   }
 
   async cargarHistorial() {
+    const version = this.sessionVersion;
     const s = this.state;
     if (s.historialCargando || !s.historialMas && s.historial.length) return;
     s.historialCargando = true;
@@ -258,12 +281,15 @@ export class SeguimientoController {
     try {
       const offset = s.historial.length;
       const pagina = await SeguimientoApi.cargarHistorial(offset);
+      if (version !== this.sessionVersion) return;
       s.historial.push(...pagina);
       s.historialMas = pagina.length === TAMANO_PAGINA_HISTORIAL;
     } catch (error) {
+      if (version !== this.sessionVersion) return;
       if (this.sesionVencida(error)) return;
       s.errorHistorial = true;
     } finally {
+      if (version !== this.sessionVersion) return;
       s.historialCargando = false;
       this.render();
     }

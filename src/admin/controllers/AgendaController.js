@@ -37,6 +37,7 @@ export class AgendaController {
     this.active = false;
     this.loaded = false;
     this.dirty = false;
+    this.sessionVersion = 0;
     const fecha = hoyBogota();
     this.state = {
       loading: false, error: null, isAdmin: null, vista: "dia", fecha,
@@ -59,6 +60,13 @@ export class AgendaController {
     else this.render();
   }
 
+  invalidateSession() {
+    this.sessionVersion += 1; this.active = false; this.loaded = false; this.dirty = false;
+    this.state = { ...this.state, loading: false, error: null, isAdmin: null, vista: "dia",
+      citas: [], reservas: [], mascotas: [], duenos: [], empleados: [], rutas: [], paradas: [],
+      planes: [], ausencias: [], servicios: [], formularios: { cita: nuevaCita() } };
+  }
+
   render() {
     if (this.active) this.getPanel().innerHTML = AgendaViews.render(this.state);
   }
@@ -72,23 +80,29 @@ export class AgendaController {
   }
 
   async cargar() {
+    const version = this.sessionVersion;
     const s = this.state;
     s.loading = true;
     s.error = null;
     this.render();
     try {
       s.isAdmin = await GestionApi.esAdmin();
+      if (version !== this.sessionVersion) return false;
       if (!s.isAdmin) return false;
       const rango = rangoAgenda(s.fecha, s.vista);
       if (!rango) throw new Error("El rango de la agenda no es válido.");
-      Object.assign(s, await AgendaApi.cargar({ fecha: s.fecha, rango }));
+      const datos = await AgendaApi.cargar({ fecha: s.fecha, rango });
+      if (version !== this.sessionVersion) return false;
+      Object.assign(s, datos);
       this.loaded = true;
       return true;
     } catch (error) {
+      if (version !== this.sessionVersion) return false;
       if (this.sesionVencida(error)) return false;
       s.error = error?.code === "perm" ? "perm" : error?.code === "missing" ? "missing" : "fail";
       return false;
     } finally {
+      if (version !== this.sessionVersion) return;
       s.loading = false;
       this.render();
     }
@@ -196,14 +210,17 @@ export class AgendaController {
   }
 
   async guardarCita() {
+    const version = this.sessionVersion;
     const formulario = this.state.formularios.cita;
     const { errors, clean } = validarCita(formulario);
     if (errors.length) { this.toast("Revisa estos puntos:", "err", errors); return; }
     let conflictos;
     try {
       const citasSolapadas = await AgendaApi.citasSolapadas(clean.inicio, clean.fin);
+      if (version !== this.sessionVersion) return;
       conflictos = conflictosCita({ ...clean, id: formulario.id }, citasSolapadas);
     } catch (error) {
+      if (version !== this.sessionVersion) return;
       if (this.sesionVencida(error)) return;
       this.toast(error?.code === "perm" ? "No tienes permiso para revisar los choques de horario." : "No se pudo comprobar si hay choques. No guardé la cita.", "err");
       return;
@@ -218,24 +235,31 @@ export class AgendaController {
       const row = formulario.id
         ? await AgendaApi.actualizarCita(formulario.id, clean)
         : await AgendaApi.crearCita(clean);
+      if (version !== this.sessionVersion) return;
       if (!row) { this.toast("No se pudo guardar la cita.", "err"); return; }
       this.state.formularios.cita = nuevaCita();
       this.setDirty(false);
       await this.cargar();
+      if (version !== this.sessionVersion) return;
       this.toast("Cita guardada.", "ok");
     } catch (error) {
+      if (version !== this.sessionVersion) return;
       if (this.sesionVencida(error)) return;
       this.toast(error?.code === "perm" ? "No tienes permiso para guardar esta cita." : "No se pudo guardar la cita.", "err");
     }
   }
 
   async cambiarEstado(id, estado) {
+    const version = this.sessionVersion;
     try {
       const row = await AgendaApi.actualizarEstado(id, estado);
+      if (version !== this.sessionVersion) return;
       if (!row) { this.toast("No se pudo actualizar el estado de la cita.", "err"); return; }
       await this.cargar();
+      if (version !== this.sessionVersion) return;
       this.toast("Estado de la cita actualizado.", "ok");
     } catch (error) {
+      if (version !== this.sessionVersion) return;
       if (this.sesionVencida(error)) return;
       this.toast(error?.code === "perm" ? "No tienes permiso para actualizar esta cita." : "No se pudo actualizar el estado de la cita.", "err");
     }

@@ -18,6 +18,7 @@ globalThis.fetch = async (url, init = {}) => {
   };
 };
 const { RutasApi } = await import("../src/admin/services/rutasApi.js");
+const { RutasController } = await import("../src/admin/controllers/RutasController.js");
 
 const DOG = "123e4567-e89b-12d3-a456-426614174000";
 const ROUTE = "223e4567-e89b-12d3-a456-426614174001";
@@ -32,6 +33,14 @@ test("carga rutas, planes, reservas del mes, ausencias del día y capacidad", as
   assert.ok(llamadas.some(({ url }) => /parametros_operativos\?id=eq\.1/.test(url)));
   assert.ok(llamadas.some(({ url }) => /paradas_ruta\?.*order=ruta_id\.asc,sentido\.asc,orden\.asc,id\.asc/.test(url)));
   assert.ok(llamadas.some(({ url }) => /mascotas\?.*order=nombre\.asc,id\.asc/.test(url)));
+});
+
+test("la consulta de empleado usa columnas operativas y no consulta cupos ni crea filas diarias", async () => {
+  llamadas.length = 0;
+  await RutasApi.cargarEmpleado({ fecha: "2026-10-12", inicioMes: "2026-10-01", finMes: "2026-11-01" });
+  assert.ok(llamadas.every(({ url, init }) => !/parametros_operativos/.test(url) && !(init.method === "POST" && /paradas_dia/.test(url))));
+  assert.ok(llamadas.some(({ url }) => /paradas_dia\?select=id,parada_id,fecha,estado,motivo/.test(url)));
+  assert.ok(llamadas.some(({ url }) => /duenos\?select=id,nombre,telefono/.test(url)));
 });
 
 test("las consultas del día mantienen un orden estable al paginar", async () => {
@@ -58,4 +67,21 @@ test("los ids inválidos se rechazan antes de hacer una petición", async () => 
   const count = llamadas.length;
   assert.throws(() => RutasApi.activarRuta("no-uuid", true), (error) => error.code === "fail");
   assert.equal(llamadas.length, count);
+});
+
+test("controlador empleado rechaza estados no permitidos y escrituras de administración", async () => {
+  const original = RutasApi.actualizarEstadoParada;
+  let escrituras = 0;
+  RutasApi.actualizarEstadoParada = async () => { escrituras += 1; };
+  try {
+    const controller = new RutasController({ panel: () => null, toast: () => {}, expire: () => {} });
+    controller.state.isEmpleado = true;
+    controller.state.paradasDia = [{ id: DOG, parada_id: ROUTE }];
+    controller.state.paradas = [{ id: ROUTE, sentido: "recogida" }];
+    await controller.marcarParada(DOG, "pendiente");
+    await controller.guardarRuta();
+    assert.equal(escrituras, 0);
+  } finally {
+    RutasApi.actualizarEstadoParada = original;
+  }
 });

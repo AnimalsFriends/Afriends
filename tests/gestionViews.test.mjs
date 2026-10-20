@@ -45,6 +45,14 @@ test("lista: muestra el dueño, su teléfono con enlace a WhatsApp y sus perros"
   assert.match(html, /data-action="g-abrir-dueno" data-id="123e4567/);
 });
 
+test("empleado consulta solo su lista asignada y no recibe acciones administrativas ni campos adicionales", () => {
+  const html = GestionViews.render({ ...base(), isAdmin: false, isEmpleado: true });
+  assert.match(html, /Dueños y mascotas asignados/);
+  assert.match(html, /Ana &lt;b&gt;Pérez/);
+  assert.match(html, /Max/);
+  assert.doesNotMatch(html, /g-nuevo-dueno|g-abrir-dueno|Contacto de emergencia|Bravo|Medicamentos/);
+});
+
 test("lista vacía y búsqueda sin resultados dan mensajes distintos", () => {
   assert.match(GestionViews.render({ ...base(), duenos: [] }), /Aún no hay dueños/);
   assert.match(GestionViews.render({ ...base(), q: "zzzz" }), /Nadie coincide/);

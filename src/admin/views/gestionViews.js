@@ -73,6 +73,22 @@ function itemsLista(duenos, q, verInactivos) {
   }).join("");
 }
 
+function itemsListaEmpleado(duenos, q) {
+  const needle = String(q ?? "").trim().toLocaleLowerCase("es-CO");
+  const filas = duenos.filter((dueno) => {
+    const texto = [dueno.nombre, dueno.telefono, ...(dueno.mascotas ?? []).map((mascota) => mascota.nombre)]
+      .join(" ").toLocaleLowerCase("es-CO");
+    return !needle || texto.includes(needle);
+  });
+  if (!duenos.length) return '<p class="adm-sub">No tienes dueños o perros asignados.</p>';
+  if (!filas.length) return '<p class="adm-sub">Nadie coincide con esa búsqueda.</p>';
+  return filas.map((dueno) => `<article class="adm-dueno">
+    <header class="adm-dueno__head"><b>${esc(dueno.nombre)}</b></header>
+    <p class="adm-lead__meta">${telefonoLink(dueno.telefono)} · ${(dueno.mascotas ?? []).length} ${(dueno.mascotas ?? []).length === 1 ? "perro" : "perros"}</p>
+    ${(dueno.mascotas ?? []).length ? `<p class="adm-pets">${dueno.mascotas.map((mascota) => chip(`🐾 ${mascota.nombre}${mascota.raza ? ` · ${mascota.raza}` : ""}`)).join(" ")}</p>` : ""}
+  </article>`).join("");
+}
+
 function lista(s) {
   return `
   <section class="adm-card">
@@ -302,11 +318,13 @@ function mascota(s) {
 /* ------------------------------ PUNTO DE ENTRADA ------------------------------ */
 export const GestionViews = {
   itemsLista,
+  itemsListaEmpleado,
   fotoHtml,
 
   render(s) {
     if (s.loading) return '<section class="adm-card"><p class="adm-sub">Cargando…</p></section>';
     if (s.error) return `${AVISOS[s.error] ?? AVISOS.fail}<div>${boton("Reintentar", "g-recargar", { sm: true })}</div>`;
+    if (s.isEmpleado) return `<section class="adm-card"><h2>Dueños y mascotas asignados</h2><p class="adm-sub">Consulta solo los datos necesarios para atender tus servicios. Para actualizar una ficha, contacta al administrador.</p><label class="adm-f adm-grow"><span class="adm-fl">Buscar</span><input type="search" data-g-search value="${esc(s.q)}" placeholder="Nombre, perro o teléfono" autocomplete="off"></label><div id="g-lista">${itemsListaEmpleado(s.duenos, s.q)}</div></section>`;
     if (s.isAdmin === false) return `${AVISOS.noadmin}<div>${boton("Reintentar", "g-recargar", { sm: true })}</div>`;
     if (s.vista === "mascota") return mascota(s);
     if (s.vista === "dueno") return dueno(s);

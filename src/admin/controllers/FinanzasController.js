@@ -28,6 +28,7 @@ export class FinanzasController {
     this.loaded = false;
     this.dirty = false;
     this.saving = false;
+    this.sessionVersion = 0;
     const fecha = hoyBogota();
     this.state = {
       loading: false, error: null, isAdmin: null, vista: "resumen", mes: fecha.slice(0, 7),
@@ -50,6 +51,14 @@ export class FinanzasController {
     else this.render();
   }
 
+  invalidateSession() {
+    this.sessionVersion += 1; this.active = false; this.loaded = false; this.dirty = false; this.saving = false;
+    const fecha = hoyBogota();
+    this.state = { ...this.state, loading: false, error: null, isAdmin: null, vista: "resumen", mes: fecha.slice(0, 7),
+      gastos: [], pagos: [], abonos: [], duenos: [], mascotas: [], servicios: [], reciboPendiente: null,
+      forms: { gasto: gastoVacio(fecha), cobro: cobroVacio(fecha), abono: abonoVacio(fecha) } };
+  }
+
   render() {
     if (this.active) this.getPanel().innerHTML = FinanzasViews.render(this.state);
   }
@@ -63,24 +72,30 @@ export class FinanzasController {
   }
 
   async cargar() {
+    const version = this.sessionVersion;
     const s = this.state;
     s.loading = true;
     s.error = null;
     this.render();
     try {
       s.isAdmin = await GestionApi.esAdmin();
+      if (version !== this.sessionVersion) return false;
       if (!s.isAdmin) {
         this.ocultarPestana?.();
         return false;
       }
-      Object.assign(s, await FinanzasApi.cargar());
+      const datos = await FinanzasApi.cargar();
+      if (version !== this.sessionVersion) return false;
+      Object.assign(s, datos);
       this.loaded = true;
       return true;
     } catch (error) {
+      if (version !== this.sessionVersion) return false;
       if (this.sesionVencida(error)) return false;
       s.error = error?.code === "perm" ? "perm" : error?.code === "missing" ? "missing" : "fail";
       return false;
     } finally {
+      if (version !== this.sessionVersion) return;
       s.loading = false;
       this.render();
     }
@@ -166,6 +181,7 @@ export class FinanzasController {
 
   async guardarGasto() {
     if (this.saving) return;
+    const version = this.sessionVersion;
     const form = this.state.forms.gasto;
     const { errors, clean } = validarGasto(form);
     if (errors.length) { this.toast("Revisa estos puntos:", "err", errors); return; }
@@ -174,13 +190,17 @@ export class FinanzasController {
       const row = form.id
         ? await FinanzasApi.actualizarGasto(form.id, clean)
         : await FinanzasApi.crearGasto(clean);
+      if (version !== this.sessionVersion) return;
       if (!row) { this.toast("No se pudo guardar el gasto.", "err"); return; }
       if (this.state.reciboPendiente) {
         try {
           const path = await FinanzasApi.subirRecibo(row.id, this.state.reciboPendiente);
+          if (version !== this.sessionVersion) return;
           const actualizado = await FinanzasApi.actualizarGasto(row.id, { recibo_path: path });
+          if (version !== this.sessionVersion) return;
           if (!actualizado) throw new Error("receipt-link");
         } catch (error) {
+          if (version !== this.sessionVersion) return;
           if (this.sesionVencida(error)) return;
           this.state.forms.gasto = { ...clean, id: row.id, categoria: clean.categoria, valor: String(clean.valor) };
           this.setDirty(true);
@@ -192,12 +212,13 @@ export class FinanzasController {
       this.state.forms.gasto = gastoVacio(hoyBogota());
       this.state.reciboPendiente = null;
       this.setDirty(false);
-      if (await this.recargarFinanzas()) this.toast("Gasto guardado.", "ok");
+      if (await this.recargarFinanzas() && version === this.sessionVersion) this.toast("Gasto guardado.", "ok");
     } catch (error) {
+      if (version !== this.sessionVersion) return;
       if (this.sesionVencida(error)) return;
       this.toast(error?.code === "perm" ? "No tienes permiso para guardar gastos." : "No se pudo guardar el gasto.", "err");
     } finally {
-      this.saving = false;
+      if (version === this.sessionVersion) this.saving = false;
     }
   }
 
@@ -225,25 +246,29 @@ export class FinanzasController {
 
   async guardarCobro() {
     if (this.saving) return;
+    const version = this.sessionVersion;
     const { errors, clean } = validarCobro(this.state.forms.cobro, this.state);
     if (errors.length) { this.toast("Revisa estos puntos:", "err", errors); return; }
     this.saving = true;
     try {
       const row = await FinanzasApi.crearCobro(clean);
+      if (version !== this.sessionVersion) return;
       if (!row) { this.toast("No se pudo registrar el cobro.", "err"); return; }
       this.state.forms.cobro = cobroVacio(hoyBogota());
       this.setDirty(false);
-      if (await this.recargarFinanzas()) this.toast("Cobro registrado.", "ok");
+      if (await this.recargarFinanzas() && version === this.sessionVersion) this.toast("Cobro registrado.", "ok");
     } catch (error) {
+      if (version !== this.sessionVersion) return;
       if (this.sesionVencida(error)) return;
       this.toast(error?.code === "perm" ? "No tienes permiso para registrar cobros." : "No se pudo registrar el cobro.", "err");
     } finally {
-      this.saving = false;
+      if (version === this.sessionVersion) this.saving = false;
     }
   }
 
   async guardarAbono() {
     if (this.saving) return;
+    const version = this.sessionVersion;
     const pago = this.state.pagos.find((item) => item.id === this.state.forms.abono.pago_id);
     const saldo = saldosPagos(this.state.pagos, this.state.abonos).get(pago?.id)?.saldo ?? 0;
     const { errors, clean } = validarAbono(this.state.forms.abono, saldo);
@@ -251,26 +276,32 @@ export class FinanzasController {
     this.saving = true;
     try {
       const row = await FinanzasApi.crearAbono(clean);
+      if (version !== this.sessionVersion) return;
       if (!row) { this.toast("No se pudo guardar el abono.", "err"); return; }
       this.state.forms.abono = abonoVacio(hoyBogota());
       this.setDirty(false);
-      if (await this.recargarFinanzas()) this.toast("Abono registrado.", "ok");
+      if (await this.recargarFinanzas() && version === this.sessionVersion) this.toast("Abono registrado.", "ok");
     } catch (error) {
+      if (version !== this.sessionVersion) return;
       if (this.sesionVencida(error)) return;
       this.toast(error?.code === "conflict"
         ? "Ese cobro ya cambió y el abono supera su saldo actual; actualicé los datos."
         : error?.code === "perm" ? "No tienes permiso para registrar abonos." : "No se pudo registrar el abono.", "err");
       if (error?.code === "conflict") await this.recargarFinanzas();
     } finally {
-      this.saving = false;
+      if (version === this.sessionVersion) this.saving = false;
     }
   }
 
   async recargarFinanzas() {
+    const version = this.sessionVersion;
     try {
-      Object.assign(this.state, await FinanzasApi.cargar());
+      const datos = await FinanzasApi.cargar();
+      if (version !== this.sessionVersion) return false;
+      Object.assign(this.state, datos);
       this.render();
     } catch (error) {
+      if (version !== this.sessionVersion) return false;
       if (this.sesionVencida(error)) return false;
       this.toast("El cambio se guardó, pero no pude actualizar los datos. Recarga la pestaña.", "err");
       return false;
@@ -279,8 +310,10 @@ export class FinanzasController {
   }
 
   async descargarRecibo(path) {
+    const version = this.sessionVersion;
     try {
       const blob = await FinanzasApi.descargarRecibo(path);
+      if (version !== this.sessionVersion) return;
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -290,6 +323,7 @@ export class FinanzasController {
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) {
+      if (version !== this.sessionVersion) return;
       if (this.sesionVencida(error)) return;
       this.toast(error?.code === "perm" ? "No tienes permiso para ver este recibo." : "No se pudo descargar el recibo.", "err");
     }

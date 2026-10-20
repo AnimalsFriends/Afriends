@@ -63,6 +63,14 @@ test("el calendario y el hotel muestran noches, entradas, salidas y capacidad", 
   assert.match(html, /Reservas de 2026-10/);
 });
 
+test("empleado ve solo tareas asignadas y no recibe controles administrativos ni estados ajenos a su ruta", () => {
+  const s = { ...base(), isAdmin: false, isEmpleado: true };
+  const html = RutasViews.render(s);
+  assert.match(html, /Tareas de ruta asignadas/);
+  assert.match(html, /data-action="r-marcar-parada"[^>]*data-estado="recogido"/);
+  assert.doesNotMatch(html, /r-vista|Crear ruta|Crear reserva|Falta hoy|Reiniciar|Cupos disponibles/);
+});
+
 test("la selección del día deja visible el resumen del hotel y avisa reservas cruzadas", () => {
   const s = base();
   s.vista = "hotel";

@@ -35,6 +35,13 @@ test("lista de dueños: trae los perros anidados, ordenados por nombre", async (
   assert.match(ultima().url, /order=nombre\.asc/);
 });
 
+test("lista de empleado consulta solo columnas operativas", async () => {
+  responder(200, []);
+  await GestionApi.listDuenosAsignados();
+  assert.match(ultima().url, /select=id,nombre,telefono,mascotas\(id,nombre,raza,activa\)/);
+  assert.doesNotMatch(ultima().url, /contacto_emergencia|notas/);
+});
+
 test("crear dueño: POST con el JSON y devuelve la fila creada", async () => {
   responder(201, [{ id: ID, nombre: "Ana" }]);
   const fila = await GestionApi.createDueno({ nombre: "Ana", telefono: "573123044174" });
@@ -81,6 +88,25 @@ test("es_admin: llama a la función de la base de datos y entiende true/false", 
   assert.equal(await GestionApi.esAdmin(), false);
   responder(404, {});
   await assert.rejects(GestionApi.esAdmin(), (e) => e.code === "missing");
+});
+
+test("el contexto de sesión obtiene el empleado desde la función SQL, no del correo", async () => {
+  const originalFetch = globalThis.fetch;
+  const empleadoId = "223e4567-e89b-12d3-a456-426614174001";
+  const urls = [];
+  globalThis.fetch = async (url, init = {}) => {
+    urls.push(String(url));
+    const admin = String(url).endsWith("/rpc/es_admin");
+    return { status: 200, ok: true, json: async () => admin ? false : empleadoId };
+  };
+  try {
+    const contexto = await GestionApi.contextoActual();
+    assert.deepEqual(contexto, { rol: "empleado", empleadoId });
+    assert.ok(urls.some((url) => url.endsWith("/rpc/es_admin")));
+    assert.ok(urls.some((url) => url.endsWith("/rpc/empleado_actual_id")));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("borrar una vacuna: DELETE con el id; un 204 sin cuerpo no rompe", async () => {

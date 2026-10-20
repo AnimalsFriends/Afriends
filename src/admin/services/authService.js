@@ -21,13 +21,25 @@ const friendly = (body) => {
 };
 
 let session = (() => { try { return JSON.parse(localStorage.getItem(STORE) || "null"); } catch { return null; } })();
+let generation = 0;
+
+function userIdFromToken(token) {
+  try {
+    const part = String(token || "").split(".")[1];
+    if (!part) return null;
+    const base64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "=")));
+    return typeof payload.sub === "string" && payload.sub ? payload.sub : null;
+  } catch { return null; }
+}
 
 const store = (json) => {
   session = {
     access_token: json.access_token,
     refresh_token: json.refresh_token,
     expires_at: Date.now() + (Number(json.expires_in) || 3600) * 1000,
-    email: json.user?.email || session?.email || ""
+    email: json.user?.email || session?.email || "",
+    user_id: json.user?.id || userIdFromToken(json.access_token) || session?.user_id || null
   };
   localStorage.setItem(STORE, JSON.stringify(session));
 };
@@ -35,6 +47,8 @@ const store = (json) => {
 export const Auth = {
   isConfigured: () => Boolean(API && KEY),
   get email() { return session?.email || ""; },
+  get userId() { return userIdFromToken(session?.access_token) || session?.user_id || null; },
+  get generation() { return generation; },
   hasSession: () => Boolean(session?.access_token),
 
   async login(email, password) {
@@ -47,6 +61,7 @@ export const Auth = {
     const body = await response.json().catch(() => ({}));
     if (!response.ok) throw friendly(body);
     store(body);
+    generation += 1;
   },
 
   async refresh() {
@@ -68,5 +83,5 @@ export const Auth = {
     return session.access_token;
   },
 
-  logout() { session = null; localStorage.removeItem(STORE); }
+  logout() { generation += 1; session = null; localStorage.removeItem(STORE); }
 };
