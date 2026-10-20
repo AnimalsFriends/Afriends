@@ -1,6 +1,9 @@
 # Guía de configuración · Fase 4
 Formulario con antispam, analítica con consentimiento y despliegue automático.
-Hazla en este orden. Tiempo total estimado: 40–60 minutos.
+
+> **Importante:** esta guía documenta la configuración prevista. No confirma que los secretos estén definidos, que las migraciones estén aplicadas ni que el despliegue esté activo. Primero revisa los valores y el estado actual; no pegues secretos en el repositorio ni en conversaciones. No ejecutes SQL ni cambies configuración de producción sin revisar el impacto y contar con aprobación explícita.
+
+Sigue el orden indicado y marca cada paso solo después de comprobarlo.
 
 ## Cómo funciona (en 30 segundos)
 ```
@@ -14,10 +17,11 @@ espera entre envíos · máximo 3 mensajes por IP cada 10 min y 1 por teléfono 
 
 ---
 ## 1. Supabase: tabla de mensajes
-1. SQL Editor → New query → pega `supabase/02_contact_requests.sql`.
-2. Cambia `CORREO_DEL_CLIENTE@ejemplo.com` (4 veces) por el correo del administrador y pulsa **Run**.
-3. **Project Settings → API**: copia la **Project URL** y la clave **service_role** (o *secret*).
-   ⚠️ Esa clave da acceso total: va **solo** como secreto en Cloudflare (paso 4). Nunca en el código ni en GitHub.
+1. Confirma que el proyecto seleccionado sea `BD-AnimalsFriends`.
+2. Antes de ejecutar SQL, compara en modo de solo lectura el historial de migraciones y el esquema con `supabase/02_contact_requests.sql`; el archivo puede no representar el estado actual.
+3. Presenta las diferencias y el plan de cambio para aprobación. Solo después de aprobar, prepara la tabla siguiendo el procedimiento del repositorio.
+4. En **Project Settings → API**, identifica la Project URL y el tipo de clave de servidor vigente.
+   ⚠️ Una clave de servidor puede dar acceso amplio: se configura únicamente como secreto del Worker. Nunca en el frontend, en el código versionado ni en GitHub como texto.
 
 ## 2. Cloudflare Turnstile (antispam gratis)
 1. Cloudflare → **Turnstile** → *Add widget*.
@@ -35,7 +39,7 @@ El Worker publica estáticos desde `dist/` y el script `worker.js`. La ruta
 `functions/` dentro de `dist/`.
 
 ## 4. Secretos de la Function (en Cloudflare)
-Workers & Pages → Worker **afriends** → **Settings → Variables and Secrets**:
+Cloudflare → Workers & Pages → Worker **afriends** → **Settings → Variables and Secrets**. Antes de modificar valores, revisa los existentes y confirma el entorno correcto:
 
 | Nombre | Tipo | Valor |
 |---|---|---|
@@ -44,10 +48,10 @@ Workers & Pages → Worker **afriends** → **Settings → Variables and Secrets
 | `TURNSTILE_SECRET` | **Secreto** | Secret key del paso 2 |
 | `IP_SALT` | **Secreto** | texto aleatorio largo: `openssl rand -hex 32` |
 
-Sin estas cuatro, el formulario responde error 500 a propósito (no acepta mensajes sin protección).
+El código admite `SUPABASE_SECRET_KEY` o `SUPABASE_SERVICE_KEY` como clave de servidor; confirma el nombre utilizado por la implementación y configura solo uno de forma consistente. Sin las variables necesarias, el formulario debe fallar de forma segura. No cambies secretos en producción durante una inspección.
 
 ## 5. GitHub Actions (despliegue continuo)
-Repositorio → **Settings → Secrets and variables → Actions**:
+Repositorio → **Settings → Secrets and variables → Actions**. La guía no puede confirmar si estos valores ya existen; comprueba su presencia sin revelar sus contenidos:
 
 | Nombre | Dónde | Valor |
 |---|---|---|
@@ -57,9 +61,10 @@ Repositorio → **Settings → Secrets and variables → Actions**:
 
 Flujo resultante:
 - **Pull Request** → build, auditoría y pruebas; no despliega.
-- **Push a `main`** o ejecución manual en `main` → build + despliegue del Worker de producción.
+- **Push a `main`** o ejecución manual en `main` → build + despliegue del Worker de producción, si se cumplen las condiciones del workflow.
 - Si una prueba o la auditoría fallan, **no se despliega**.
 - Sin token, Account ID o `SITE_URL`, el workflow avisa y omite el despliegue.
+- Confirma en la ejecución de Actions si el job de despliegue corrió o fue omitido; no lo deduzcas solo de la configuración.
 - Antes de desplegar, el workflow rechaza `SITE_URL` distinta del hostname confirmado y una Site Key de Turnstile de prueba.
 
 ## 6. Google Analytics 4 (opcional hasta tener dominio)
@@ -71,6 +76,9 @@ Flujo resultante:
 Sin ID: no hay aviso de cookies ni se carga nada de Google.
 
 ## 7. Probar en tu computador
+
+Para probar el sitio, usa el servidor local en lugar de abrir los archivos HTML con `file://`. Los comandos siguientes empaquetan el sitio y arrancan Wrangler local; no ejecutan migraciones de Supabase.
+
 ```
 cp .dev.vars.example .dev.vars     # y completa los valores
 npm run dev:worker                 # sirve el Worker y los estáticos con Wrangler
@@ -84,8 +92,10 @@ Conviene revisar la tabla a diario o activar una notificación (ver "Siguientes 
 Retención: borra los mensajes de más de 24 meses (consulta al final del SQL).
 
 ## 9. Lista de verificación antes de publicar
-- [ ] `02_contact_requests.sql` ejecutado con el correo real
-- [ ] 4 secretos configurados en Cloudflare
+- [ ] Proyecto objetivo y esquema Supabase comparados en modo de solo lectura
+- [ ] Cambios SQL revisados y aprobados antes de ejecutarlos
+- [ ] `02_contact_requests.sql` aplicado solo después de confirmar que hace falta y con el correo real
+- [ ] Variables y secretos requeridos configurados en el Worker `afriends`
 - [ ] `TURNSTILE_SITE_KEY` real en `env.js`
 - [ ] Envío de prueba real: aparece la fila en `contact_requests`
 - [ ] Envío con el campo trampa lleno (desde la consola): responde "ok" pero **no** crea fila
