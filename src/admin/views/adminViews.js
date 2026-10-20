@@ -214,6 +214,26 @@ export const AdminViews = {
     </section>`;
   },
 
+  employeeServices(data) {
+    if (!data) return `<section class="adm-card"><h2>Servicios disponibles</h2><p class="adm-note adm-note--info">No pudimos cargar el catálogo publicado. Intenta recargar el panel más tarde.</p></section>`;
+    const categorias = data.categorias.filter((categoria) => categoria.activa)
+      .map((categoria) => {
+        const servicios = categoria.servicios.filter((servicio) => servicio.activo);
+        if (!servicios.length) return "";
+        const unidad = categoria.tipo === "porDias" ? categoria.unidadPrecio || "por día"
+          : categoria.tipo === "porNoches" ? categoria.unidadPrecio || "por noche" : "";
+        return `<section class="adm-card"><h2>${esc(categoria.tarjeta.titulo || categoria.pestana || "Servicios")}</h2>${categoria.tarjeta.descripcion ? `<p class="adm-sub">${esc(categoria.tarjeta.descripcion)}</p>` : ""}${servicios.map((servicio) => {
+          const precio = servicio.tipoPrecio === PRICE_TYPE.FREE ? "Gratis"
+            : servicio.tipoPrecio === PRICE_TYPE.QUOTE ? "Cotizar"
+              : servicio.tipoPrecio === PRICE_TYPE.FIXED && Number(servicio.precio) > 0
+                ? `${formatMoney(servicio.precio, data.negocio.moneda)}${unidad ? ` ${esc(unidad)}` : ""}`
+                : "Precio por confirmar";
+          return `<div class="adm-item"><div class="adm-grow"><b>${esc(servicio.nombre)}</b>${servicio.descripcion ? `<small>${esc(servicio.descripcion)}</small>` : ""}</div><span>${precio}</span></div>`;
+        }).join("")}</section>`;
+      }).join("");
+    return categorias || `<section class="adm-card"><h2>Servicios disponibles</h2><p class="adm-sub">No hay servicios publicados en este momento.</p></section>`;
+  },
+
   /* ------------------------------ MENSAJES RECIBIDOS ------------------------------ */
   leads({ leads, filter, titles, error }) {
     const count = (estado) => leads.filter((l) => l.estado === estado).length;

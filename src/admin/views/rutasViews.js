@@ -135,6 +135,19 @@ function panelDia(s) {
 }
 
 function panelDiaEmpleado(s) {
+  const perrosHotel = s.mascotas.map((mascota) => ({
+    mascota,
+    servicio: servicioMascotaEnFecha(mascota, s.fecha, s.planes, s.reservas, [])
+  })).filter(({ servicio }) => ["hotel", "hotel_colegio"].includes(servicio.codigo));
+  const hotel = perrosHotel.length
+    ? `<section class="adm-card"><h2>Perros en hotel hoy</h2>${perrosHotel.map(({ mascota, servicio }) => {
+      const parada = s.paradas.find((item) => item.mascota_id === mascota.id && item.activa && s.rutas.some((ruta) => ruta.id === item.ruta_id));
+      const ruta = s.rutas.find((item) => item.id === parada?.ruta_id);
+      const reserva = servicio.reserva;
+      const etiqueta = servicio.codigo === "hotel_colegio" ? "Hotel + colegio" : "Hotel";
+      return `<div class="adm-item"><div class="adm-grow"><b>${esc(mascota.nombre)}</b><small>${esc(ownerFor(s, mascota)?.nombre ?? "Dueño no disponible")} · ${ruta ? `Ruta: ${esc(ruta.nombre)}` : "Sin ruta asignada"}</small><small>${esc(etiqueta)} · ${esc(dateText(reserva?.entrada))} → ${esc(dateText(reserva?.salida))}</small></div>${tag(reserva?.estado === "en_curso" ? "En hotel" : "Reservado", reserva?.estado === "en_curso" ? "ok" : "")}</div>`;
+    }).join("")}</section>`
+    : '<section class="adm-card"><h2>Perros en hotel hoy</h2><p class="adm-sub">No tienes perros alojados en hotel para esta fecha.</p></section>';
   const routes = s.rutas.filter((route) => route.activa);
   const contenido = routes.length ? routes.map((route) => {
     const sentidos = SENTIDOS.map(([sentido, texto]) => {
@@ -158,7 +171,7 @@ function panelDiaEmpleado(s) {
     }).join("");
     return `<article class="adm-card"><h2>${esc(route.nombre)}</h2>${sentidos}</article>`;
   }).join("") : '<section class="adm-card"><p class="adm-sub">No tienes rutas asignadas.</p></section>';
-  return `<section class="adm-card"><div class="adm-row adm-between adm-wrapx"><div><h2>Tareas de ruta asignadas</h2><p class="adm-sub">Consulta tus recogidas y entregas del día y actualiza su estado.</p></div><label class="adm-f"><span class="adm-fl">Fecha</span><input type="date" data-r-date="fecha" value="${esc(s.fecha)}"></label></div></section>${contenido}`;
+  return `<section class="adm-card"><div class="adm-row adm-between adm-wrapx"><div><h2>Tareas de ruta asignadas</h2><p class="adm-sub">Consulta tus recogidas y entregas del día y actualiza su estado.</p></div><label class="adm-f"><span class="adm-fl">Fecha</span><input type="date" data-r-date="fecha" value="${esc(s.fecha)}"></label></div></section>${hotel}${contenido}`;
 }
 
 function formularioRuta(s) {

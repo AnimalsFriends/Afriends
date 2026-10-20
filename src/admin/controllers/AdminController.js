@@ -197,8 +197,10 @@ export class AdminController {
         $("adm-download").className = "adm-btn adm-btn--ghost";
         this.refreshLeads();                                  // sin esperar: solo para mostrar el número de nuevos
       } else {
-        this.data = null;
-        note = '<p class="adm-note adm-note--info">Acceso de empleado: aquí verás solo dueños, mascotas y tareas de ruta que tengas asignados.</p>';
+        const result = await SiteConfigApi.fetch();
+        if (!this.sessionIsCurrent(generation, identity)) return;
+        this.data = result.data ? normalizeDraft(result.data) : null;
+        note = '<p class="adm-note adm-note--info">Acceso de empleado: aquí verás el catálogo publicado, los dueños y mascotas asignados y tus tareas operativas.</p>';
         $("adm-save").hidden = true;
         $("adm-download").hidden = true;
       }
@@ -259,6 +261,7 @@ export class AdminController {
     if (this.tab === "seguimiento") { this.seguimiento.render(); return; }
     const panel = $("adm-panel");
     if (this.tab === "negocio") panel.innerHTML = AdminViews.business(this.data);
+    else if (this.tab === "servicios" && this.role === "empleado") panel.innerHTML = AdminViews.employeeServices(this.data);
     else if (this.tab === "servicios") panel.innerHTML = AdminViews.services(this.data, this.openCat);
     else panel.innerHTML = AdminViews.leads({ leads: this.leads, filter: this.leadFilter, titles: this.serviceTitles(), error: this.leadsError });
   }

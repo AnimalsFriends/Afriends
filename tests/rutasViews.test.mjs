@@ -71,6 +71,21 @@ test("empleado ve solo tareas asignadas y no recibe controles administrativos ni
   assert.doesNotMatch(html, /r-vista|Crear ruta|Crear reserva|Falta hoy|Reiniciar|Cupos disponibles/);
 });
 
+test("empleado ve de inmediato perros alojados, servicio de hotel y ruta relacionada", () => {
+  const s = { ...base(), isAdmin: false, isEmpleado: true };
+  s.planes.push({ id: "b23e4567-e89b-12d3-a456-426614174010", mascota_id: OTHER_DOG, dias_semana: [1], desde: "2026-10-01", hasta: null, activo: true });
+  s.reservas = [
+    { id: "923e4567-e89b-12d3-a456-426614174008", mascota_id: OTHER_DOG, entrada: "2026-10-11", salida: "2026-10-14", estado: "reservada", tambien_colegio: false },
+    { id: "c23e4567-e89b-12d3-a456-426614174011", mascota_id: DOG, entrada: "2026-10-11", salida: "2026-10-14", estado: "en_curso", tambien_colegio: true }
+  ];
+  const html = RutasViews.render(s);
+  assert.match(html, /Perros en hotel hoy/);
+  assert.match(html, /Luna<\/b>[\s\S]*Ruta: Ruta &lt;Norte&gt;[\s\S]*Hotel ·/);
+  assert.match(html, /Max<\/b>[\s\S]*Hotel \+ colegio ·/);
+  assert.match(html, /En hotel/);
+  assert.doesNotMatch(html, /r-guardar-cupos|r-guardar-reserva|r-guardar-ruta/);
+});
+
 test("la selección del día deja visible el resumen del hotel y avisa reservas cruzadas", () => {
   const s = base();
   s.vista = "hotel";
