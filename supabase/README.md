@@ -1,5 +1,7 @@
 # Base de datos (Supabase)
 
+> **Importante — estado por verificar:** los archivos SQL del repositorio describen cambios previstos, pero no demuestran qué migraciones están aplicadas en `BD-AnimalsFriends`. Antes de ejecutar cualquier SQL, compara en modo de solo lectura el historial de migraciones, las tablas, las columnas, las funciones, los triggers, las políticas RLS y los buckets del proyecto objetivo. No ejecutes migraciones ni rollbacks sin revisar diferencias, impacto y aprobación explícita.
+
 Aquí vive todo lo que toca la base de datos de Animal's Friends. Si llegas nuevo al
 proyecto, lee esto primero.
 
@@ -83,10 +85,17 @@ privados `fotos-mascotas` y `recibos`.
 | Otros empleados | Todo | Solo su propia fila, sin poder editarla |
 | Público anónimo | Nada de lo nuevo | |
 
-## Cómo aplicar la Fase 1
+## Preparación y verificación (sin ejecutar cambios)
 
-Hazlo primero en un proyecto de pruebas o saca una copia antes. La revisión de la
-historia remota del 2026-10-09 registraba las migraciones de Fase 1 como aplicadas.
+1. Identifica el proyecto Supabase exacto y confirma que sea `BD-AnimalsFriends`.
+2. Revisa en modo de solo lectura el historial de migraciones y el esquema real.
+3. Compara los archivos versionados con las tablas, funciones, triggers, políticas y buckets existentes.
+4. Presenta diferencias, riesgos, respaldo y plan de reversión para aprobación antes de ejecutar SQL.
+
+## Cómo aplicar la Fase 1 (solo después de revisión y aprobación)
+
+Hazlo primero en un proyecto de pruebas o saca una copia antes. Una revisión histórica del
+2026-10-09 registraba las migraciones de Fase 1 como aplicadas; no se debe asumir que ese estado representa el proyecto actual.
 Estas instrucciones sirven para preparar otros entornos: antes de aplicar cambios,
 compara el historial y el esquema del proyecto de destino y revisa cada diferencia.
 
@@ -146,7 +155,7 @@ por ahora el orden se organiza manualmente y agrupado por localidad.
 
 Para deshacerla, ejecuta `rollbacks/20261009120000_fase3_rutas_hotel_operacion_down.sql`. Ese rollback quita
 el trigger y las funciones nuevas, pero **conserva la localidad y el cupo configurado** para no perder datos.
-La historia de migraciones remota revisada el 2026-10-09 registra esta migración como aplicada.
+Una revisión histórica del 2026-10-09 registraba esta migración como aplicada; confirma el estado actual antes de actuar.
 Antes de volver a aplicarla en cualquier entorno, valida el esquema, las funciones, los triggers
 y los datos existentes; no la ejecutes a ciegas. La revisión del proyecto no encontró datos reales
 de clientes cargados en ese momento.
