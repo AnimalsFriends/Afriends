@@ -1,5 +1,9 @@
 # Entrada del panel
 
+El panel está pensado para abrirse desde el sitio servido por HTTP/HTTPS, en `/admin/`. No abras `admin/index.html` mediante `file://`: los módulos JavaScript y las peticiones al backend pueden fallar en ese contexto. Para una prueba local, ejecuta `npm run dev` desde la raíz y visita `http://localhost:3000/admin/` (si el servidor informa otro puerto, usa el que muestre la terminal).
+
+La documentación de las pestañas describe las funciones implementadas en el código, no confirma que las migraciones estén aplicadas ni que los permisos hayan sido validados en un proyecto Supabase real. No introduzcas claves privadas en el navegador ni en este repositorio.
+
 `index.html` es la página privada que sirve `/admin/`. Carga los estilos compartidos y
 `src/admin/main.js`, que monta el login y las pestañas disponibles. La sección **Rutas y hotel**
 solo se muestra a cuentas admin cuando están aplicadas y disponibles las tablas de operación.
@@ -14,5 +18,4 @@ Requiere la migración de Fase 7; sus instrucciones y el rollback que conserva l
 Para probarla localmente, ejecuta `npm run dev` desde la raíz y abre `/admin/`; los cambios de
 operación requieren una sesión conectada a Supabase. No publiques credenciales en este archivo.
 
-Pendiente: validar los flujos con un admin de prueba en navegador y en celular después de aplicar
-las migraciones a un entorno de pruebas. La sugerencia de rutas por distancia sigue pendiente de proveedor.
+Pendiente: validar los flujos con cuentas admin y empleado en un entorno de pruebas, comprobar RLS y probar el panel en navegador y celular. No asumir que la base objetivo está lista hasta completar esas comprobaciones. La sugerencia de rutas por distancia sigue pendiente de proveedor.

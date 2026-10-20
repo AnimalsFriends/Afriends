@@ -51,15 +51,12 @@ Una vez por semana: promociones, tips de cuidado, fotos de la guardería, con bo
 2. Agrega el enlace del perfil en las redes sociales.
 
 ## 9. Google Search Console (para que Google indexe la página)
-El sitio actual está publicado bajo una URL de GitHub Pages, no bajo un dominio propio.
-Por eso usa una propiedad **Prefijo de URL** (no "Dominio", que requiere acceso al DNS):
+Primero confirma la URL canónica después de verificar el despliegue del Worker `afriends`. No uses la URL antigua de GitHub Pages salvo que siga siendo el destino público elegido. Si continúas con la URL `workers.dev`, usa una propiedad **Prefijo de URL**:
 1. Abre https://search.google.com/search-console → **Agregar propiedad** → **Prefijo de URL**.
-2. Escribe `https://animalsfriends.github.io/Afriends/` y elige el método **Etiqueta HTML**.
+2. Escribe la URL pública confirmada del Worker (por ejemplo, `https://afriends.petcommunity-133.workers.dev/` si se confirma como URL canónica) y elige el método **Etiqueta HTML**.
 3. El tag entregado por Google ya está en `index.html`. Si Google muestra un valor distinto,
    reemplaza solo el contenido de `content`, publica de nuevo y pulsa **Verificar**.
-4. Cuando esté verificada, envía el sitemap `https://animalsfriends.github.io/Afriends/sitemap.xml`.
+4. Cuando esté verificada, envía el sitemap bajo la misma URL canónica confirmada, por ejemplo `https://afriends.petcommunity-133.workers.dev/sitemap.xml` si esa es la URL pública validada.
 5. Revisa **Inspección de URL** → *Solicitar indexación* para la página principal.
 
-Si el sitio pasa a un dominio propio, confirma la URL canónica y vuelve a verificarla en
-Search Console. Solo entonces conviene usar una propiedad de tipo **Dominio** y añadir el
-registro TXT que Google indique en el DNS del proveedor correspondiente.
+Si más adelante el sitio pasa a un dominio propio, confirma la URL canónica y verifica la nueva propiedad en Search Console. La propiedad de tipo **Dominio** requiere añadir el registro DNS que Google indique.

@@ -1,5 +1,7 @@
 # Panel de administración (`src/admin`)
 
+> Las descripciones de esta guía documentan el comportamiento previsto del código. Las pruebas automatizadas usan datos simulados y no sustituyen una validación real del login, la sesión, los roles ni las políticas RLS de Supabase.
+
 Todo el código del panel privado de `/admin/`. Sigue la misma idea MVC que el resto del
 proyecto: cada archivo hace una sola cosa y las pantallas no hablan directo con la base de datos.
 
@@ -117,10 +119,7 @@ npm run check          # build + empaquetado + auditoría del dist + todas las p
 node --test tests/gestionModel.test.mjs tests/gestionViews.test.mjs tests/gestionApi.test.mjs tests/gestionController.test.mjs tests/rutasModel.test.mjs tests/rutasApi.test.mjs tests/rutasViews.test.mjs tests/agendaModel.test.mjs tests/agendaApi.test.mjs tests/agendaViews.test.mjs tests/finanzasModel.test.mjs tests/finanzasApi.test.mjs tests/finanzasViews.test.mjs tests/seguimientoModel.test.mjs tests/seguimientoApi.test.mjs tests/seguimientoViews.test.mjs
 ```
 
-Las pruebas cubren las reglas de validación, que las vistas escapen el texto y no usen
-código en línea, y que el servicio arme bien las peticiones (con un `fetch` falso, sin
-tocar ninguna base de datos). **No cubren el funcionamiento real en el navegador ni contra
-Supabase**: eso hay que verlo a mano (lista de comprobación abajo).
+Las pruebas cubren reglas de validación, escape de texto, ausencia de código en línea y construcción de peticiones con un `fetch` simulado. No consultan ni modifican una base de datos. **No demuestran el funcionamiento real del login, la renovación o expiración de sesión, el aislamiento por rol ni las políticas RLS**: esos puntos deben comprobarse por separado en un entorno de pruebas.
 
 ### Comprobación a mano (después de aplicar la Fase 1)
 
