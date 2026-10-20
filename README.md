@@ -1,8 +1,10 @@
-# Animal Friends · plataforma web
+# Animals Friends · plataforma web
 
-Sitio estático (HTML + CSS + JavaScript moderno) con datos en Supabase.
-Hoy está publicado en **GitHub Pages** en `https://animalsfriends.github.io/Afriends/`.
-El destino Cloudflare confirmado es el Worker `https://afriends.petcommunity-133.workers.dev/`.
+Sitio estático construido con HTML, CSS y JavaScript modular, con datos en Supabase.
+**Alojamiento oficial previsto:** Cloudflare Worker `afriends`. **Repositorio del código:** GitHub (`AnimalsFriends/Afriends`).
+La URL `https://afriends.petcommunity-133.workers.dev/` está configurada como destino de despliegue, pero el estado del último despliegue debe confirmarse en GitHub Actions y Cloudflare antes de considerarla validada en producción.
+
+> **Estado operativo:** la configuración del repositorio describe cómo construir y desplegar el Worker; esta documentación no demuestra que el último workflow haya terminado correctamente ni que las variables, secretos, Turnstile o permisos de Supabase estén validados.
 
 ## Arquitectura (MVC para frontend)
 
@@ -46,22 +48,18 @@ Usa módulos ES: no abre con doble clic. En VS Code usa **Live Server**, o `npx 
 Con `?debug=1` en la dirección ves si los datos vienen de Supabase o de los valores locales.
 
 ## Publicación y despliegue
-GitHub sigue siendo el repositorio del código. El destino configurado para el despliegue
-es Cloudflare Workers Static Assets en `https://afriends.petcommunity-133.workers.dev/`.
+GitHub sigue siendo el repositorio del código. El destino configurado para el despliegue es Cloudflare Workers Static Assets mediante el Worker `afriends`. La URL objetivo es `https://afriends.petcommunity-133.workers.dev/`; confirma el estado real en Actions y en Cloudflare.
 El build genera `dist/`; Wrangler publica esos archivos junto con `worker.js`, que conecta
 `/api/contact` con `functions/api/contact.js`. No se usa el comando de Cloudflare Pages.
 
 El workflow ejecuta build, auditoría y pruebas en PRs; solo despliega producción desde
 `main` (push o ejecución manual). Requiere los secretos de despliegue de Cloudflare y la
 variable `SITE_URL`. Consulta `GUIA_FASE4_CONFIGURACION.md` para configurar los secretos
-del Worker, Turnstile y GitHub Actions. El despliegue real aún requiere configuración y
-una ejecución exitosa del workflow.
+del Worker, Turnstile y GitHub Actions. La publicación solo se considera verificada después de una ejecución exitosa del workflow y pruebas del sitio, del formulario y del panel en el entorno publicado.
 
 ## Base de datos del panel (Fase 1)
 El panel de gestión de la guardería (dueños, mascotas, rutas del colegio, hotel, agenda, gastos y cartera)
-se apoya en Supabase. La Fase 1 dejó listo el modelo de datos y la seguridad:
-tablas nuevas, roles `admin` y `empleado` (tabla `empleados`) y RLS en todas las tablas; el empleado no puede
-ver nada de dinero. Las pantallas de operación se agregan por fases.
+se apoya en Supabase. El código SQL define el modelo y las reglas de seguridad previstas: roles `admin` y `empleado` (tabla `empleados`) y políticas RLS. La presencia de archivos SQL no demuestra que estén aplicados ni que funcionen en el proyecto Supabase de destino; hay que verificar el historial, el esquema y las pruebas de permisos. Las pantallas de operación se agregan por fases.
 Todo el detalle, cómo aplicarlo y cómo deshacerlo está en **`supabase/README.md`**.
 Las migraciones nuevas están en `supabase/migrations/` y cada una tiene su rollback en `supabase/rollbacks/`.
 
@@ -80,7 +78,7 @@ se calcula con el plan del colegio, sus ausencias y reservas de hotel; no se gua
 puede marcarse **Hotel + colegio** si el perro tiene plan ese día. El hotel muestra calendario, entradas, salidas, ocupación
 y cupos: inicia con los 50 confirmados, editables más adelante. La validación de cupo y de reservas cruzadas también corre
 en Supabase para evitar sobreventa concurrente. Las localidades se ordenan a mano; la sugerencia geográfica sigue pendiente
-de elegir un proveedor de distancias. La migración de esta fase aún no se ha aplicado a una instancia real: instrucciones y
+de elegir un proveedor de distancias. El estado de aplicación debe comprobarse en el proyecto Supabase de destino antes de usar esta fase en operación real; instrucciones y
 límites de la prueba están en **`supabase/README.md`** y **`src/admin/README.md`**.
 
 ## Agenda y planeación (Fase 4)
