@@ -1,83 +1,78 @@
-# Lista para publicar · qué falta para el 100 %
+# Lista de verificación de publicación
 
-Estado: GitHub Pages sigue disponible y el frontend también responde en el Worker
-`https://afriends.petcommunity-133.workers.dev/`. El cambio de código para integrar
-`/api/contact` y el workflow de Workers está preparado localmente, pero aún no se ha
-desplegado. No des por probado lo que solo ha pasado la auditoría local.
+## Estado general
 
-## ✅ Ya está listo en el código
-- Sitio MVC: servicios, cotizador por WhatsApp, formulario con antispam, páginas legales, 404, WhatsApp flotante.
-- Panel `/admin/`: negocio, datos legales, servicios y precios, mensajes recibidos.
-- SEO (sitemap, robots, canonical, Open Graph, JSON-LD) generado con `SITE_URL`.
-- Verificación HTML de Search Console en la home y guía para enviar el sitemap.
-- GA4 tiene consentimiento previo implementado, pero no está activo: falta el ID real.
-- No hay un archivo suelto `git` en la raíz; `.git/` es la metadata del repositorio y no se debe borrar.
-- La descripción del repositorio aún requiere un cambio manual desde GitHub.
+**Destino oficial:** Cloudflare Worker `afriends`. **Código fuente:** GitHub, repositorio `AnimalsFriends/Afriends`. **Base de datos objetivo:** Supabase `BD-AnimalsFriends`.
 
-## 🔴 Falta antes de publicar (bloqueante)
+La configuración del repositorio define un workflow para construir, auditar, probar y desplegar el Worker. Esta lista no afirma que el último despliegue haya terminado correctamente. Confirma el resultado en GitHub Actions y Cloudflare antes de anunciar la web como verificada.
 
-### A. Datos del cliente — enviar `DATOS_PENDIENTES_CLIENTE.md`
-- [ ] Razón social / nombre del titular, NIT o cédula y dirección completa. Los campos están marcados en las páginas legales.
-- [ ] Confirmar los datos de contacto y ubicación que ya aparecen en la configuración.
-- [x] URL existente del Worker: `https://afriends.petcommunity-133.workers.dev/`.
-- [ ] No se requiere dominio propio; conservar la URL gratuita `workers.dev`.
-- [ ] Enlaces de Instagram, Facebook y TikTok; Gmail para el Perfil de Google.
-- [ ] Confirmar horarios, servicios y precios, y si atienden **gatos** además de perros.
-- [ ] **Fotos reales** de las instalaciones y los peluditos (hoy el sitio usa solo el logo y una imagen para compartir provisional).
-- [ ] Revisión de un **asesor legal** de Aviso legal, Política de privacidad y Política de cookies (son un documento base).
-      Consultar también si el negocio debe inscribir su base de datos ante la SIC.
+## 1. GitHub Actions y despliegue
 
-### B. Supabase (≈ 10 min)
-- [ ] Ejecutar `supabase/01_site_config.sql` y `supabase/02_contact_requests.sql` con el **mismo** correo de administrador real.
-- [ ] Crear el usuario administrador (Authentication → Users, *Auto Confirm*).
-- [ ] Desactivar *Allow new users to sign up*.
-- [ ] Recomendado: activar autenticación en dos pasos (MFA) para esa cuenta.
+- [ ] Revisar la ejecución más reciente del workflow **CI/CD** en GitHub Actions.
+- [ ] Confirmar que `npm run check` terminó correctamente.
+- [ ] Confirmar si el job de despliegue se ejecutó o se omitió; el workflow solo despliega desde `main` en push o ejecución manual.
+- [ ] Si el despliegue se omitió, revisar la presencia de los secretos `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` y la variable `SITE_URL`, sin copiar sus valores a chats ni al repositorio.
+- [ ] Confirmar en Cloudflare que el Worker se llama `afriends` y que la versión desplegada corresponde al commit esperado.
+- [ ] Abrir la URL pública confirmada y comprobar home, recursos, páginas legales, `/admin/` y `/api/contact`.
 
-### C. Hosting y Function
-- [x] Destino confirmado: Cloudflare Worker `afriends.petcommunity-133.workers.dev`; `wrangler.jsonc` publica estáticos de `dist/`.
-- [x] `worker.js` enruta `/api/contact` al manejador compartido `functions/api/contact.js`.
-- [ ] Configurar en el Worker los secretos `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (o `SUPABASE_SERVICE_KEY`), `TURNSTILE_SECRET` e `IP_SALT`.
-- [ ] Configurar dominio `afriends.petcommunity-133.workers.dev` en Turnstile y reemplazar la Site Key de prueba en `src/config/env.js`.
-- [ ] Configurar en GitHub Actions `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` y `SITE_URL=https://afriends.petcommunity-133.workers.dev`.
-- [ ] Ejecutar el workflow en `main` y verificar `/api/contact` y un envío de prueba controlado.
+## 2. Datos del negocio y requisitos legales
 
-### D. Configuración pública (nunca pegar secretos en el frontend)
-- [ ] Verificar que `SUPABASE_URL` y `SUPABASE_ANON_KEY` sean los valores públicos correctos (anon/publishable); nunca usar `sb_secret` ni `service_role` en el frontend.
-- [ ] Sustituir la Site Key de prueba por la Site Key real de Turnstile, registrada para el hostname del Worker.
-- [ ] `GA_MEASUREMENT_ID` real (`G-...`) si quieren analítica; el consentimiento previo y el texto condicional de cookies ya están implementados.
-- [ ] `SITE_URL` de GitHub Actions configurada para `https://afriends.petcommunity-133.workers.dev`
+- [ ] Completar razón social o titular, NIT/cédula, dirección y correo para consultas de datos personales.
+- [ ] Confirmar teléfono/WhatsApp, ubicación, horarios, servicios y precios.
+- [ ] Confirmar si el negocio atiende gatos además de perros y si ofrece atención en local, a domicilio o ambas.
+- [ ] Añadir enlaces reales de redes sociales y Perfil de Negocio de Google, cuando existan.
+- [ ] Incorporar fotos reales con permiso de las familias.
+- [ ] Pedir revisión profesional del aviso legal y de las políticas de privacidad y cookies.
+- [ ] Consultar las obligaciones aplicables al tratamiento y registro de bases de datos personales en Colombia.
 
-### E. GitHub
-- [ ] Configurar secretos y variable requeridos para que el workflow publique el Worker solo desde `main`.
-- [ ] En **Settings → General → Description**, actualizar manualmente la descripción del repositorio. Sugerencia: “Sitio web de Animal Friends, guardería canina con colegio, hotel y servicios para mascotas”.
+Ver detalles en `DATOS_PENDIENTES_CLIENTE.md`.
 
-### F. Pasos externos que quedan en manos del negocio
-- [ ] **Search Console:** verificar la propiedad Prefijo de URL elegida y enviar el sitemap correspondiente.
-- [ ] **Perfil de Negocio de Google:** crear o reclamar la ficha, verificarla y seguir `GOOGLE_BUSINESS_PROFILE.md`.
-- [ ] **Cloudflare Worker:** revisar que el endpoint y sus secretos estén configurados en el Worker `afriends`.
+## 3. Supabase y seguridad
 
-## 🟡 Después de publicar (verificar en producción)
-- [ ] Enviar un mensaje real por el formulario → aparece en el panel (pestaña Mensajes) y en Supabase.
-- [ ] Probar que un envío con el campo trampa lleno responde "ok" pero **no** crea fila.
-- [ ] Entrar a `/admin/`, cambiar un precio, guardar y ver el cambio en la página.
-- [ ] https://securityheaders.com y https://pagespeed.web.dev en el Worker publicado.
-- [ ] Search Console: verificar la propiedad **Prefijo de URL** con la etiqueta HTML y enviar el sitemap del hosting elegido.
-- [ ] GA4 → Tiempo real: aceptar cookies genera eventos; rechazar no envía nada.
-- [ ] Crear/reclamar el Perfil de Negocio de Google (`GOOGLE_BUSINESS_PROFILE.md`) y pegar su enlace en el panel.
-- [ ] Probar en un celular real (iPhone y Android): menú, cotizador, formulario, WhatsApp.
+- [ ] Confirmar que el proyecto objetivo es `BD-AnimalsFriends`.
+- [ ] En modo de solo lectura, comparar historial de migraciones, tablas, columnas, funciones, triggers, políticas RLS y buckets con los archivos versionados.
+- [ ] Revisar el acceso de visitantes anónimos, admin y empleado con cuentas de prueba.
+- [ ] Confirmar que las claves privadas solo estén en secretos del servidor/Worker; nunca en frontend, documentación o GitHub.
+- [ ] Crear o confirmar la cuenta admin y comprobar MFA si está disponible.
+- [ ] No ejecutar SQL, migraciones ni rollbacks hasta revisar el plan, el impacto y contar con aprobación explícita.
 
-## 🧪 Lo que NO pude verificar desde aquí (hazlo en el siguiente despliegue)
-- La ejecución del nuevo workflow y el despliegue actualizado del Worker.
-- La clave privada se retiró de la configuración local; revoca/rota en Supabase cualquier clave privada que se haya usado ahí y configura solo la clave pública anon/publishable antes de reconectar el panel.
-- La Function corriendo en Cloudflare (la probé con pruebas automáticas y simulaciones, no en su entorno real).
-- Las políticas de seguridad (RLS) contra una base de Supabase real: los SQL no se han ejecutado.
-- Turnstile y Google Analytics reales; falta activar GA4 con su ID y consentir en producción.
-- Core Web Vitals en producción (solo medí en local: ~65 KB, CLS 0).
+La existencia de archivos SQL o pruebas estáticas no demuestra que las políticas funcionen en la base real. Consulta `supabase/README.md`.
 
-## 🟢 Mejoras recomendadas (no bloquean)
-- **Aviso al dueño** por cada mensaje nuevo (correo o WhatsApp) con un Webhook de Supabase: hoy debe entrar al panel a verlos.
-- Foto de portada real y mejor imagen para compartir (la actual es provisional).
-- Revisión en un celular real y PageSpeed, pendiente después de la publicación/cambio de hosting.
-- Regla de límite de peticiones (Rate Limiting) en Cloudflare para `/api/contact` como capa extra.
-- Retiro de los archivos antiguos (`index.html`, `admin.html`, `config.js` de la versión previa) cuando todo esté en línea.
-- Revisión periódica: borrar mensajes de más de 24 meses (consulta al final de `02_contact_requests.sql`).
+## 4. Formulario de contacto y Turnstile
+
+- [ ] Confirmar que el Worker enruta `/api/contact` al manejador `functions/api/contact.js`.
+- [ ] Confirmar que el Worker tenga `SUPABASE_URL`, una clave de servidor compatible (`SUPABASE_SECRET_KEY` o `SUPABASE_SERVICE_KEY`, según la implementación), `TURNSTILE_SECRET` e `IP_SALT`.
+- [ ] Verificar que `TURNSTILE_SITE_KEY` en `src/config/env.js` sea la clave pública real asociada al hostname.
+- [ ] Hacer un envío de prueba controlado y comprobar que se guarda una sola solicitud.
+- [ ] Comprobar que una solicitud antispam no genere una fila.
+- [ ] Revisar respuesta y logs del Worker sin exponer datos personales ni secretos.
+
+Los nombres exactos y el flujo de configuración están en `GUIA_FASE4_CONFIGURACION.md`.
+
+## 5. Panel de administración
+
+- [ ] Abrir `/admin/` desde la web servida por HTTP/HTTPS; no usar `file://`.
+- [ ] Probar inicio de sesión, cierre de sesión y comportamiento ante sesión expirada.
+- [ ] Verificar con cuentas de prueba que admin y empleado tengan únicamente los permisos esperados.
+- [ ] Probar cambios de negocio y servicios, recepción de mensajes y funciones operativas solo después de verificar el esquema.
+- [ ] Probar en móvil y escritorio.
+
+## 6. SEO y analítica
+
+- [ ] Confirmar que `SITE_URL` coincida con la URL canónica pública elegida, sin barra final en la variable de entorno.
+- [ ] Revisar `robots.txt`, `sitemap.xml`, canonical, Open Graph y datos estructurados en la URL publicada.
+- [ ] Verificar la propiedad correcta en Search Console y enviar el sitemap de esa misma URL.
+- [ ] Activar GA4 solo si el negocio lo solicita y se dispone del ID real; comprobar que el consentimiento funcione como se espera.
+- [ ] Revisar cabeceras y rendimiento después de publicar.
+
+Ver `GOOGLE_BUSINESS_PROFILE.md` para la ficha de Google.
+
+## 7. Evidencias que deben quedar registradas
+
+- [ ] Enlace de la ejecución de Actions y resultado del job de pruebas.
+- [ ] Commit desplegado y versión/fecha del Worker.
+- [ ] Resultado de pruebas de home, formulario y panel.
+- [ ] Estado de validación de Supabase y permisos, sin incluir credenciales.
+- [ ] Pendientes, responsables y riesgos aceptados.
+
+No marcar una tarea como completada solo porque exista código para ella: marca como completada cuando se haya comprobado en el entorno correspondiente.
