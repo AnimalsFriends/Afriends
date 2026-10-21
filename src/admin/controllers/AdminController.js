@@ -171,7 +171,6 @@ export class AdminController {
     this.lastRole = this.role;
     $("adm-login").hidden = true;
     $("adm-main").hidden = false;
-    $("adm-bar").hidden = false;
     let note = "";
     const keepDraft = Boolean(this.dirty && this.data);     // volvió a entrar tras vencer la sesión: se conservan sus cambios
 
@@ -221,7 +220,7 @@ export class AdminController {
       button.hidden = !puedeVerModulo(this.role, modulo);
     }
     $("adm-rutas-tab").textContent = this.role === "empleado" ? "Mis rutas" : "Rutas y hotel";
-    $("adm-bar").hidden = this.role === "empleado";
+    this.setDirty(this.dirty);
     $("adm-reset").hidden = this.role === "empleado";
     $("adm-save").hidden = this.role !== "admin";
     $("adm-download").hidden = this.role === "empleado";
@@ -242,7 +241,7 @@ export class AdminController {
       b.setAttribute("aria-selected", String(active));
       b.tabIndex = active ? 0 : -1;
     });
-    $("adm-bar").hidden = ["leads", "gestion", "rutas", "agenda", "finanzas", "seguimiento"].includes(tab);
+    this.setDirty(this.dirty);
     this.gestion.setActive(tab === "gestion");
     this.rutas.setActive(tab === "rutas");
     this.agenda.setActive(tab === "agenda");
@@ -271,7 +270,10 @@ export class AdminController {
   }
 
   setDirty(value) {
-    this.dirty = value;
+    this.dirty = Boolean(value);
+    const bar = $("adm-bar");
+    const barTab = this.tab === "negocio" || this.tab === "servicios";
+    bar.hidden = this.role === "empleado" || !this.dirty || !barTab;
     const state = $("adm-state");
     state.textContent = value ? "Tienes cambios sin guardar" : "Sin cambios";
     state.className = `adm-state ${value ? "is-dirty" : "is-clean"}`;
