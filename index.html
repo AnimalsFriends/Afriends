@@ -71,9 +71,53 @@
   </header>
 
   <main id="contenido">
-    <section class="section container hero" aria-labelledby="titulo-principal">
-      <h1 id="titulo-principal">Cuidamos a tu peludito con amor, respeto y alegría</h1>
-      <p>Tu mejor amigo de cuatro patas merece sentirse como en casa.</p>
+    <section class="home-carousel" aria-label="Conoce Animals Friends" data-carousel>
+      <div class="home-carousel__track">
+        <article class="home-carousel__slide is-active" data-slide aria-hidden="false">
+          <img src="https://images.unsplash.com/photo-1760530327971-f8523426c60a?auto=format&fit=crop&w=1800&q=80" alt="Dos perros jugando felices sobre el césped" width="1800" height="1200" fetchpriority="high">
+          <div class="home-carousel__shade"></div>
+          <div class="home-carousel__content container">
+            <p class="eyebrow">Amigos para toda la vida</p>
+            <h1 id="titulo-principal">Cuidamos a tu peludito con amor, respeto y alegría</h1>
+            <p>Un espacio para jugar, descubrir y sentirse como en casa.</p>
+            <a class="btn btn--primary" href="#servicios">Conoce nuestros servicios</a>
+            <a class="home-carousel__credit" href="https://unsplash.com/photos/two-dogs-playing-together-outdoors-on-grass-R5R-PQDBG_g" target="_blank" rel="noopener noreferrer">Foto de Sisi en Unsplash</a>
+          </div>
+        </article>
+        <article class="home-carousel__slide" data-slide aria-hidden="true" inert>
+          <img src="https://images.unsplash.com/photo-1638514891503-a9ef77a6039c?auto=format&fit=crop&w=1800&q=80" alt="Retrato cercano de un perro de expresión alegre" width="1800" height="1200" loading="lazy">
+          <div class="home-carousel__shade"></div>
+          <div class="home-carousel__content container">
+            <p class="eyebrow">Cuidado con cariño</p>
+            <h2>Su bienestar es nuestra prioridad</h2>
+            <p>Atención pensada para que cada visita sea una buena experiencia.</p>
+            <a class="btn btn--primary" href="#formulario">Hablemos de tu mascota</a>
+            <a class="home-carousel__credit" href="https://unsplash.com/photos/a-close-up-of-a-dog-sitting-in-the-grass-Brl_nIVPkb0" target="_blank" rel="noopener noreferrer">Foto de Kyle McLeod en Unsplash</a>
+          </div>
+        </article>
+        <article class="home-carousel__slide" data-slide aria-hidden="true" inert>
+          <img src="https://images.unsplash.com/photo-1623531221106-d062ad4fae11?auto=format&fit=crop&w=1800&q=80" alt="Perro descansando tranquilamente en el césped" width="1800" height="1200" loading="lazy">
+          <div class="home-carousel__shade"></div>
+          <div class="home-carousel__content container">
+            <p class="eyebrow">Juego, descanso y compañía</p>
+            <h2>Un lugar para mover la cola</h2>
+            <p>Descubre las opciones de cuidado para acompañar su rutina.</p>
+            <a class="btn btn--primary" href="#servicios">Explorar servicios</a>
+            <a class="home-carousel__credit" href="https://unsplash.com/photos/dPDO-skIxQA" target="_blank" rel="noopener noreferrer">Foto de Daniel Hodgkins en Unsplash</a>
+          </div>
+        </article>
+      </div>
+      <div class="home-carousel__controls container">
+        <button class="home-carousel__arrow" type="button" data-carousel-prev aria-label="Imagen anterior">‹</button>
+        <div class="home-carousel__dots" aria-label="Elegir imagen">
+          <button type="button" data-carousel-to="0" aria-label="Mostrar imagen 1" aria-current="true"></button>
+          <button type="button" data-carousel-to="1" aria-label="Mostrar imagen 2" aria-current="false"></button>
+          <button type="button" data-carousel-to="2" aria-label="Mostrar imagen 3" aria-current="false"></button>
+        </div>
+        <button class="home-carousel__arrow" type="button" data-carousel-next aria-label="Imagen siguiente">›</button>
+        <button class="home-carousel__pause" type="button" data-carousel-pause aria-pressed="false">Pausar carrusel</button>
+      </div>
+      <p class="home-carousel__note">Fotografías provisionales de Unsplash; se pueden sustituir por las fotos de Animals Friends.</p>
     </section>
 
     <section id="servicios" class="section container" aria-labelledby="servicios-titulo">
