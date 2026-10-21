@@ -12,7 +12,7 @@ const base = () => ({
   dueno: { id: ID, form: { ...blankDueno(), nombre: "Ana", telefono: "573123044174" }, autorizadas: [] },
   mascota: { id: MID, form: { ...blankMascota(), nombre: "Max", toma_medicamentos: true }, activa: true, foto_path: null, vacunas: [], medicamentos: [] },
   fotoUrl: null,
-  sub: { autorizada: blankAutorizada(), vacuna: blankVacuna(), medicamento: blankMedicamento() }
+  sub: { autorizada: blankAutorizada(), vacuna: blankVacuna(), medicamento: blankMedicamento(), hotel: { habilitado: false, entrada: "2026-10-21", salida: "2026-10-22" } }
 });
 const todas = (s) => ["lista", "dueno", "mascota"].map((vista) => GestionViews.render({ ...s, vista })).join("\n");
 
