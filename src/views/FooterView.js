@@ -50,7 +50,7 @@ export const FooterView = {
             <h2>Información legal</h2>
             <ul class="site-footer__list">
               ${LEGAL_LINKS.map(([href, label]) => `<li><a href="${href}">${label}</a></li>`).join("")}
-              ${analyticsEnabled ? '<li><button type="button" class="link-button" data-open-cookie-settings>Configurar cookies</button></li>' : ""}
+              <li><button type="button" class="link-button" data-open-cookie-settings>Configurar cookies y privacidad</button></li>
             </ul>
           </div>
         </div>
