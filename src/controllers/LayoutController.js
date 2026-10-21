@@ -54,13 +54,13 @@ export class LayoutController {
   /** Rellena [data-legal="campo"] en las páginas legales con los datos del negocio. */
   fillLegal(negocio) {
     const values = {
-      razonSocial: negocio.razonSocial,
-      nit: negocio.nit,
-      direccion: negocio.direccion,
-      ciudad: negocio.ciudad,
-      correo: negocio.correo,
-      telefono: negocio.telefonoVisible,
-      nombre: negocio.nombre
+      razonSocial: negocio.razonSocial || "Pendiente de confirmación por el titular",
+      nit: negocio.nit || "Pendiente de confirmación por el titular",
+      direccion: negocio.direccion || "Pendiente de confirmación por el titular",
+      ciudad: negocio.ciudad || "Chía, Cundinamarca",
+      correo: negocio.correo || "Pendiente de confirmación por el titular",
+      telefono: negocio.telefonoVisible || "Pendiente de confirmación por el titular",
+      nombre: negocio.nombre || "Animals Friends"
     };
     const missing = new Set();
     document.querySelectorAll("[data-legal]").forEach((el) => {
