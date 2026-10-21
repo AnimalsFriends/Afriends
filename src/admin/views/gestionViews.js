@@ -230,6 +230,14 @@ function formMascota(s) {
       ${campo("Tipo de comida", "tipo_comida", f.tipo_comida, { max: 120, ph: "Concentrado adulto raza mediana..." })}
       ${campo("Comidas al día", "comidas_por_dia", f.comidas_por_dia, { type: "number", min: 1, maxn: 10, inputmode: "numeric" })}
     </div>
+    ${nuevo ? `<fieldset class="adm-fieldset adm-mt">
+      <legend>Servicio inicial</legend>
+      <label class="adm-inline"><input type="checkbox" data-gs="hotel.habilitado" data-g-rerender="1"${s.sub.hotel.habilitado ? " checked" : ""}> Registrar también una estancia en el hotel</label>
+      ${s.sub.hotel.habilitado ? `<div class="adm-grid adm-mt">
+        ${campo("Entrada al hotel", "hotel.entrada", s.sub.hotel.entrada, { attr: "data-gs", type: "date" })}
+        ${campo("Salida del hotel", "hotel.salida", s.sub.hotel.salida, { attr: "data-gs", type: "date" })}
+      </div><p class="adm-sub">Al guardar el perro se creará la reserva. La disponibilidad y los cruces de fechas se validan en el sistema del hotel.</p>` : ""}
+    </fieldset>` : ""}
     <div class="adm-stack adm-mt">
       ${interruptor("¿Es bravo?", "es_bravo", f.es_bravo)}
       ${f.es_bravo ? campo("Cómo se comporta", "nota_comportamiento", f.nota_comportamiento, { textarea: true, full: true, ph: "Con qué se pone bravo, qué hacer o evitar..." }) : ""}
