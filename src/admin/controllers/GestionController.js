@@ -546,6 +546,10 @@ export class GestionController {
     if (!this.state.isAdmin) return;
     const t = event.target;
     const s = this.state;
+    if (t.dataset.gs) {
+      const [tipo, campo] = t.dataset.gs.split(".");
+      if (s.sub[tipo]) s.sub[tipo][campo] = t.type === "checkbox" ? t.checked : t.value;
+    }
     if (t.matches("[data-g-inactivos]")) {
       s.verInactivos = t.checked;
       const caja = document.getElementById("g-lista");
