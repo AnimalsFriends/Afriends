@@ -38,6 +38,10 @@ Solo aparece cuando el panel está conectado a Supabase y requiere haber aplicad
 - **Perro:** nombre, raza, género, tamaño, comida (tipo y veces al día), si es bravo (con
   nota de comportamiento), si está enfermo (con detalle), si toma medicamentos, foto,
   medicamentos (cuál, dosis, horario) y vacunas o desparasitación con fecha de vencimiento.
+- **Servicio inicial de hotel:** al crear un perro, el administrador puede marcar que también
+  ingrese al hotel y registrar las fechas de entrada y salida en el mismo flujo. La ficha se guarda
+  primero y la reserva se crea vinculada a su ID; Supabase valida cupos y reservas cruzadas.
+  Si la reserva falla, la ficha no se pierde y el panel avisa que debe revisarse en Rutas y hotel.
 - **Nada se borra de verdad:** dueños y perros se *desactivan* y se pueden reactivar.
   Además de ocultar el botón de borrado, la migración de Fase 2 quita el permiso `DELETE`
   a sesiones autenticadas para esas dos tablas; así tampoco se borran con una llamada directa.
