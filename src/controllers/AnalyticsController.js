@@ -1,6 +1,6 @@
 /**
  * CONTROLADOR: consentimiento de cookies + medición de conversiones.
- * Si no hay GA_MEASUREMENT_ID, no hace nada (ni siquiera muestra el aviso).
+ * El consentimiento siempre está disponible, aunque Google Analytics no esté configurado.
  * Eventos GA4: "whatsapp_click" (con la ubicación del botón) y "generate_lead" (formulario).
  */
 import { Analytics, analyticsConfigured } from "../services/analytics.js";
@@ -13,10 +13,8 @@ const WA_LOCATIONS = [
 
 export class AnalyticsController {
   init() {
-    if (!analyticsConfigured()) return;
-
     const consent = ConsentModel.get();
-    if (consent?.analytics) Analytics.enable();
+    if (consent?.analytics && analyticsConfigured()) Analytics.enable();
     if (!consent) this.showBanner();
 
     document.addEventListener("click", (event) => {
@@ -24,7 +22,7 @@ export class AnalyticsController {
       const choice = event.target.closest("[data-consent]");
       if (choice) { this.decide(choice.dataset.consent === "accept"); return; }
       const wa = event.target.closest('a[href^="https://wa.me/"]');
-      if (wa) {
+      if (wa && analyticsConfigured() && ConsentModel.get()?.analytics) {
         const location = WA_LOCATIONS.find(([selector]) => wa.closest(selector))?.[1] ?? "otro";
         Analytics.track("whatsapp_click", { location });
       }
