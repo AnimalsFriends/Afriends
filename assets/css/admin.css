@@ -242,3 +242,205 @@ body.adm { padding-bottom: 7rem; font-size: 1rem; }
   .adm-fin-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .adm-fin-breakdown li { align-items: start; flex-direction: column; gap: 2px; }
 }
+
+/* =====================================================================
+   Pulido visual del panel (solo presentación; conserva HTML y lógica).
+   Reutiliza las clases y los tokens existentes para evitar duplicidades.
+   ===================================================================== */
+
+/* Cabecera más clara y consistente con la marca */
+.adm-top {
+  background: color-mix(in srgb, var(--color-surface) 94%, var(--brand-crema));
+  backdrop-filter: blur(12px);
+}
+.adm-brand {
+  font-size: 1.25rem;
+  letter-spacing: -.025em;
+  border-left-width: 4px;
+  border-radius: 2px;
+}
+.adm-brand small {
+  margin-top: 2px;
+  letter-spacing: 0;
+}
+
+/* Navegación: mejor jerarquía sin cambiar pestañas ni eventos */
+.adm-tabs {
+  align-items: stretch;
+  gap: 8px;
+  padding: 6px;
+  background: rgba(97, 89, 81, .045);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+}
+.adm-tab {
+  flex: 0 0 auto;
+  border-color: transparent;
+  background: transparent;
+  transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.adm-tab:hover:not([aria-selected="true"]) {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+.adm-tab[aria-selected="true"] {
+  box-shadow: 0 3px 10px rgba(97, 89, 81, .12);
+}
+
+/* Superficies y formularios con ritmo visual uniforme */
+.adm-card {
+  border-radius: 20px;
+  box-shadow: 0 3px 14px rgba(97, 89, 81, .055);
+  padding: clamp(16px, 2.4vw, 24px);
+}
+.adm-card > h2,
+.adm-card > .adm-row h2 {
+  line-height: 1.3;
+}
+.adm-sub {
+  line-height: 1.55;
+}
+.adm-f {
+  min-width: 0;
+}
+.adm-fl {
+  line-height: 1.4;
+}
+.adm input[type="text"],
+.adm input[type="email"],
+.adm input[type="password"],
+.adm input[type="number"],
+.adm input[type="url"],
+.adm input[type="tel"],
+.adm input[type="date"],
+.adm textarea,
+.adm select {
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.adm input:focus-visible,
+.adm textarea:focus-visible,
+.adm select:focus-visible {
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, .12);
+}
+
+/* Interacciones coherentes y accesibles */
+.adm-btn {
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.adm-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.adm-btn:focus-visible,
+.adm-tab:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.adm-cat,
+.adm-svc,
+.adm-dueno,
+.adm-dog,
+.adm-lead {
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.adm-cat:hover,
+.adm-svc:hover,
+.adm-dueno:hover,
+.adm-dog:hover,
+.adm-lead:hover {
+  border-color: color-mix(in srgb, var(--color-border) 55%, var(--color-accent));
+}
+
+/* La barra de acciones permanece legible sin tapar el contenido */
+.adm-bar {
+  background: rgba(255, 255, 255, .97);
+  backdrop-filter: blur(12px);
+}
+.adm-bar__in {
+  max-width: 72rem;
+}
+.adm-state {
+  line-height: 1.4;
+}
+
+/* Ajustes móviles: navegación deslizable y acciones fáciles de tocar */
+@media (max-width: 700px) {
+  .adm-top__in {
+    align-items: flex-start;
+    padding-block: 10px;
+  }
+  .adm-top__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .adm-wrap {
+    padding: 16px 12px 24px;
+  }
+  .adm-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    margin-inline: -2px;
+    padding: 5px;
+    scroll-snap-type: x proximity;
+  }
+  .adm-tab {
+    scroll-snap-align: start;
+    white-space: nowrap;
+    padding-inline: 13px;
+  }
+  .adm-card {
+    margin-bottom: 12px;
+    border-radius: 16px;
+  }
+  .adm-bar__in {
+    align-items: stretch;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+  .adm-bar__in > .adm-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .adm-bar__in > .adm-row .adm-btn {
+    min-width: 0;
+    padding-inline: 10px;
+    overflow-wrap: anywhere;
+  }
+  .adm-bar__in > .adm-row #adm-save {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .adm-toast {
+    bottom: calc(128px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 380px) {
+  .adm-bar__in > .adm-row {
+    grid-template-columns: 1fr;
+  }
+  .adm-bar__in > .adm-row #adm-save {
+    grid-column: auto;
+  }
+  .adm-userbox {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* No forzar animaciones a personas que prefieren movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  .adm-btn,
+  .adm-tab,
+  .adm-cat,
+  .adm-svc,
+  .adm-dueno,
+  .adm-dog,
+  .adm-lead {
+    transition: none;
+  }
+}
+
