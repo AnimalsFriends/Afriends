@@ -14,6 +14,8 @@
  */
 import { AuthError } from "../services/authService.js";
 import { GestionApi } from "../services/gestionApi.js";
+import { RutasApi } from "../services/rutasApi.js";
+import { hoyBogota, validarReserva } from "../models/rutasModel.js";
 import { reducirImagen } from "../services/imagen.js";
 import { GestionViews } from "../views/gestionViews.js";
 import { puedeEjecutarAccion } from "../models/permissions.js";
@@ -23,7 +25,14 @@ import {
 } from "../models/gestionModel.js";
 
 const nuevaMascotaVacia = () => ({ id: null, form: blankMascota(), activa: true, foto_path: null, vacunas: [], medicamentos: [] });
-const subformsVacios = () => ({ autorizada: blankAutorizada(), vacuna: blankVacuna(), medicamento: blankMedicamento() });
+const fechaMas = (fecha, dias) => {
+  const [y, m, d] = fecha.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + dias)).toISOString().slice(0, 10);
+};
+const subformsVacios = () => ({
+  autorizada: blankAutorizada(), vacuna: blankVacuna(), medicamento: blankMedicamento(),
+  hotel: { habilitado: false, entrada: hoyBogota(), salida: fechaMas(hoyBogota(), 1) }
+});
 const porFecha = (a, b) => String(a.created_at ?? "").localeCompare(String(b.created_at ?? ""));
 
 export class GestionController {
@@ -322,6 +331,16 @@ export class GestionController {
     const s = this.state;
     const { errors, clean } = validarMascota(s.mascota.form);
     if (errors.length) { this.toast("Revisa estos puntos:", "err", errors); return; }
+    let reservaHotel = null;
+    if (!s.mascota.id && s.sub.hotel?.habilitado) {
+      const reserva = validarReserva({
+        mascota_id: "123e4567-e89b-12d3-a456-426614174000",
+        entrada: s.sub.hotel.entrada, salida: s.sub.hotel.salida, estado: "reservada",
+        tambien_colegio: false, notas_comida: "", notas_medicacion: "", notas: ""
+      });
+      if (reserva.errors.length) { this.toast("Revisa las fechas del servicio de hotel:", "err", reserva.errors); return; }
+      reservaHotel = reserva.clean;
+    }
     await this.conBoton(boton, "Guardando…", async (version) => {
       try {
         const fila = s.mascota.id
@@ -333,9 +352,23 @@ export class GestionController {
         s.mascota.activa = fila.activa;
         s.mascota.form = formDesdeFila(fila, blankMascota);
         this.dirty = false;
+        let hotelGuardado = true;
+        if (reservaHotel) {
+          try {
+            const reservaFila = await RutasApi.crearReserva({ ...reservaHotel, mascota_id: fila.id });
+            if (version !== this.sessionVersion) return;
+            if (!reservaFila) hotelGuardado = false;
+          } catch (error) {
+            if (version !== this.sessionVersion) return;
+            hotelGuardado = false;
+            console.warn("[GestionController] La mascota se guardó, pero falló la reserva del hotel:", error?.code ?? error?.name);
+          }
+        }
         if (!await this.refrescarLista("El perro se guardó, pero no se pudo actualizar la lista. Recarga el panel para ver los cambios.")) return;
         if (version !== this.sessionVersion) return;
-        this.toast("Perro guardado.", "ok");
+        if (reservaHotel && hotelGuardado) this.toast("Perro y servicio de hotel guardados.", "ok");
+        else if (reservaHotel) this.toast("El perro se guardó, pero no se pudo crear la reserva del hotel. Revisa los cupos y las fechas en Rutas y hotel.", "err");
+        else this.toast("Perro guardado.", "ok");
         this.render();
       } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudo guardar al perro. Revisa tu conexión e inténtalo de nuevo."); }
     });
@@ -505,7 +538,7 @@ export class GestionController {
     }
     if (t.dataset.gs) {                                       // mini-formulario para agregar: "vacuna.nombre"
       const [tipo, campo] = t.dataset.gs.split(".");
-      if (s.sub[tipo]) s.sub[tipo][campo] = t.value;
+      if (s.sub[tipo]) s.sub[tipo][campo] = t.type === "checkbox" ? t.checked : t.value;
     }
   }
 
