@@ -84,6 +84,17 @@ test("mascota: bravo y enfermo muestran su campo solo cuando están activados", 
   assert.match(GestionViews.render(s), /data-g="detalle_enfermedad"/);
 });
 
+test("mascota nueva permite registrarla también como estancia de hotel con fechas", () => {
+  const s = { ...base(), vista: "mascota", mascota: { id: null, form: blankMascota(), activa: true, foto_path: null, vacunas: [], medicamentos: [] }, sub: { ...base().sub, hotel: { habilitado: false, entrada: "2026-10-21", salida: "2026-10-22" } } };
+  const html = GestionViews.render(s);
+  assert.match(html, /Registrar también una estancia en el hotel/);
+  assert.equal(html.includes('data-gs="hotel.entrada"'), false);
+  s.sub.hotel.habilitado = true;
+  const conHotel = GestionViews.render(s);
+  assert.equal(conHotel.includes('data-gs="hotel.entrada"'), true);
+  assert.equal(conHotel.includes('data-gs="hotel.salida"'), true);
+});
+
 test("mascota nueva: sin foto, vacunas ni medicamentos hasta guardarse", () => {
   const s = { ...base(), vista: "mascota", mascota: { id: null, form: blankMascota(), activa: true, foto_path: null, vacunas: [], medicamentos: [] } };
   const html = GestionViews.render(s);
