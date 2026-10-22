@@ -47,6 +47,8 @@ export const blankDueno = () => ({
 });
 
 export const blankMascota = () => ({
+  responsable_empleado_id: "",
+  es_mascota_propia: false,
   nombre: "", raza: "", genero: "", tamano: "", tipo_comida: "", comidas_por_dia: "",
   es_bravo: false, nota_comportamiento: "", esta_enfermo: false, detalle_enfermedad: "", toma_medicamentos: false
 });
@@ -111,6 +113,8 @@ export function validarMascota(form) {
   const detalle = largo(form.detalle_enfermedad);
   const bravo = Boolean(form.es_bravo);
   const enfermo = Boolean(form.esta_enfermo);
+  const responsable = String(form.responsable_empleado_id ?? "");
+  const esMascotaPropia = Boolean(form.es_mascota_propia);
 
   if (nombre.length < 1 || nombre.length > 60) errors.push("Escribe el nombre del perro (máximo 60 letras).");
   if (raza.length > 60) errors.push("La raza es demasiado larga (máximo 60).");
@@ -118,6 +122,7 @@ export function validarMascota(form) {
   if (tamano.length > 30) errors.push("El tamaño es demasiado largo (máximo 30 caracteres).");
   if (comida.length > 120) errors.push("El tipo de comida es demasiado largo (máximo 120).");
   if (comidas !== null && (!Number.isInteger(comidas) || comidas < 1 || comidas > 10)) errors.push("Las comidas al día deben ser un número entre 1 y 10.");
+  if (responsable && !UUID.test(responsable)) errors.push("El empleado responsable no es válido.");
   if (bravo && !nota) errors.push("Si es bravo, cuéntanos cómo se comporta para que el equipo lo sepa.");
   if (enfermo && !detalle) errors.push("Si está enfermo, escribe de qué para que el equipo lo sepa.");
 
@@ -125,6 +130,8 @@ export function validarMascota(form) {
     errors,
     clean: {
       nombre,
+      es_mascota_propia: esMascotaPropia,
+      responsable_empleado_id: nulo(responsable),
       raza: nulo(raza),
       genero: nulo(genero),
       tamano: nulo(tamano),

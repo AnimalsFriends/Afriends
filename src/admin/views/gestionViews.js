@@ -137,7 +137,7 @@ function seccionPerros(fila) {
     ? perros.map((m) => `
       <div class="adm-item adm-dog${m.activa ? "" : " is-off"}">
         <div class="adm-grow"><b>${esc(m.nombre)}</b>${m.raza ? ` <small>${esc(m.raza)}</small>` : ""}
-          <span class="adm-tags">${m.es_bravo ? chip("Bravo", "warn") : ""}${m.esta_enfermo ? chip("Enfermo", "warn") : ""}${m.toma_medicamentos ? chip("Medicamentos") : ""}${m.activa ? "" : chip("Desactivado", "off")}</span>
+          <span class="adm-tags">${m.es_mascota_propia ? chip("Propio", "ok") : ""}${m.es_bravo ? chip("Bravo", "warn") : ""}${m.esta_enfermo ? chip("Enfermo", "warn") : ""}${m.toma_medicamentos ? chip("Medicamentos") : ""}${m.activa ? "" : chip("Desactivado", "off")}</span>
         </div>
         ${boton("Abrir", "g-abrir-mascota", { id: m.id, sm: true })}
       </div>`).join("")
@@ -229,8 +229,11 @@ function formMascota(s) {
       ${campo("Tamaño", "tamano", f.tamano, { max: 30, ph: "Pequeño, mediano, grande...", hint: "Texto libre: las categorías las decide el negocio." })}
       ${campo("Tipo de comida", "tipo_comida", f.tipo_comida, { max: 120, ph: "Concentrado adulto raza mediana..." })}
       ${campo("Comidas al día", "comidas_por_dia", f.comidas_por_dia, { type: "number", min: 1, maxn: 10, inputmode: "numeric" })}
+      ${selector("Responsable", "responsable_empleado_id", f.responsable_empleado_id, [["", "Todos los empleados"], ...s.empleados.map((e) => [e.id, e.nombre])])}
     </div>
-    ${nuevo ? `<fieldset class="adm-fieldset adm-mt">
+    <div class="adm-mt">${interruptor("Mascota propia del administrador", "es_mascota_propia", f.es_mascota_propia)}</div>
+    ${f.es_mascota_propia ? nota("info", "Se mostrará permanentemente en Hotel, sin fecha de salida ni reserva, y no consumirá cupos del hotel ni capacidad de rutas.") : ""}
+    ${nuevo && !f.es_mascota_propia ? `<fieldset class="adm-fieldset adm-mt">
       <legend>Servicio inicial</legend>
       <label class="adm-inline"><input type="checkbox" data-gs="hotel.habilitado" data-g-rerender="1"${s.sub.hotel.habilitado ? " checked" : ""}> Registrar también una estancia en el hotel</label>
       ${s.sub.hotel.habilitado ? `<div class="adm-grid adm-mt">

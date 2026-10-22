@@ -527,7 +527,7 @@ export class RutasController {
     }
     for (let dia = datos.entrada; dia < datos.salida; dia = fechaMas(dia, 1)) {
       if (dia < hoyBogota()) continue;
-      if (contarOcupacionDia(dia, otras) >= s.cuposHotel) {
+      if (contarOcupacionDia(dia, otras, s.mascotas) >= s.cuposHotel) {
         this.toast(`No hay cupo para la noche del ${diaText(dia)}.`, "err");
         return false;
       }

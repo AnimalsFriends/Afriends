@@ -6,6 +6,7 @@ import { SITE_DEFAULTS } from "../../config/site.defaults.js";
 import { esc } from "../../utils/dom.js";
 import { Auth, AuthError } from "../services/authService.js";
 import { SiteConfigApi, LeadsApi, ApiError } from "../services/adminApi.js";
+import { MensajesApi } from "../services/mensajesApi.js";
 import { GestionApi } from "../services/gestionApi.js";
 import { AdminViews } from "../views/adminViews.js";
 import { puedeEjecutarAccion, puedeVerModulo } from "../models/permissions.js";
@@ -34,6 +35,7 @@ export class AdminController {
     this.leads = [];
     this.leadFilter = "nuevo";
     this.leadsError = null;
+    this.empleados = []; this.conversacionEmpleadoId = null; this.mensajes = []; this.mensajesError = null;
     this.remote = Auth.isConfigured();
     this.role = null;
     this.lastRole = null;
@@ -106,6 +108,7 @@ export class AdminController {
     this.openCat = null;
     this.leads = [];
     this.leadsError = null;
+    this.empleados = []; this.conversacionEmpleadoId = null; this.mensajes = []; this.mensajesError = null;
     this.leadFilter = "nuevo";
     this.role = null;
     for (const controller of [this.gestion, this.rutas, this.agenda, this.finanzas, this.seguimiento]) {
@@ -214,7 +217,7 @@ export class AdminController {
     for (const [modulo, id] of Object.entries({
       negocio: "adm-business-tab", servicios: "adm-services-tab", leads: "adm-leads-tab",
       gestion: "adm-gestion-tab", rutas: "adm-rutas-tab", agenda: "adm-agenda-tab",
-      finanzas: "adm-finanzas-tab", seguimiento: "adm-seguimiento-tab"
+      finanzas: "adm-finanzas-tab", seguimiento: "adm-seguimiento-tab", conversaciones: "adm-conversations-tab"
     })) {
       const button = $(id);
       button.hidden = !puedeVerModulo(this.role, modulo);
@@ -249,6 +252,7 @@ export class AdminController {
     this.seguimiento.setActive(tab === "seguimiento");
     if (!["gestion", "rutas", "agenda", "finanzas", "seguimiento"].includes(tab)) this.render();
     if (tab === "leads") this.refreshLeads();
+    if (tab === "conversaciones") this.refreshConversacion();
   }
 
   render() {
@@ -262,7 +266,25 @@ export class AdminController {
     if (this.tab === "negocio") panel.innerHTML = AdminViews.business(this.data);
     else if (this.tab === "servicios" && this.role === "empleado") panel.innerHTML = AdminViews.employeeServices(this.data);
     else if (this.tab === "servicios") panel.innerHTML = AdminViews.services(this.data, this.openCat);
+    else if (this.tab === "conversaciones") panel.innerHTML = AdminViews.conversaciones({ admin: this.role === "admin", empleados: this.empleados, empleadoId: this.conversacionEmpleadoId, mensajes: this.mensajes, error: this.mensajesError, userId: Auth.userId });
     else panel.innerHTML = AdminViews.leads({ leads: this.leads, filter: this.leadFilter, titles: this.serviceTitles(), error: this.leadsError });
+  }
+
+  async refreshConversacion() {
+    if (this.role !== "admin" && this.role !== "empleado") return;
+    try {
+      const contexto = await MensajesApi.contexto();
+      if (contexto.admin) {
+        this.empleados = await MensajesApi.empleados();
+        if (!this.conversacionEmpleadoId || !this.empleados.some((e) => e.id === this.conversacionEmpleadoId)) this.conversacionEmpleadoId = this.empleados[0]?.id ?? null;
+      } else this.conversacionEmpleadoId = contexto.empleadoId;
+      this.mensajes = this.conversacionEmpleadoId ? await MensajesApi.listar(this.conversacionEmpleadoId) : [];
+      this.mensajesError = null;
+      const unread = this.mensajes.filter((m) => m.remitente_user_id !== Auth.userId && !m.leido_en);
+      for (const m of unread) await MensajesApi.leer(m.id);
+      if (unread.length) this.mensajes = this.mensajes.map((m) => unread.some((u) => u.id === m.id) ? { ...m, leido_en: new Date().toISOString() } : m);
+    } catch (error) { this.mensajes = []; this.mensajesError = error.code || "fail"; }
+    if (this.tab === "conversaciones") this.render();
   }
 
   serviceTitles() {
@@ -368,6 +390,16 @@ export class AdminController {
     $("adm-tabs").addEventListener("keydown", (e) => this.onTabKeys(e));
 
     const panel = $("adm-panel");
+    panel.addEventListener("change", (e) => {
+      if (e.target.matches("[data-conv-empleado]")) { this.conversacionEmpleadoId = e.target.value || null; this.refreshConversacion(); }
+    });
+    panel.addEventListener("submit", async (e) => {
+      if (!e.target.matches("[data-conv-form]")) return;
+      e.preventDefault();
+      const cuerpo = new FormData(e.target).get("mensaje");
+      try { await MensajesApi.enviar(this.conversacionEmpleadoId, String(cuerpo ?? "").trim()); e.target.reset(); await this.refreshConversacion(); }
+      catch (error) { this.toast(error.code === "perm" ? "No tienes permiso para enviar en esta conversación." : "No se pudo enviar el mensaje.", "err"); }
+    });
     panel.addEventListener("input", (e) => this.onInput(e));
     panel.addEventListener("change", (e) => this.onChange(e));
     panel.addEventListener("click", (e) => this.onClick(e));
@@ -411,6 +443,7 @@ export class AdminController {
     if (this.tab === "agenda") return;                   // agenda guarda cada cita al momento
     if (this.tab === "finanzas") return;                 // finanzas guarda cada registro al momento
     if (this.tab === "seguimiento") return;              // seguimiento tiene formulario propio
+    if (this.tab === "conversaciones") return;
     const t = event.target;
     if (!t.dataset.path) return;
     const value = t.type === "checkbox" ? t.checked : t.type === "number" ? (t.value === "" ? 0 : Number(t.value)) : t.value;
@@ -434,6 +467,7 @@ export class AdminController {
     if (this.tab === "agenda") return;
     if (this.tab === "finanzas") return;
     if (this.tab === "seguimiento") return;
+    if (this.tab === "conversaciones") return;
     const t = event.target;
     if (t.matches("[data-lead-status]")) { this.changeLeadStatus(t.dataset.id, t.value); return; }
     if (t.dataset.dia) {

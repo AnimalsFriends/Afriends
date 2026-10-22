@@ -29,7 +29,13 @@ export async function llamar(path, init = {}) {
   if (response.status === 401 || response.status === 403) throw new ApiError("perm");
   if (response.status === 404) throw new ApiError("missing");
   if (response.status === 409) throw new ApiError("conflict");
-  if (!response.ok) throw new ApiError("fail");
+  if (!response.ok) {
+    const body = await response.clone().json().catch(() => ({}));
+    if (["42703", "PGRST204"].includes(body.code) || /es_mascota_propia|responsable_empleado_id/i.test(body.message ?? "")) {
+      throw new ApiError("schema");
+    }
+    throw new ApiError("fail");
+  }
   return response.status === 204 ? null : response.json();
 }
 
@@ -59,7 +65,15 @@ export const GestionApi = {
 
   /* ------------------------------ dueños ------------------------------ */
   /** Todos los dueños con el nombre de sus perros (basta para listar y buscar). */
-  listDuenos: () => llamar("duenos?select=*,mascotas(id,nombre,raza,activa,es_bravo,esta_enfermo,toma_medicamentos)&order=nombre.asc&limit=1000"),
+  async listDuenos() {
+    try {
+      return await llamar("duenos?select=*,mascotas(id,nombre,raza,activa,es_bravo,esta_enfermo,toma_medicamentos,es_mascota_propia)&order=nombre.asc&limit=1000");
+    } catch (error) {
+      if (error.code !== "schema") throw error;
+      return llamar("duenos?select=*,mascotas(id,nombre,raza,activa,es_bravo,esta_enfermo,toma_medicamentos)&order=nombre.asc&limit=1000");
+    }
+  },
+  listEmpleados: () => llamar("empleados?select=id,nombre&rol=eq.empleado&activo=eq.true&order=nombre.asc"),
   /** Lista mínima de dueños y perros que RLS ya autoriza a este empleado. */
   listDuenosAsignados: () => llamar("duenos?select=id,nombre,telefono,mascotas(id,nombre,raza,activa)&order=nombre.asc&limit=1000"),
   createDueno: (datos) => primero(escribir("POST", "duenos", datos)),

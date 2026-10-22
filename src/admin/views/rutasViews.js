@@ -44,7 +44,7 @@ function tabs(s) {
 }
 
 function resumenDelHotel(s, fecha) {
-  const resumen = resumenHotel(fecha, s.reservas, s.cuposHotel);
+  const resumen = resumenHotel(fecha, s.reservas, s.cuposHotel, s.mascotas);
   return `<div class="adm-grid adm-grid--3 adm-r-summary">
     <article class="adm-r-stat"><span>En el hotel</span><b>${resumen.enHotel}</b></article>
     <article class="adm-r-stat"><span>Entradas</span><b>${resumen.entradas}</b></article>
@@ -131,21 +131,22 @@ function panelDia(s) {
       <label class="adm-f"><span class="adm-fl">Fecha</span><input type="date" data-r-date="fecha" value="${esc(s.fecha)}"></label>
     </div>
     ${hotel}
-  </section>${avisoConflictos}${contenido}${ausencias}`;
+  </section>${bloqueMascotasPropias(s)}${avisoConflictos}${contenido}${ausencias}`;
 }
 
 function panelDiaEmpleado(s) {
   const perrosHotel = s.mascotas.map((mascota) => ({
     mascota,
     servicio: servicioMascotaEnFecha(mascota, s.fecha, s.planes, s.reservas, [])
-  })).filter(({ servicio }) => ["hotel", "hotel_colegio"].includes(servicio.codigo));
+  })).filter(({ servicio }) => ["hotel", "hotel_colegio", "hotel_propio"].includes(servicio.codigo));
   const hotel = perrosHotel.length
     ? `<section class="adm-card"><h2>Perros en hotel hoy</h2>${perrosHotel.map(({ mascota, servicio }) => {
       const parada = s.paradas.find((item) => item.mascota_id === mascota.id && item.activa && s.rutas.some((ruta) => ruta.id === item.ruta_id));
       const ruta = s.rutas.find((item) => item.id === parada?.ruta_id);
       const reserva = servicio.reserva;
-      const etiqueta = servicio.codigo === "hotel_colegio" ? "Hotel + colegio" : "Hotel";
-      return `<div class="adm-item"><div class="adm-grow"><b>${esc(mascota.nombre)}</b><small>${esc(ownerFor(s, mascota)?.nombre ?? "Dueño no disponible")} · ${ruta ? `Ruta: ${esc(ruta.nombre)}` : "Sin ruta asignada"}</small><small>${esc(etiqueta)} · ${esc(dateText(reserva?.entrada))} → ${esc(dateText(reserva?.salida))}</small></div>${tag(reserva?.estado === "en_curso" ? "En hotel" : "Reservado", reserva?.estado === "en_curso" ? "ok" : "")}</div>`;
+      const propio = servicio.codigo === "hotel_propio";
+      const etiqueta = propio ? "Mascota propia · permanente" : servicio.codigo === "hotel_colegio" ? "Hotel + colegio" : "Hotel";
+      return `<div class="adm-item"><div class="adm-grow"><b>${esc(mascota.nombre)}</b><small>${esc(ownerFor(s, mascota)?.nombre ?? "Dueño no disponible")} · ${ruta ? `Ruta: ${esc(ruta.nombre)}` : "Sin ruta asignada"}</small><small>${esc(etiqueta)} · ${propio ? "Sin fecha de salida" : `${esc(dateText(reserva?.entrada))} → ${esc(dateText(reserva?.salida))}`}</small></div>${tag(propio ? "Propio" : reserva?.estado === "en_curso" ? "En hotel" : "Reservado", propio || reserva?.estado === "en_curso" ? "ok" : "")}</div>`;
     }).join("")}</section>`
     : '<section class="adm-card"><h2>Perros en hotel hoy</h2><p class="adm-sub">No tienes perros alojados en hotel para esta fecha.</p></section>';
   const routes = s.rutas.filter((route) => route.activa);
@@ -189,7 +190,7 @@ function formularioRuta(s) {
 
 function formularioParada(s) {
   const f = s.formularios.parada;
-  const perros = nameOptions(s.mascotas);
+  const perros = nameOptions(s.mascotas.filter((m) => !m.es_mascota_propia));
   return `<section class="adm-card"><h2>${f.id ? "Editar parada" : "Agregar parada"}</h2>
     ${s.rutas.some((r) => r.activa) && perros.length ? `<div class="adm-grid">
       ${select("Ruta", "parada.ruta_id", f.ruta_id, s.rutas.filter((r) => r.activa).map((r) => [r.id, r.nombre]))}
@@ -269,7 +270,7 @@ function panelRutas(s) {
 
 function formularioReserva(s) {
   const f = s.formularios.reserva;
-  const perros = nameOptions(s.mascotas);
+  const perros = nameOptions(s.mascotas.filter((m) => !m.es_mascota_propia));
   return `<section class="adm-card"><h2>${f.id ? "Editar reserva" : "Nueva reserva"}</h2>
     ${perros.length ? `<div class="adm-grid">
       ${select("Perro", "reserva.mascota_id", f.mascota_id, perros)}
@@ -295,7 +296,7 @@ function calendario(s) {
   return `<div class="adm-r-calendar">${dayNames.map((day) => `<b>${day}</b>`).join("")}${cells.map((day) => {
     if (!day) return '<span class="adm-r-calendar__empty"></span>';
     const date = `${s.mes}-${String(day).padStart(2, "0")}`;
-    const count = contarOcupacionDia(date, s.reservas);
+    const count = contarOcupacionDia(date, s.reservas, s.mascotas);
     return `<button type="button" data-action="r-seleccionar-dia" data-fecha="${date}" class="${count >= (s.cuposHotel ?? Infinity) ? "is-full" : ""}" aria-label="${date}: ${count} perros">
       <span>${day}</span><small>${count}</small>
     </button>`;
@@ -303,8 +304,9 @@ function calendario(s) {
 }
 
 function listaReservas(s) {
-  if (!s.reservas.length) return '<p class="adm-sub">No hay reservas en este mes.</p>';
-  return [...s.reservas].sort((a, b) => a.entrada.localeCompare(b.entrada)).map((r) => `<article class="adm-r-booking">
+  const reservas = s.reservas.filter((r) => !ownerDog(s, r.mascota_id)?.es_mascota_propia);
+  if (!reservas.length) return '<p class="adm-sub">No hay reservas en este mes.</p>';
+  return [...reservas].sort((a, b) => a.entrada.localeCompare(b.entrada)).map((r) => `<article class="adm-r-booking">
     <div class="adm-grow"><b>${esc(dogName(s, r.mascota_id))}</b>${tag(r.estado.replace("_", " "))}
       <small>${dateText(r.entrada)} → ${dateText(r.salida)} · ${r.tambien_colegio ? "Hotel + colegio" : "Solo hotel"}</small>
       ${r.notas_comida ? `<small>Comida: ${esc(r.notas_comida)}</small>` : ""}
@@ -319,6 +321,11 @@ function listaReservas(s) {
   </article>`).join("");
 }
 
+function bloqueMascotasPropias(s) {
+  const propios = s.mascotas.filter((m) => m.activa && m.es_mascota_propia);
+  return `<section class="adm-card"><h2>Mascotas propias</h2><p class="adm-sub">Alojamiento permanente; no requiere reserva ni consume cupos del hotel o capacidad de rutas.</p>${propios.length ? propios.map((m) => `<article class="adm-item"><div class="adm-grow"><b>${esc(m.nombre)}</b><small>${esc(ownerFor(s, m)?.nombre ?? "Responsable: administrador")} · Sin fecha de salida</small></div>${tag("Propio", "ok")}</article>`).join("") : '<p class="adm-sub">Aún no hay mascotas propias registradas.</p>'}</section>`;
+}
+
 function panelHotel(s) {
   return `<section class="adm-card">
     <div class="adm-row adm-between adm-wrapx"><div><h2>Ocupación del hotel</h2><p class="adm-sub">Cupos por noche; la salida no ocupa una noche adicional.</p></div>
@@ -330,6 +337,7 @@ function panelHotel(s) {
     <div class="adm-r-month">${calendario(s)}</div>
   </section>
   <section class="adm-card adm-r-month-summary"><h2>Resumen para ${dateText(s.fecha)}</h2>${resumenDelHotel(s, s.fecha)}</section>
+  ${bloqueMascotasPropias(s)}
   ${avisoReservasCruzadas(s)}
   ${formularioReserva(s)}
   <section class="adm-card"><h2>Reservas de ${esc(s.mes)}</h2>${listaReservas(s)}</section>`;
@@ -339,9 +347,12 @@ export const RutasViews = {
   render(s) {
     if (s.loading) return '<section class="adm-card"><p class="adm-sub">Cargando rutas y reservas…</p></section>';
     if (s.error) return `${note(s.error === "missing" ? "Faltan las tablas de la Fase 1 en Supabase. Revisa supabase/README.md." : "No se pudieron cargar las rutas. Revisa conexión y permisos, y vuelve a intentar.", "err")}${button("Reintentar", "r-recargar")}`;
-    if (s.isEmpleado) return panelDiaEmpleado(s);
+    const avisoMigracion = s.mascotasPropiasDisponible === false
+      ? note('Las rutas están cargadas, pero Supabase aún no tiene el campo de mascotas propias. Aplica la migración <code>20261022120200_mascotas_propias_permanentes.sql</code> para activar esa función.', "info")
+      : "";
+    if (s.isEmpleado) return `${avisoMigracion}${panelDiaEmpleado(s)}`;
     if (s.isAdmin === false) return note("Esta sección no está disponible para esta cuenta.", "err");
     const content = s.vista === "rutas" ? panelRutas(s) : s.vista === "hotel" ? panelHotel(s) : panelDia(s);
-    return `${tabs(s)}${content}`;
+    return `${tabs(s)}${avisoMigracion}${content}`;
   }
 };

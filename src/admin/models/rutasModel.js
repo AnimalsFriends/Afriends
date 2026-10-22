@@ -100,6 +100,17 @@ export function validarReserva(form) {
   };
 }
 
+/** Valida los campos independientes de la reserva antes de que exista la mascota. */
+export function validarFechasReserva(form) {
+  const entrada = String(form.entrada ?? "");
+  const salida = String(form.salida ?? "");
+  const errors = [];
+  if (!fechaValida(entrada)) errors.push("La fecha de entrada no es válida.");
+  if (!fechaValida(salida)) errors.push("La fecha de salida no es válida.");
+  if (fechaValida(entrada) && fechaValida(salida) && salida <= entrada) errors.push("La salida debe ser posterior a la entrada: ese rango incluye las noches.");
+  return { errors, clean: { entrada, salida } };
+}
+
 export function validarCupos(valor) {
   const cupos = Number(String(valor ?? "").trim());
   return Number.isInteger(cupos) && cupos > 0 && cupos <= 32767
@@ -109,6 +120,7 @@ export function validarCupos(valor) {
 
 export function servicioMascotaEnFecha(mascota, fecha, planes, reservas, ausencias) {
   if (!mascota?.activa) return { codigo: "sin_servicio", ausente: false, reserva: null };
+  if (mascota.es_mascota_propia) return { codigo: "hotel_propio", ausente: false, reserva: null };
   const id = mascota.id;
   const ausente = ausencias.some((a) => a.mascota_id === id && a.fecha === fecha);
   if (ausente) return { codigo: "ausente", ausente: true, reserva: null };
@@ -136,11 +148,14 @@ export function servicioMascotaEnFecha(mascota, fecha, planes, reservas, ausenci
 }
 
 /** Los cupos cuentan perros, no filas de reserva duplicadas. */
-export function resumenHotel(fecha, reservas, cupos) {
-  const ocupan = reservas.filter((r) => r.estado !== "cancelada" && r.entrada <= fecha && fecha < r.salida);
+const idsMascotasPropias = (mascotas) => new Set(mascotas.filter((m) => m.es_mascota_propia).map((m) => m.id));
+
+export function resumenHotel(fecha, reservas, cupos, mascotas = []) {
+  const propios = idsMascotasPropias(mascotas);
+  const ocupan = reservas.filter((r) => !propios.has(r.mascota_id) && r.estado !== "cancelada" && r.entrada <= fecha && fecha < r.salida);
   const enHotel = new Set(ocupan.map((r) => r.mascota_id)).size;
-  const entradas = new Set(reservas.filter((r) => r.estado !== "cancelada" && r.entrada === fecha).map((r) => r.mascota_id)).size;
-  const salidas = new Set(reservas.filter((r) => r.estado !== "cancelada" && r.salida === fecha).map((r) => r.mascota_id)).size;
+  const entradas = new Set(reservas.filter((r) => !propios.has(r.mascota_id) && r.estado !== "cancelada" && r.entrada === fecha).map((r) => r.mascota_id)).size;
+  const salidas = new Set(reservas.filter((r) => !propios.has(r.mascota_id) && r.estado !== "cancelada" && r.salida === fecha).map((r) => r.mascota_id)).size;
   return {
     enHotel,
     entradas,
@@ -151,9 +166,10 @@ export function resumenHotel(fecha, reservas, cupos) {
   };
 }
 
-export function contarOcupacionDia(fecha, reservas) {
+export function contarOcupacionDia(fecha, reservas, mascotas = []) {
+  const propios = idsMascotasPropias(mascotas);
   return new Set(reservas
-    .filter((r) => r.estado !== "cancelada" && r.entrada <= fecha && fecha < r.salida)
+    .filter((r) => !propios.has(r.mascota_id) && r.estado !== "cancelada" && r.entrada <= fecha && fecha < r.salida)
     .map((r) => r.mascota_id)).size;
 }
 

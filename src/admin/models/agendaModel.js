@@ -117,7 +117,7 @@ export function planificarRutas(fecha, rutas, paradas, mascotas, planes, reserva
   const perrosPorRuta = new Map(activas.map((ruta) => [ruta.id, new Set()]));
   const rutasPorPerro = new Map();
   const programados = new Set(mascotas
-    .filter((mascota) => ["colegio", "hotel_colegio"].includes(
+    .filter((mascota) => !mascota.es_mascota_propia && ["colegio", "hotel_colegio"].includes(
       servicioMascotaEnFecha(mascota, fecha, planes, reservas, ausencias).codigo
     ))
     .map((mascota) => mascota.id));

@@ -13,6 +13,17 @@ proyecto, lee esto primero.
 | `migrations/` | Migraciones versionadas. Se aplican en orden de nombre (la fecha va primero). Aquí está la Fase 1 del panel. |
 | `rollbacks/` | Para cada migración de la Fase 1, un archivo `_down.sql` que la deshace. **No se ejecutan solos**, los corres tú si hace falta. |
 | `manual/` | Scripts que NO son migraciones y que decides cuándo correr (hoy: retirar las políticas viejas por correo). |
+
+Las migraciones `20261022120000` y `20261022120100` agregan mensajería privada del
+equipo y responsable opcional de mascota, respectivamente. Cada una tiene un
+rollback correspondiente en `rollbacks/`. Revisa los efectos sobre mensajes y
+asignaciones antes de revertirlas.
+
+La migración `20261022120200_mascotas_propias_permanentes.sql` habilita mascotas
+propias del administrador con estancia permanente: no necesitan reserva de hotel
+ni fecha de salida, y se excluyen de los cálculos de capacidad. Para los seis perros
+ya registrados bajo Martín Jiménez, el administrador debe marcar “Mascota propia”
+en cada ficha; la migración no altera datos por nombre ni reclasifica clientes automáticamente.
 | `config.toml` | Configuración de la CLI de Supabase para correr todo en local. |
 
 > `migrations/20261005121608_crear_tablas_iniciales.sql` está vacía y se conserva

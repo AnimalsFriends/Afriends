@@ -8,7 +8,7 @@ import { DIAS, formatPhone, leadWhatsapp } from "../models/siteDraft.js";
 import { PRICE_TYPE } from "../../shared/pricing.js";
 
 const field = (label, path, value, o = {}) => {
-  const attrs = `data-path="${path}"${o.ph ? ` placeholder="${esc(o.ph)}"` : ""}${o.min != null ? ` min="${o.min}"` : ""}`;
+  const attrs = `data-path="${path}"${o.name ? ` name="${esc(o.name)}"` : ""}${o.autocomplete ? ` autocomplete="${esc(o.autocomplete)}"` : ""}${o.ph ? ` placeholder="${esc(o.ph)}"` : ""}${o.min != null ? ` min="${o.min}"` : ""}`;
   const control = o.textarea
     ? `<textarea ${attrs} rows="2">${esc(value)}</textarea>`
     : `<input type="${o.type || "text"}" ${attrs} value="${esc(value)}"${o.cls ? ` class="${o.cls}"` : ""}>`;
@@ -30,7 +30,7 @@ export const AdminViews = {
         ${field("Número de WhatsApp (recibe los pedidos)", "negocio.whatsapp", n.whatsapp, { type: "tel", ph: "573123044174", hint: "Solo números, con el código del país y sin el +. Colombia: 57 y luego tu número." })}
         ${field("Cómo se ve el teléfono en la página", "negocio.telefonoVisible", n.telefonoVisible, { ph: "+57 312 3044174" })}
         ${field("Correo electrónico", "negocio.correo", n.correo, { type: "email", ph: "hola@tunegocio.com" })}
-        ${field("Dirección", "negocio.direccion", n.direccion, { ph: "Calle 123 # 45-67, Barrio" })}
+        ${field("Dirección", "negocio.direccion", n.direccion, { name: "street-address", autocomplete: "street-address", ph: "Calle 123 # 45-67, Barrio" })}
         ${field("Ciudad", "negocio.ciudad", n.ciudad, { ph: "Bogotá", hint: "Ayuda a que Google te encuentre." })}
         ${field("Ubicación visible en el pie de página", "negocio.ubicacionVisible", n.ubicacionVisible, { ph: "Bogotá, Colombia" })}
       </div>
@@ -41,7 +41,7 @@ export const AdminViews = {
       <p class="adm-sub">Se usan en el Aviso legal y la Política de privacidad. Mientras falten, esas páginas muestran avisos amarillos "[Completar...]".</p>
       <div class="adm-grid">
         ${field("Nombre completo o razón social del titular", "negocio.razonSocial", n.razonSocial, { ph: "Animal Friends S.A.S." })}
-        ${field("NIT o cédula", "negocio.nit", n.nit, { ph: "901.234.567-8" })}
+        ${field("NIT o cédula", "negocio.nit", n.nit, { name: "tax-id", autocomplete: "off", ph: "901.234.567-8" })}
       </div>
     </section>
 
@@ -258,6 +258,17 @@ export const AdminViews = {
       <div class="adm-filters" role="group" aria-label="Filtrar mensajes">${chips}</div>
       ${body}
     </section>`;
+  },
+
+  conversaciones({ admin, empleados, empleadoId, mensajes, error, userId }) {
+    const actual = empleados.find((e) => e.id === empleadoId);
+    const selector = admin ? `<label class="adm-f"><span class="adm-fl">Conversación</span><select data-conv-empleado><option value="">Elige un empleado</option>${empleados.map((e) => `<option value="${esc(e.id)}"${e.id === empleadoId ? " selected" : ""}>${esc(e.nombre)}</option>`).join("")}</select></label>` : `<p class="adm-sub">Conversación privada con administración.</p>`;
+    const body = error ? `<p class="adm-note adm-note--err">No se pudieron cargar los mensajes. ${error === "missing" ? "Aplica la migración de conversaciones." : "Revisa tu conexión y acceso."}</p>` : mensajes.map((m) => {
+      const propio = m.remitente_user_id === userId;
+      const hora = new Date(m.creado_en).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
+      return `<article class="adm-item"><div class="adm-grow"><b>${propio ? "Tú" : admin ? "Empleado" : "Administración"}</b><small>${esc(hora)} · ${m.leido_en ? "Leído" : propio ? "Enviado" : "No leído"}</small><p>${esc(m.cuerpo)}</p></div></article>`;
+    }).join("") || '<p class="adm-sub">Aún no hay mensajes en esta conversación.</p>';
+    return `<section class="adm-card"><h2>💬 Conversaciones del equipo</h2><p class="adm-sub">Mensajes privados entre administración y cada empleado.</p>${selector}${actual ? `<p class="adm-sub">Conversación con ${esc(actual.nombre)}</p>` : ""}<div>${body}</div>${empleadoId ? `<form data-conv-form><label class="adm-f adm-full"><span class="adm-fl">Mensaje</span><textarea name="mensaje" maxlength="4000" rows="3" required></textarea></label><button class="adm-btn adm-btn--primary adm-mt" type="submit">Enviar mensaje</button></form>` : ""}</section>`;
   },
 
   lead(l, titles) {

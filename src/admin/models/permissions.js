@@ -1,7 +1,7 @@
 /** Permisos de presentación del panel. RLS sigue siendo la autoridad de datos. */
 const MODULES = Object.freeze({
-  admin: Object.freeze(["negocio", "servicios", "leads", "gestion", "rutas", "agenda", "finanzas", "seguimiento"]),
-  empleado: Object.freeze(["servicios", "gestion", "rutas"]),
+  admin: Object.freeze(["negocio", "servicios", "leads", "conversaciones", "gestion", "rutas", "agenda", "finanzas", "seguimiento"]),
+  empleado: Object.freeze(["servicios", "gestion", "rutas", "conversaciones"]),
   offline: Object.freeze(["negocio", "servicios"])
 });
 

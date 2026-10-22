@@ -15,7 +15,7 @@
 import { AuthError } from "../services/authService.js";
 import { GestionApi } from "../services/gestionApi.js";
 import { RutasApi } from "../services/rutasApi.js";
-import { hoyBogota, validarReserva } from "../models/rutasModel.js";
+import { hoyBogota, validarFechasReserva } from "../models/rutasModel.js";
 import { reducirImagen } from "../services/imagen.js";
 import { GestionViews } from "../views/gestionViews.js";
 import { puedeEjecutarAccion } from "../models/permissions.js";
@@ -52,7 +52,7 @@ export class GestionController {
     this.sessionVersion = 0;
     this.state = {
       loading: false, error: null, isAdmin: null, isEmpleado: false,
-      duenos: [], q: "", verInactivos: false,
+      duenos: [], empleados: [], q: "", verInactivos: false,
       vista: "lista",         // "lista" | "dueno" | "mascota"
       dueno: { id: null, form: blankDueno(), autorizadas: [] },
       mascota: nuevaMascotaVacia(),
@@ -80,7 +80,7 @@ export class GestionController {
     this.sessionVersion += 1;
     this.active = false; this.loaded = false; this.dirty = false;
     this.state = { ...this.state, loading: false, error: null, isAdmin: null, isEmpleado: false,
-      duenos: [], q: "", verInactivos: false, vista: "lista",
+      duenos: [], empleados: [], q: "", verInactivos: false, vista: "lista",
       dueno: { id: null, form: blankDueno(), autorizadas: [] },
       mascota: nuevaMascotaVacia(), fotoUrl: null, sub: subformsVacios() };
   }
@@ -102,7 +102,7 @@ export class GestionController {
       s.isAdmin = contexto?.rol === "admin";
       s.isEmpleado = contexto?.rol === "empleado";
       if (s.isAdmin) {
-        s.duenos = await GestionApi.listDuenos();
+        [s.duenos, s.empleados] = await Promise.all([GestionApi.listDuenos(), GestionApi.listEmpleados()]);
         if (version !== this.sessionVersion) return;
         this.loaded = true;
       } else if (s.isEmpleado) {
@@ -152,7 +152,8 @@ export class GestionController {
     const textos = {
       perm: "Este usuario no tiene permiso para hacer eso.",
       conflict: "Ese dato choca con otro que ya existe.",
-      missing: "Faltan las tablas del panel en Supabase (Fase 1)."
+      missing: "Faltan las tablas del panel en Supabase (Fase 1).",
+      schema: "Supabase aún no tiene las columnas de las nuevas funciones de mascotas. Aplica las migraciones 20261022120100 y 20261022120200 y vuelve a intentarlo."
     };
     this.toast(textos[error?.code] ?? mensaje, "err");
   }
@@ -332,14 +333,10 @@ export class GestionController {
     const { errors, clean } = validarMascota(s.mascota.form);
     if (errors.length) { this.toast("Revisa estos puntos:", "err", errors); return; }
     let reservaHotel = null;
-    if (!s.mascota.id && s.sub.hotel?.habilitado) {
-      const reserva = validarReserva({
-        mascota_id: "123e4567-e89b-12d3-a456-426614174000",
-        entrada: s.sub.hotel.entrada, salida: s.sub.hotel.salida, estado: "reservada",
-        tambien_colegio: false, notas_comida: "", notas_medicacion: "", notas: ""
-      });
+    if (!s.mascota.id && !s.mascota.form.es_mascota_propia && s.sub.hotel?.habilitado) {
+      const reserva = validarFechasReserva({ entrada: s.sub.hotel.entrada, salida: s.sub.hotel.salida });
       if (reserva.errors.length) { this.toast("Revisa las fechas del servicio de hotel:", "err", reserva.errors); return; }
-      reservaHotel = reserva.clean;
+      reservaHotel = { ...reserva.clean, estado: "reservada", tambien_colegio: false, notas_comida: null, notas_medicacion: null, notas: null };
     }
     await this.conBoton(boton, "Guardando…", async (version) => {
       try {
@@ -546,6 +543,12 @@ export class GestionController {
     if (!this.state.isAdmin) return;
     const t = event.target;
     const s = this.state;
+    if (t.dataset.g) {
+      this.formActual()[t.dataset.g] = t.type === "checkbox" ? t.checked : t.value;
+      this.dirty = true;
+      if (t.dataset.gRerender) this.render();
+      return;
+    }
     if (t.dataset.gs) {
       const [tipo, campo] = t.dataset.gs.split(".");
       if (s.sub[tipo]) s.sub[tipo][campo] = t.type === "checkbox" ? t.checked : t.value;

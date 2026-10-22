@@ -29,15 +29,29 @@ const primeraFila = async (promise) => (await promise)?.[0] ?? null;
 const escribir = (method, path, body, headers = REPRESENTACION) =>
   llamar(path, { method, headers, body: JSON.stringify(body) });
 
+async function cargarMascotas() {
+  try {
+    return {
+      filas: await listaCompleta("mascotas?select=id,nombre,activa,dueno_id,es_mascota_propia&order=nombre.asc,id.asc"),
+      mascotasPropiasDisponible: true
+    };
+  }
+  catch (error) {
+    if (error.code !== "schema") throw error;
+    const filas = await listaCompleta("mascotas?select=id,nombre,activa,dueno_id&order=nombre.asc,id.asc");
+    return { filas: filas.map((mascota) => ({ ...mascota, es_mascota_propia: false })), mascotasPropiasDisponible: false };
+  }
+}
+
 export const RutasApi = {
   async cargar({ fecha, inicioMes, finMes }) {
     const [
-      rutas, paradas, mascotas, duenos, planes, reservas, ausencias,
+      rutas, paradas, mascotasData, duenos, planes, reservas, ausencias,
       paradasDia, empleados, parametros
     ] = await Promise.all([
       listaCompleta("rutas_colegio?select=*&order=nombre.asc,id.asc"),
       listaCompleta("paradas_ruta?select=*&order=ruta_id.asc,sentido.asc,orden.asc,id.asc"),
-      listaCompleta("mascotas?select=id,nombre,activa,dueno_id&order=nombre.asc,id.asc"),
+      cargarMascotas(),
       listaCompleta("duenos?select=id,nombre,direccion,telefono&order=nombre.asc,id.asc"),
       listaCompleta("planes_colegio?select=*&order=desde.desc,id.asc"),
       listaCompleta(`reservas_hotel?select=*&entrada=lt.${finMes}&salida=gt.${inicioMes}&order=entrada.asc,id.asc`),
@@ -47,24 +61,24 @@ export const RutasApi = {
       listaCompleta("parametros_operativos?id=eq.1&select=cupos_hotel,perros_por_empleado")
     ]);
     return {
-      rutas, paradas, mascotas, duenos, planes, reservas, ausencias, paradasDia, empleados,
+      rutas, paradas, mascotas: mascotasData.filas, mascotasPropiasDisponible: mascotasData.mascotasPropiasDisponible, duenos, planes, reservas, ausencias, paradasDia, empleados,
       cuposHotel: parametros[0]?.cupos_hotel ?? null
     };
   },
 
   /** Lecturas mínimas de las rutas asignadas. No crea filas diarias ni lee cupos globales. */
   async cargarEmpleado({ fecha, inicioMes, finMes }) {
-    const [rutas, paradas, mascotas, duenos, planes, reservas, ausencias, paradasDia] = await Promise.all([
+    const [rutas, paradas, mascotasData, duenos, planes, reservas, ausencias, paradasDia] = await Promise.all([
       listaCompleta("rutas_colegio?select=id,nombre,empleado_id,activa&order=nombre.asc,id.asc"),
       listaCompleta("paradas_ruta?select=id,ruta_id,mascota_id,sentido,orden,localidad,direccion,hora_estimada,activa&order=ruta_id.asc,sentido.asc,orden.asc,id.asc"),
-      listaCompleta("mascotas?select=id,nombre,activa,dueno_id&order=nombre.asc,id.asc"),
+      cargarMascotas(),
       listaCompleta("duenos?select=id,nombre,telefono&order=nombre.asc,id.asc"),
       listaCompleta("planes_colegio?select=id,mascota_id,dias_semana,desde,hasta,activo&order=desde.desc,id.asc"),
       listaCompleta(`reservas_hotel?select=id,mascota_id,entrada,salida,estado,tambien_colegio&entrada=lt.${finMes}&salida=gt.${inicioMes}&order=entrada.asc,id.asc`),
       listaCompleta(`ausencias_colegio?select=id,mascota_id,fecha&fecha=eq.${fecha}&order=created_at.asc,id.asc`),
       listaCompleta(`paradas_dia?select=id,parada_id,fecha,estado,motivo&fecha=eq.${fecha}&order=parada_id.asc,id.asc`)
     ]);
-    return { rutas, paradas, mascotas, duenos, planes, reservas, ausencias, paradasDia, empleados: [], cuposHotel: null };
+    return { rutas, paradas, mascotas: mascotasData.filas, mascotasPropiasDisponible: mascotasData.mascotasPropiasDisponible, duenos, planes, reservas, ausencias, paradasDia, empleados: [], cuposHotel: null };
   },
 
   async cargarDia(fecha) {
