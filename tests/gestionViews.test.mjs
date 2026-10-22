@@ -9,6 +9,7 @@ const base = () => ({
   loading: false, error: null, isAdmin: true, q: "", verInactivos: false, vista: "lista",
   duenos: [{ id: ID, nombre: "Ana <b>Pérez</b>", telefono: "573123044174", activo: true,
     mascotas: [{ id: MID, nombre: "Max", raza: "Criollo", activa: true, es_bravo: true, esta_enfermo: false, toma_medicamentos: true }] }],
+  empleados: [],
   dueno: { id: ID, form: { ...blankDueno(), nombre: "Ana", telefono: "573123044174" }, autorizadas: [] },
   mascota: { id: MID, form: { ...blankMascota(), nombre: "Max", toma_medicamentos: true }, activa: true, foto_path: null, vacunas: [], medicamentos: [] },
   fotoUrl: null,

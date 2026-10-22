@@ -12,6 +12,7 @@ globalThis.fetch = async (url, init = {}) => {
   llamadas.push({ url: String(url), init });
   return {
     status: respuesta.status, ok: respuesta.status >= 200 && respuesta.status < 300,
+    clone: () => ({ json: async () => respuesta.body }),
     json: async () => respuesta.body, blob: async () => new Blob(["x"])
   };
 };
