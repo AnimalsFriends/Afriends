@@ -70,6 +70,22 @@
 .wa-float:hover { background: #EAF5F3; color: #0F7A6D; transform: scale(1.06); }
 .wa-float svg { width: 1.75rem; height: 1.75rem; fill: currentColor; }
 
+/* En móvil, separa el acceso flotante del encabezado de servicios y respeta áreas seguras. */
+@media (max-width: 767px) {
+  .wa-float {
+    right: max(.75rem, env(safe-area-inset-right));
+    bottom: max(.75rem, env(safe-area-inset-bottom));
+    width: 3rem;
+    height: 3rem;
+  }
+  #servicios {
+    padding-bottom: calc(var(--sp-8) + 3.5rem);
+  }
+  body.has-consent-banner .wa-float {
+    bottom: calc(var(--consent-h, 11rem) + var(--sp-4));
+  }
+}
+
 /* ---------- Páginas legales (texto largo) ---------- */
 .prose { max-width: 46rem; }
 .prose h1 { font-size: var(--fs-2xl); }
