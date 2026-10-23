@@ -74,40 +74,40 @@
   <main id="contenido">
     <section class="home-carousel" aria-label="Conoce Animals Friends" data-carousel>
       <div class="home-carousel__track">
-        <article class="home-carousel__slide is-active" data-slide aria-hidden="false">
-          <img src="https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=1800&q=80" alt="Dos perros jugando felices sobre el césped" width="1800" height="1200" fetchpriority="high">
-          <div class="home-carousel__shade"></div>
+        <article class="home-carousel__slide home-carousel__slide--1 is-active" data-slide aria-hidden="false">
+          <img src="https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&fm=webp&w=1800&q=80" alt="Dos perros jugando felices sobre el césped" width="1800" height="1200" loading="eager" fetchpriority="high" decoding="async">
+          <p class="eyebrow home-carousel__badge">Amigos para toda la vida</p>
+          <div class="home-carousel__shade" aria-hidden="true"></div>
           <div class="home-carousel__content container">
-            <p class="eyebrow">Amigos para toda la vida</p>
             <h1 id="titulo-principal">Cuidamos a tu peludito con amor, respeto y alegría</h1>
             <p>Un espacio para jugar, descubrir y sentirse como en casa.</p>
             <a class="btn btn--primary" href="#servicios">Conoce nuestros servicios</a>
           </div>
         </article>
-        <article class="home-carousel__slide" data-slide aria-hidden="true" inert>
-          <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=1800&q=80" alt="Retrato cercano de un perro de expresión alegre" width="1800" height="1200">
-          <div class="home-carousel__shade"></div>
+        <article class="home-carousel__slide home-carousel__slide--2" data-slide aria-hidden="true" inert>
+          <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&fm=webp&w=1800&q=80" alt="Retrato cercano de un perro de expresión alegre" width="1800" height="1200" loading="lazy" decoding="async">
+          <p class="eyebrow home-carousel__badge">Cuidado con cariño</p>
+          <div class="home-carousel__shade" aria-hidden="true"></div>
           <div class="home-carousel__content container">
-            <p class="eyebrow">Cuidado con cariño</p>
             <h2>Su bienestar es nuestra prioridad</h2>
             <p>Atención pensada para que cada visita sea una buena experiencia.</p>
             <a class="btn btn--primary" href="#formulario">Hablemos de tu mascota</a>
           </div>
         </article>
-        <article class="home-carousel__slide" data-slide aria-hidden="true" inert>
-          <img src="https://images.unsplash.com/photo-1551717743-49959800b1f6?auto=format&fit=crop&w=1800&q=80" alt="Perro descansando tranquilamente en el césped" width="1800" height="1200">
-          <div class="home-carousel__shade"></div>
+        <article class="home-carousel__slide home-carousel__slide--3" data-slide aria-hidden="true" inert>
+          <img src="https://images.unsplash.com/photo-1551717743-49959800b1f6?auto=format&fit=crop&fm=webp&w=1800&q=80" alt="Perro descansando tranquilamente en el césped" width="1800" height="1200" loading="lazy" decoding="async">
+          <p class="eyebrow home-carousel__badge">Juego, descanso y compañía</p>
+          <div class="home-carousel__shade" aria-hidden="true"></div>
           <div class="home-carousel__content container">
-            <p class="eyebrow">Juego, descanso y compañía</p>
             <h2>Un lugar para mover la cola</h2>
             <p>Descubre las opciones de cuidado para acompañar su rutina.</p>
             <a class="btn btn--primary" href="#servicios">Explorar servicios</a>
           </div>
         </article>
       </div>
-      <div class="home-carousel__controls container">
+      <div class="home-carousel__controls container" aria-label="Controles del carrusel">
         <button class="home-carousel__arrow" type="button" data-carousel-prev aria-label="Imagen anterior">‹</button>
-        <div class="home-carousel__dots" aria-label="Elegir imagen">
+        <div class="home-carousel__dots" role="group" aria-label="Elegir imagen">
           <button type="button" data-carousel-to="0" aria-label="Mostrar imagen 1" aria-current="true"></button>
           <button type="button" data-carousel-to="1" aria-label="Mostrar imagen 2" aria-current="false"></button>
           <button type="button" data-carousel-to="2" aria-label="Mostrar imagen 3" aria-current="false"></button>
