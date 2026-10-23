@@ -141,7 +141,7 @@ async function auditPages(baseDir, pageNames, label) {
 
     // La etiqueta debe permanecer exacta en la página principal y en el paquete publicado.
     if (f === "index.html") {
-      const verificationTags = [...html.matchAll(/<meta\\s+name=["']google-site-verification["']\\s+content=["']([^"']+)["']\\s*\\/?\\s*>/gi)];
+      const verificationTags = [...html.matchAll(/<meta\s+name=["']google-site-verification["']\s+content=["']([^"']+)["']\s*\/?\s*>/gi)];
       if (verificationTags.length !== 1) err(reportFile, `debe contener exactamente una etiqueta google-site-verification (tiene ${verificationTags.length})`);
       else if (verificationTags[0][1] !== GOOGLE_SITE_VERIFICATION) err(reportFile, "el token google-site-verification no coincide con el configurado para Search Console");
     }
