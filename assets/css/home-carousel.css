@@ -3,7 +3,7 @@
 .home-carousel__track { position: relative; min-height: 34rem; }
 .home-carousel__slide { position: absolute; inset: 0; min-height: 34rem; opacity: 0; visibility: hidden; transition: opacity .55s ease; }
 .home-carousel__slide.is-active { position: relative; opacity: 1; visibility: visible; }
-.home-carousel__slide img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.home-carousel__slide img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; background: #26312d; }
 .home-carousel__shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(15, 23, 20, .82) 0%, rgba(15, 23, 20, .56) 52%, rgba(15, 23, 20, .16) 100%); }
 .home-carousel__content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 34rem; padding-block: 4rem 5rem; }
 .home-carousel__content .eyebrow { background: rgba(255,255,255,.92); color: #4b3329; }
@@ -21,6 +21,7 @@
 .home-carousel button:focus-visible, .home-carousel a:focus-visible { outline: 3px solid #ffd166; outline-offset: 3px; }
 @media (max-width: 40rem) {
   .home-carousel__track, .home-carousel__slide, .home-carousel__content { min-height: 37rem; }
+  .home-carousel__slide img { object-position: center top; }
   .home-carousel__shade { background: linear-gradient(0deg, rgba(15,23,20,.88) 0%, rgba(15,23,20,.55) 58%, rgba(15,23,20,.15) 100%); }
   .home-carousel__content { justify-content: flex-end; padding-block: 3rem 6.25rem; }
   .home-carousel__controls { bottom: .85rem; gap: .5rem; }
