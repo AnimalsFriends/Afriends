@@ -24,6 +24,7 @@ const isDirectory = async (p) => {
   try { return (await stat(p)).isDirectory(); } catch { return false; }
 };
 const rel = (...parts) => path.posix.normalize(path.posix.join(...parts));
+const GOOGLE_SITE_VERIFICATION = "QwgC8mxuI7mi7kvHCMZFgxPDEuOYS2lY8Qc7eSUgscY";
 const BRAND_ICONS = [
   { src: "img/icon-192.png", sizes: "192x192" },
   { src: "img/icon-512.png", sizes: "512x512" }
@@ -137,6 +138,13 @@ async function auditPages(baseDir, pageNames, label) {
   for (const [f, html] of Object.entries(pages)) {
     const reportFile = `${prefix}${f}`;
     const noindex = /<meta name="robots" content="[^"]*noindex/.test(html);
+
+    // La etiqueta debe permanecer exacta en la página principal y en el paquete publicado.
+    if (f === "index.html") {
+      const verificationTags = [...html.matchAll(/<meta\s+name=["']google-site-verification["']\s+content=["']([^"']+)["']\s*\/?\s*>/gi)];
+      if (verificationTags.length !== 1) err(reportFile, `debe contener exactamente una etiqueta google-site-verification (tiene ${verificationTags.length})`);
+      else if (verificationTags[0][1] !== GOOGLE_SITE_VERIFICATION) err(reportFile, "el token google-site-verification no coincide con el configurado para Search Console");
+    }
 
     // --- SEO ---
     const title = grab(html, /<title>([\s\S]*?)<\/title>/);
