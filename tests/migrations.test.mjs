@@ -104,6 +104,37 @@ test("el empleado no tiene ninguna política sobre tablas de dinero", () => {
   }
 });
 
+test("mensajes_equipo restringe la lectura y canaliza escrituras por RPC", () => {
+  const migracion = migraciones.find(({ f }) => f === "20261022120000_mensajes_admin_empleado.sql");
+  assert.ok(migracion, "falta la migración de mensajes privados");
+  assert.match(migracion.sql, /alter table public\.mensajes_equipo enable row level security/i);
+  assert.match(migracion.sql, /revoke all on public\.mensajes_equipo from public, anon, authenticated/i);
+  const grants = [...migracion.sql.matchAll(/grant\s+([^;]+?)\s+on\s+(?:table\s+)?public\.mensajes_equipo\s+to\s+([^;]+);/gi)]
+    .map(([, privileges, roles]) => `${privileges.trim().toLowerCase()}|${roles.trim().toLowerCase()}`);
+  assert.deepEqual(grants, ["select|authenticated"], "solo debe concederse SELECT directo; las escrituras usan RPC");
+
+  const enviar = migracion.sql.match(/create or replace function public\.mensaje_equipo_enviar\([^]*?\$\$;/i)?.[0];
+  const marcarLeido = migracion.sql.match(/create or replace function public\.mensaje_equipo_marcar_leido\([^]*?\$\$;/i)?.[0];
+  assert.ok(enviar, "falta la RPC de envío");
+  assert.ok(marcarLeido, "falta la RPC para marcar leído");
+  assert.match(enviar, /security definer\s+set search_path = ''/i);
+  assert.match(enviar, /\(select auth\.uid\(\)\) is null/i);
+  assert.match(enviar, /public\.es_admin\(\)\s+or\s+p_empleado = public\.empleado_actual_id\(\)/i);
+  assert.match(marcarLeido, /security definer\s+set search_path = ''/i);
+  assert.match(marcarLeido, /m\.leido_en is null/i);
+  assert.match(marcarLeido, /m\.remitente_user_id <> \(select auth\.uid\(\)\)/i);
+  for (const [signature, functionName] of [
+    ["uuid, text", "mensaje_equipo_enviar"],
+    ["uuid", "mensaje_equipo_marcar_leido"],
+  ]) {
+    assert.match(migracion.sql, new RegExp(`revoke all on function public\\.${functionName}\\(${signature.replace(", ", ",\\s*")}\\) from public, anon`, "i"));
+    assert.match(migracion.sql, new RegExp(`grant execute on function public\\.${functionName}\\(${signature.replace(", ", ",\\s*")}\\) to authenticated`, "i"));
+  }
+
+  assert.match(migracion.sql, /using \(public\.es_admin\(\) or empleado_id = public\.empleado_actual_id\(\)\)/i);
+  assert.match(migracion.sql, /using \(\(public\.es_admin\(\) or empleado_id = public\.empleado_actual_id\(\)\) and remitente_user_id <> \(select auth\.uid\(\)\)\)\s+with check \(\(public\.es_admin\(\) or empleado_id = public\.empleado_actual_id\(\)\) and remitente_user_id <> \(select auth\.uid\(\)\)\)/i);
+});
+
 test("dueños y mascotas no se pueden borrar desde sesiones autenticadas", () => {
   const migracion = migraciones.find(({ f }) => f === "20261008190000_fase2_evitar_borrado_duenos_mascotas.sql");
   const rollback = leer(ROLLBACKS).find(({ f }) => f === "20261008190000_fase2_evitar_borrado_duenos_mascotas_down.sql");

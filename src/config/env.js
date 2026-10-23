@@ -13,7 +13,7 @@ export const ENV = Object.freeze({
   SITE_URL: "https://afriends.petcommunity-133.workers.dev",
 
   SUPABASE_URL: "https://xjpivjxagyzeeqinlzkz.supabase.co",
-  SUPABASE_ANON_KEY: "sb_publishable_lSN4fF9cjtra9NwX6rLX-A_MuBBH-Rk",
+  SUPABASE_ANON_KEY:"sb_publishable_lSN4fF9cjtra9NwX6rLX-A_MuBBH-Rk",
   SITE_TABLE: "site_config",
 
   // --- Formulario de contacto (Fase 4) ---

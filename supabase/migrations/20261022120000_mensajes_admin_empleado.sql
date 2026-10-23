@@ -10,9 +10,8 @@ create table if not exists public.mensajes_equipo (
 
 create index if not exists mensajes_equipo_hilo_idx on public.mensajes_equipo(empleado_id, creado_en);
 alter table public.mensajes_equipo enable row level security;
-revoke all on public.mensajes_equipo from anon;
+revoke all on public.mensajes_equipo from public, anon, authenticated;
 grant select on public.mensajes_equipo to authenticated;
-grant update (leido_en) on public.mensajes_equipo to authenticated;
 
 create or replace function public.mensaje_equipo_enviar(p_empleado uuid, p_cuerpo text)
 returns public.mensajes_equipo language plpgsql security definer set search_path = '' as $$
