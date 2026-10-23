@@ -13,7 +13,7 @@
  *
  * Dirección del sitio (SITE_URL): variable de entorno SITE_URL > ENV.SITE_URL en src/config/env.js.
  * Si está vacía NO se inventa ningún dominio: se omiten sitemap, canonical y og:url / og:image.
- * La ruta pública conserva el .html porque GitHub Pages no aplica las rutas limpias de Cloudflare Pages.
+ * Las rutas públicas conservan el sufijo .html de los archivos estáticos publicados por el Worker.
  */
 import { readFile, writeFile, readdir, rm } from "node:fs/promises";
 import path from "node:path";
@@ -27,7 +27,12 @@ const { SITE_DEFAULTS } = await import(url("src/config/site.defaults.js"));
 const { SiteConfigModel } = await import(url("src/models/SiteConfigModel.js"));
 const { buildBusinessSchema, buildPageSchema } = await import(url("src/seo/structuredData.js"));
 
-const SITE_URL = (process.env.SITE_URL || ENV.SITE_URL || "").trim().replace(/\/+$/, "");
+const CONFIGURED_SITE_URL = (ENV.SITE_URL || "").trim().replace(/\/+$/, "");
+const SITE_URL = (process.env.SITE_URL || CONFIGURED_SITE_URL).trim().replace(/\/+$/, "");
+if (SITE_URL && SITE_URL !== CONFIGURED_SITE_URL) {
+  console.error(`✖ SITE_URL debe coincidir con el dominio canónico configurado (${CONFIGURED_SITE_URL})`);
+  process.exit(1);
+}
 if (SITE_URL && !/^https:\/\//.test(SITE_URL)) {
   console.error(`✖ SITE_URL debe empezar por https:// (recibido: "${SITE_URL}")`);
   process.exit(1);

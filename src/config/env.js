@@ -7,8 +7,7 @@
  * - Mientras estén vacías, el sitio funciona 100% con los valores de site.defaults.js.
  */
 export const ENV = Object.freeze({
-  // URL pública, sin barra final. GitHub Pages publica este repo bajo /Afriends;
-  // conservar esa ruta evita canonical, sitemap y JSON-LD apuntando al sitio equivocado.
+  // URL canónica pública del Worker afriends, sin barra final.
   // La usan el sitemap, robots.txt, las etiquetas canonical / Open Graph y los datos
   // estructurados (SEO). SITE_URL del entorno puede reemplazarla al desplegar.
   SITE_URL: "https://afriends.petcommunity-133.workers.dev",

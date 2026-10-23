@@ -11,9 +11,12 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { ENV } from "../src/config/env.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DIST = path.join(ROOT, "dist");
+const CONFIGURED_SITE_URL = (ENV.SITE_URL || "").trim().replace(/\/+$/, "");
+const SITE_URL = (process.env.SITE_URL || CONFIGURED_SITE_URL).trim().replace(/\/+$/, "");
 /* ids que NO están en el HTML estático porque los crea JavaScript (Header/Footer) */
 const JS_IDS = new Set(["contacto", "primary-nav"]);
 
@@ -35,6 +38,26 @@ const warn = (f, m) => warnings.push(`${f}: ${m}`);
 const grab = (html, re) => (html.match(re)?.[1] ?? "").trim();
 const idsOf = (html) => new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]));
 
+async function hasNoindexHeader(baseDir, pagePath) {
+  const headerFile = path.join(baseDir, "_headers");
+  if (!(await isFile(headerFile))) return false;
+  const lines = (await readFile(headerFile, "utf8")).split(/\r?\n/);
+  let routePattern = "";
+  let noindex = false;
+  for (const line of lines) {
+    if (!line.trim() || /^\s*#/.test(line)) continue;
+    if (!/^\s/.test(line)) {
+      routePattern = line.trim();
+      continue;
+    }
+    const match = line.match(/^\s*X-Robots-Tag:\s*(.+)$/i);
+    if (!match || !/\bnoindex\b/i.test(match[1])) continue;
+    const regex = new RegExp(`^${routePattern.split("*").map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*")}$`);
+    if (regex.test(pagePath)) noindex = true;
+  }
+  return noindex;
+}
+
 const files = (await readdir(ROOT)).filter((f) => f.endsWith(".html")).sort();
 if (await isFile(path.join(ROOT, "admin/index.html"))) files.push("admin/index.html");
 
@@ -51,7 +74,7 @@ function localTarget(page, href) {
   return { relative: target, hash };
 }
 
-async function auditSitemap(baseDir, robotsTxt, label) {
+async function auditSitemap(baseDir, robotsTxt, pages, label) {
   const sitemapFile = path.join(baseDir, "sitemap.xml");
   const prefix = label === "dist" ? "dist/" : "";
   const hasSite = /^Sitemap:/m.test(robotsTxt);
@@ -61,32 +84,66 @@ async function auditSitemap(baseDir, robotsTxt, label) {
   }
 
   const sm = await readFile(sitemapFile, "utf8");
-  const locs = [];
-  for (const match of sm.matchAll(/<loc>([^<]+)<\/loc>/g)) {
-    try { locs.push(new URL(match[1]).pathname); }
-    catch { err(`${prefix}sitemap.xml`, `URL inválida → ${match[1]}`); }
+  if (SITE_URL !== CONFIGURED_SITE_URL) {
+    err(`${prefix}robots.txt`, `SITE_URL del entorno debe coincidir con el dominio canónico ${CONFIGURED_SITE_URL}`);
   }
-  const sitemapUrl = robotsTxt.match(/^Sitemap:\s*(\S+)/m)?.[1];
-  let sitePrefix = "";
-  if (sitemapUrl) {
-    try { sitePrefix = new URL(sitemapUrl).pathname.replace(/\/sitemap\.xml$/, "").replace(/\/+$/, ""); }
-    catch { err(`${prefix}robots.txt`, `URL de sitemap inválida → ${sitemapUrl}`); }
+  const sitemapUrl = robotsTxt.match(/^Sitemap:\s*(\S+)\s*$/m)?.[1];
+  const expectedSitemapUrl = SITE_URL ? `${SITE_URL}/sitemap.xml` : "";
+  if (!sitemapUrl) err(`${prefix}robots.txt`, "falta la directiva Sitemap");
+  else if (sitemapUrl !== expectedSitemapUrl) err(`${prefix}robots.txt`, `Sitemap debe ser ${expectedSitemapUrl} (recibido: ${sitemapUrl})`);
+  if ((robotsTxt.match(/^Sitemap:/gm) ?? []).length !== 1) err(`${prefix}robots.txt`, "debe contener exactamente una directiva Sitemap");
+
+  if (!sm.startsWith('<?xml version="1.0" encoding="UTF-8"?>') ||
+      !/<urlset\s+xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">[\s\S]*<\/urlset>\s*$/.test(sm)) {
+    err(`${prefix}sitemap.xml`, "declaración XML, namespace o raíz urlset inválidos");
+  }
+  const urls = [...sm.matchAll(/<url>\s*<loc>([^<]+)<\/loc>\s*<\/url>/g)].map((m) => m[1]);
+  if (!urls.length || (sm.match(/<url>/g) ?? []).length !== urls.length ||
+      (sm.match(/<loc>/g) ?? []).length !== urls.length) {
+    err(`${prefix}sitemap.xml`, "estructura de url/loc incompleta o vacía");
   }
 
-  for (const urlPath of locs) {
-    if (sitePrefix && !urlPath.startsWith(`${sitePrefix}/`)) {
-      err(`${prefix}sitemap.xml`, `URL fuera de la ruta base del sitio → ${urlPath}`);
+  let expectedOrigin = "";
+  let sitePrefix = "";
+  try {
+    const site = new URL(SITE_URL);
+    if (site.protocol !== "https:") err("src/config/env.js", "SITE_URL debe usar HTTPS");
+    expectedOrigin = site.origin;
+    sitePrefix = site.pathname.replace(/\/+$/, "");
+  } catch {
+    err("src/config/env.js", "SITE_URL no es una URL pública válida");
+  }
+  const seen = new Set();
+  for (const loc of urls) {
+    let parsed;
+    try { parsed = new URL(loc); }
+    catch { err(`${prefix}sitemap.xml`, `URL inválida → ${loc}`); continue; }
+    if (parsed.protocol !== "https:" || parsed.origin !== expectedOrigin) {
+      err(`${prefix}sitemap.xml`, `URL debe usar HTTPS y el dominio canónico ${expectedOrigin} → ${loc}`);
       continue;
     }
-    const localPath = sitePrefix ? urlPath.slice(sitePrefix.length) || "/" : urlPath;
-    const trimmedPath = localPath.replace(/^\/+|\/+$/g, "");
-    const file = localPath === "/" || localPath.endsWith("/")
-      ? `${trimmedPath ? `${trimmedPath}/` : ""}index.html`
-      : localPath.replace(/^\//, "");
-    if (!(await isFile(path.join(baseDir, file)))) err(`${prefix}sitemap.xml`, `URL sin archivo → ${urlPath}`);
-  }
-  if (locs.includes("/404") || locs.some((p) => p.startsWith("/admin"))) {
-    err(`${prefix}sitemap.xml`, "no debe incluir la 404 ni el panel");
+    if (sitePrefix && parsed.pathname !== sitePrefix && !parsed.pathname.startsWith(`${sitePrefix}/`)) {
+      err(`${prefix}sitemap.xml`, `URL fuera de la ruta base del sitio → ${parsed.pathname}`);
+      continue;
+    }
+    if (seen.has(loc)) err(`${prefix}sitemap.xml`, `URL duplicada → ${loc}`);
+    seen.add(loc);
+
+    const pagePath = parsed.pathname.slice(sitePrefix.length) || "/";
+    const file = pagePath === "/" || pagePath.endsWith("/")
+      ? `${pagePath.replace(/^\/+|\/+$/g, "")}${pagePath === "/" ? "" : "/"}index.html`
+      : pagePath.replace(/^\//, "");
+    const html = pages[file];
+    if (!html) { err(`${prefix}sitemap.xml`, `URL sin página pública correspondiente → ${loc}`); continue; }
+    const robotsMeta = html.match(/<meta\b[^>]*\bname=["']robots["'][^>]*>/i)?.[0] ?? "";
+    const robotsContent = robotsMeta.match(/\bcontent=["']([^"']*)["']/i)?.[1] ?? "";
+    if (/\bnoindex\b|\bnofollow\b/i.test(robotsContent) || await hasNoindexHeader(baseDir, parsed.pathname)) {
+      err(`${prefix}sitemap.xml`, `incluye página no indexable → ${loc}`);
+    }
+    const canonical = [...html.matchAll(/<link\b[^>]*\brel=["']canonical["'][^>]*\bhref=["']([^"']+)["'][^>]*>/gi)];
+    if (canonical.length !== 1 || canonical[0][1] !== loc) {
+      err(`${prefix}sitemap.xml`, `URL no coincide con el canonical de ${file} → ${loc}`);
+    }
   }
 }
 
@@ -213,7 +270,7 @@ async function auditPages(baseDir, pageNames, label) {
 
   await auditManifest(baseDir, label);
   if (!/^User-agent:/m.test(robotsTxt)) err(`${prefix}robots.txt`, "falta o es inválido");
-  await auditSitemap(baseDir, robotsTxt, label);
+  await auditSitemap(baseDir, robotsTxt, pages, label);
   return { pages, robotsTxt };
 }
 
@@ -223,7 +280,7 @@ console.log(`Páginas auditadas: ${Object.keys(source.pages).length} (${Object.k
 if (!(await isDirectory(DIST))) {
   err("dist", "no existe el paquete; ejecuta npm run package o npm run audit para generarlo");
 } else {
-  for (const required of ["_headers", "robots.txt"]) {
+  for (const required of ["_headers", "robots.txt", "sitemap.xml"]) {
     if (!(await isFile(path.join(DIST, required)))) err("dist", `falta archivo requerido → ${required}`);
   }
   const dist = await auditPages(DIST, files, "dist");

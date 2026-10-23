@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://animalsfriends.github.io/Afriends/sitemap.xml
+Sitemap: https://afriends.petcommunity-133.workers.dev/sitemap.xml
