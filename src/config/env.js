@@ -22,7 +22,7 @@ export const ENV = Object.freeze({
                                       // Clave de prueba para desarrollo: "1x00000000000000000000AA"
 
   // --- Analítica (Fase 4) ---
-  GA_MEASUREMENT_ID: "",              // ID de Google Analytics 4, ej. "G-ABC123XYZ". Vacío = sin analítica ni banner de cookies
+  GA_MEASUREMENT_ID: "G-SQWWXCB1YS", // ID de Google Analytics 4. Solo se carga tras aceptar cookies opcionales
    // la crea supabase/01_site_config.sql
   REQUEST_TIMEOUT_MS: 3500
 });
