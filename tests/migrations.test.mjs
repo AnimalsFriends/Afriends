@@ -64,7 +64,7 @@ for (const t of tablas) {
       assert.ok(anonRevokes, "falta revoke all para anon");
     }
 
-    const hayAdmin = [...todo.matchAll(/create policy "[^"]+" on public\.(\w+)[\s\S]*?;/gi)]
+    const hayAdmin = [...todo.matchAll(/create policy "[^"]+"\s+on public\.(\w+)[\s\S]*?;/gi)]
       .some((m) => m[1] === t && /es_admin\(\)/.test(m[0]));
     assert.ok(hayAdmin, "falta una política que use es_admin()");
 
