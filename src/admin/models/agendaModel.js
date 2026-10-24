@@ -59,7 +59,8 @@ export function conflictosCita(cita,citas){
   if(!Number.isFinite(oi)||!Number.isFinite(of)||inicio>=of||fin<=oi)return [];
   const tipos=[];
   const otros=empleadosDe(otra);
-  if(!servicioColectivo(cita.servicio_codigo)&&!servicioColectivo(otra.servicio_codigo)&&empleados.some(id=>otros.includes(id)))tipos.push("empleado");
+  const mismoServicioColectivo = cita.servicio_codigo === otra.servicio_codigo && servicioColectivo(cita.servicio_codigo);
+  if(!mismoServicioColectivo&&empleados.some(id=>otros.includes(id)))tipos.push("empleado");
   if(cita.mascota_id===otra.mascota_id)tipos.push("mascota");
   return tipos.length?[{cita:otra,tipos}]:[];
  });
