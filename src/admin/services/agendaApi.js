@@ -2,7 +2,7 @@
  * Acceso REST de la agenda. La escritura de cita y asignaciones es atómica vía RPC.
  */
 import { inicioDiaBogotaUTC } from "../models/agendaModel.js";
-import { esUuid, esFechaISO } from "../models/gestionModel.js";
+import { esUuid } from "../models/gestionModel.js";
 import { llamar } from "./gestionApi.js";
 import { RutasApi } from "./rutasApi.js";
 import { ApiError } from "./adminApi.js";
