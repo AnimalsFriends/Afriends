@@ -28,7 +28,7 @@ test("la agenda convierte fecha y hora con zona Bogotá sin depender del navegad
 
 test("la cita exige mascota, empleado, servicio y un rango horario real", () => {
   const result = validarCita({
-    mascota_id: DOG, empleado_id: EMPLOYEE, servicio_codigo: "bano",
+    mascota_id: DOG, empleado_ids: [EMPLOYEE], servicio_codigo: "bano", fecha_servicio: MONDAY,
     inicio: "2026-10-12T08:30", fin: "2026-10-12T09:15", estado: "pendiente", notas: ""
   });
   assert.deepEqual(result.errors, []);
@@ -69,4 +69,43 @@ test("la planeación cuenta perros programados por ruta y no inventa capacidades
   assert.equal(sinParada.totalPerros, 1);
   assert.deepEqual(sinParada.perrosSinRuta, [DOG]);
   assert.equal(sinParada.totalEmpleados, null);
+});
+
+
+test("permite guardar cualquier servicio con fecha y sin horario", () => {
+  const result = validarCita({
+    mascota_id: DOG, empleado_ids: [EMPLOYEE], servicio_codigo: "hotel",
+    fecha_servicio: MONDAY, inicio: "", fin: "", estado: "pendiente", notas: ""
+  });
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.clean.inicio, null);
+  assert.equal(result.clean.fin, null);
+  assert.equal(result.clean.fecha_servicio, MONDAY);
+});
+
+test("rechaza un horario incompleto y exige al menos un empleado", () => {
+  const result = validarCita({
+    mascota_id: DOG, empleado_ids: [], servicio_codigo: "peluqueria",
+    fecha_servicio: MONDAY, inicio: "2026-10-12T08:30", fin: "", estado: "pendiente", notas: ""
+  });
+  assert.ok(result.errors.some((e) => e.includes("empleado")));
+  assert.ok(result.errors.some((e) => e.includes("ambas vacías")));
+});
+
+test("hotel y colegio permiten varios perros del mismo empleado en el mismo horario", () => {
+  const otra = { id: "other", mascota_id: "523e4567-e89b-12d3-a456-426614174005",
+    empleado_ids: [EMPLOYEE], servicio_codigo: "hotel", inicio: "2026-10-12T13:00:00Z",
+    fin: "2026-10-12T14:00:00Z", estado: "pendiente" };
+  const cita = { id: "new", mascota_id: DOG, empleado_ids: [EMPLOYEE], servicio_codigo: "hotel",
+    inicio: "2026-10-12T13:15:00Z", fin: "2026-10-12T14:15:00Z", estado: "pendiente" };
+  assert.deepEqual(conflictosCita(cita, [otra]), []);
+});
+
+test("los servicios individuales conservan la alerta si un empleado asignado se cruza", () => {
+  const otra = { id: "other", mascota_id: "523e4567-e89b-12d3-a456-426614174005",
+    empleado_ids: [EMPLOYEE], servicio_codigo: "bano", inicio: "2026-10-12T13:00:00Z",
+    fin: "2026-10-12T14:00:00Z", estado: "pendiente" };
+  const cita = { id: "new", mascota_id: DOG, empleado_ids: [EMPLOYEE], servicio_codigo: "peluqueria",
+    inicio: "2026-10-12T13:15:00Z", fin: "2026-10-12T14:15:00Z", estado: "pendiente" };
+  assert.deepEqual(conflictosCita(cita, [otra]).map((x) => x.tipos), [["empleado"]]);
 });
