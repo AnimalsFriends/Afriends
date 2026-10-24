@@ -144,6 +144,14 @@ export class AgendaController {
 
   onChange(event) {
     const target = event.target;
+    if (target.matches("[data-agenda-employee]")) {
+      const ids = new Set(this.state.formularios.cita.empleado_ids ?? []);
+      if (target.checked) ids.add(target.value); else ids.delete(target.value);
+      this.state.formularios.cita.empleado_ids = [...ids];
+      this.setDirty(true);
+      this.render();
+      return;
+    }
     if (target.matches("[data-agenda-field]")) this.actualizarFormulario(target);
     if (target.matches("[data-agenda-date]")) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(target.value)) { target.value = this.state.fecha; return; }
