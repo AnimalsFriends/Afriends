@@ -9,15 +9,16 @@
   display: grid;
   grid-template: 1fr / minmax(0, 1fr);
   background: #26312d;
+  border: 0;
 }
 .home-carousel__slide {
   position: relative;
   grid-area: 1 / 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  align-content: start;
+  display: block;
   min-width: 0;
+  min-height: 37rem;
+  overflow: hidden;
+  border: 0;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -30,11 +31,12 @@
   pointer-events: auto;
 }
 .home-carousel__slide img {
+  position: absolute;
+  inset: 0;
   display: block;
-  grid-row: 1;
   width: 100%;
-  aspect-ratio: 4 / 3;
-  height: auto;
+  height: 100%;
+  aspect-ratio: auto;
   object-fit: cover;
   object-position: center;
   background: #26312d;
@@ -53,16 +55,24 @@
   color: #3d302a;
   box-shadow: 0 2px 12px rgba(0,0,0,.18);
 }
-.home-carousel__shade { display: none; }
+.home-carousel__shade {
+  display: block;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(18,28,26,.94) 0%, rgba(18,28,26,.78) 34%, rgba(18,28,26,.18) 72%, rgba(18,28,26,.05) 100%);
+  pointer-events: none;
+}
 .home-carousel__content {
-  grid-row: 2;
+  position: absolute;
+  z-index: 1;
+  inset: auto 0 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: flex-end;
   min-height: 21.5rem;
   padding: 1.5rem var(--gutter, 1rem) 1.5rem;
-  background: #26312d;
+  background: transparent;
   color: #fff;
 }
 .home-carousel__content h1,
@@ -221,7 +231,8 @@
     pointer-events: none;
   }
   .home-carousel__content {
-    position: relative;
+    position: absolute;
+    inset: 0 auto 0 0;
     z-index: 1;
     display: flex;
     justify-content: center;
@@ -256,6 +267,11 @@
 }
 @media (max-width: 767px) {
   .home-carousel__content { padding-inline: max(var(--gutter, 1rem), env(safe-area-inset-left)); }
+  .home-carousel__slide { min-height: clamp(34rem, 92svh, 42rem); }
+  .home-carousel__content { min-height: 0; padding-top: 7rem; padding-bottom: 1.25rem; }
+  .home-carousel__content .btn { margin-top: .25rem; }
+  .home-carousel__shade { background: linear-gradient(0deg, rgba(18,28,26,.94) 0%, rgba(18,28,26,.76) 38%, rgba(18,28,26,.12) 78%, transparent 100%); }
+  .home-carousel__controls { border-top: 0; }
   .home-carousel__content .btn { min-height: 48px; }
   .home-carousel__controls { gap: .25rem; }
   .home-carousel__arrow { flex-basis: 44px; }
