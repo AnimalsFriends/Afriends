@@ -42,9 +42,9 @@ alter table public.cita_empleados enable row level security;
 revoke all on public.cita_empleados from public, anon;
 grant select, insert, update, delete on public.cita_empleados to authenticated;
 
-drop policy if exists cita_empleados_admin_total on public.cita_empleados;
-create policy "cita_empleados_admin_total"
-  on public.cita_empleados for all to authenticated
+drop policy if exists cita_empleados_admin_todo on public.cita_empleados;
+create policy "cita_empleados_admin_todo" on public.cita_empleados
+  for all to authenticated
   using (public.es_admin())
   with check (public.es_admin());
 
