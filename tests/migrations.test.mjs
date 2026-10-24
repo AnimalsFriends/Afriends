@@ -87,8 +87,8 @@ test("las funciones de apoyo no quedan abiertas al público", () => {
   const funciones = [...todo.matchAll(/create or replace function public\.(es_admin|empleado_actual_id|ruta_es_mia|parada_es_mia|mascota_asignada_a_mi|dueno_asignado_a_mi)\(/gi)].map((m) => m[1]);
   assert.deepEqual([...new Set(funciones)].sort(), nombresEsperados.sort());
   for (const fn of nombresEsperados) {
-    assert.match(todo, new RegExp(`revoke all on function public\\.${fn}\\([^)]*\\)\s+from public, anon`, "i"), `falta revoke en ${fn}`);
-    const definiciones = [...todo.matchAll(new RegExp(`create or replace function public\\.${fn}\\([^)]*\\)[\s\S]*?\$\$;`, "gi"))].map(([definicion]) => definicion);
+    assert.match(todo, new RegExp(`revoke all on function public\\.${fn}\\([^)]*\\)\\s+from public, anon`, "i"), `falta revoke en ${fn}`);
+    const definiciones = [...todo.matchAll(new RegExp(`create or replace function public\\.${fn}\\([^)]*\\)[\\s\\S]*?\\$\\$;`, "gi"))].map(([definicion]) => definicion);
     assert.ok(definiciones.length, `falta la definición de ${fn}`);
     for (const definicion of definiciones) {
       assert.match(definicion, /security definer\s+set search_path = ''/i, `${fn} debe ser security definer con search_path vacío`);
