@@ -40,14 +40,17 @@ test("día muestra citas, ocupación de hotel y enlace para confirmar por WhatsA
   assert.match(html, /Se requieren 1 empleado/);
 });
 
-test("exige escoger explícitamente perro, servicio y empleado al crear una cita", () => {
+test("exige perro y servicio y permite asignar varios empleados", () => {
   const s = base();
   s.formularios.cita = {
     id: null, mascota_id: "", empleado_id: "", servicio_codigo: "",
     inicio: "", fin: "", estado: "pendiente", notas: ""
   };
   const html = AgendaViews.render(s);
-  assert.equal((html.match(/<option value="" disabled selected>Selecciona…<\/option>/g) ?? []).length, 3);
+  assert.equal((html.match(/<option value="" disabled selected>Selecciona…<\/option>/g) ?? []).length, 2);
+  assert.match(html, /<fieldset[^>]*><legend[^>]*>Empleados asignados<\/legend>/);
+  assert.match(html, /<input type="checkbox" data-agenda-employee value=/);
+  assert.doesNotMatch(html, /data-agenda-employee[^>]*checked/);
 });
 
 test("advierte choques de empleado/perro y muestra el resumen de agenda semanal y mensual", () => {
