@@ -43,18 +43,18 @@ revoke all on public.cita_empleados from public, anon;
 grant select, insert, update, delete on public.cita_empleados to authenticated;
 
 drop policy if exists cita_empleados_admin_total on public.cita_empleados;
-create policy cita_empleados_admin_total
+create policy "cita_empleados_admin_total"
   on public.cita_empleados for all to authenticated
   using (public.es_admin())
   with check (public.es_admin());
 
 drop policy if exists cita_empleados_empleado_ve_asignaciones on public.cita_empleados;
-create policy cita_empleados_empleado_ve_asignaciones
+create policy "cita_empleados_empleado_ve_asignaciones"
   on public.cita_empleados for select to authenticated
   using (empleado_id = public.empleado_actual_id());
 
 drop policy if exists empleado_ve_sus_citas on public.citas;
-create policy empleado_ve_sus_citas
+create policy "empleado_ve_sus_citas"
   on public.citas for select to authenticated
   using (
     empleado_id = public.empleado_actual_id()
