@@ -17,11 +17,14 @@ const tag = (text, type = "") => `<span class="adm-tag${type ? ` adm-tag--${type
 const persona = (s, id) => s.mascotas.find((row) => row.id === id);
 const fechaTexto = (fecha, options = { weekday: "long", day: "numeric", month: "long" }) =>
   new Date(`${fecha}T12:00:00-05:00`).toLocaleDateString("es-CO", { ...options, timeZone: "America/Bogota" });
-const horaTexto = (valor) => new Date(valor).toLocaleTimeString("es-CO", {
+const horaTexto = (valor) => valor ? new Date(valor).toLocaleTimeString("es-CO", {
   timeZone: "America/Bogota", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
-});
-const inRange = (cita, inicio, fin) =>
-  Date.parse(cita.inicio) < Date.parse(fin) && Date.parse(cita.fin) > Date.parse(inicio);
+}) : "";
+const inRange = (cita, inicio, fin) => {
+  if (cita.inicio && cita.fin) return Date.parse(cita.inicio) < Date.parse(fin) && Date.parse(cita.fin) > Date.parse(inicio);
+  const fecha = cita.fecha_servicio || (cita.inicio ? fechaBogotaDeISO(cita.inicio) : "");
+  return Boolean(fecha && fecha >= inicio.slice(0, 10) && fecha < fin.slice(0, 10));
+};
 
 function selectorVista(s) {
   return `<div class="adm-tabs" role="tablist" aria-label="Vistas de la agenda">
@@ -47,7 +50,9 @@ function citaEnlaceWhatsapp(s, cita) {
   const servicio = s.servicios.find((row) => row.codigo === cita.servicio_codigo);
   const telefono = normalizarTelefono(dueno?.telefono);
   if (!telefono) return "";
-  const mensaje = `Hola ${dueno.nombre}, te escribimos para confirmar o recordar la cita de ${mascota?.nombre ?? "tu perro"} (${servicio?.nombre ?? "servicio"}) para el ${fechaTexto(fechaBogotaDeISO(cita.inicio))} a las ${horaTexto(cita.inicio)}. ¿Nos confirmas, por favor?`;
+  const fecha = cita.fecha_servicio || fechaBogotaDeISO(cita.inicio);
+  const hora = cita.inicio ? ` a las ${horaTexto(cita.inicio)}` : " (horario por definir)";
+  const mensaje = `Hola ${dueno.nombre}, te escribimos para confirmar o recordar el servicio de ${mascota?.nombre ?? "tu perro"} (${servicio?.nombre ?? "servicio"}) para el ${fechaTexto(fecha)}${hora}. ¿Nos confirmas, por favor?`;
   const url = whatsappUrl(telefono, mensaje);
   return url ? `<a class="adm-btn adm-btn--ghost adm-btn--sm" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Confirmar / recordar por WhatsApp</a>` : "";
 }
@@ -65,14 +70,15 @@ function avisoChoques(cita, s) {
 function tarjetaCita(s, cita, compacta = false) {
   const mascota = persona(s, cita.mascota_id);
   const dueno = s.duenos.find((row) => row.id === mascota?.dueno_id);
-  const empleado = s.empleados.find((row) => row.id === cita.empleado_id);
+  const asignados = cita.empleado_ids ?? cita.cita_empleados?.map((x) => x.empleado_id) ?? [cita.empleado_id];
+  const nombresEmpleados = [...new Set(asignados.filter(Boolean))].map((id) => s.empleados.find((row) => row.id === id)?.nombre).filter(Boolean);
   const servicio = s.servicios.find((row) => row.codigo === cita.servicio_codigo);
   const estado = ESTADOS_CITA.find(([value]) => value === cita.estado)?.[1] ?? cita.estado;
   const choqueCorto = compacta && conflictosCita(cita, s.citas).length ? tag("Choque", "warn") : "";
   return `<article class="adm-agenda-event${compacta ? " adm-agenda-event--compact" : ""}${cita.estado === "cancelado" ? " is-off" : ""}">
     <div class="adm-row adm-between adm-wrapx"><b>${esc(mascota?.nombre ?? "Perro no disponible")}</b>${tag(estado, cita.estado === "listo" ? "ok" : cita.estado === "cancelado" ? "off" : "warn")}${choqueCorto}</div>
-    <small>${esc(servicio?.nombre ?? "Servicio no disponible")} · ${esc(horaTexto(cita.inicio))}–${esc(horaTexto(cita.fin))}</small>
-    ${!compacta ? `<small>${esc(dueno?.nombre ?? "Dueño no disponible")}${empleado ? ` · ${esc(empleado.nombre)}` : " · Sin empleado"}</small>
+    <small>${esc(servicio?.nombre ?? "Servicio no disponible")} · ${cita.inicio && cita.fin ? `${esc(horaTexto(cita.inicio))}–${esc(horaTexto(cita.fin))}` : "Horario por definir"}</small>
+    ${!compacta ? `<small>${esc(dueno?.nombre ?? "Dueño no disponible")}${nombresEmpleados.length ? ` · ${esc(nombresEmpleados.join(", "))}` : " · Sin empleado"}</small>
       ${cita.notas ? `<small>${esc(cita.notas)}</small>` : ""}
       ${avisoChoques(cita, s)}
       <div class="adm-row adm-wrapx">
@@ -112,7 +118,7 @@ function planDiario(s) {
 function eventosDia(s, fecha, compacta = false) {
   const inicio = `${fecha}T05:00:00.000Z`;
   const fin = `${fechaMas(fecha, 1)}T05:00:00.000Z`;
-  const citas = s.citas.filter((cita) => inRange(cita, inicio, fin)).sort((a, b) => a.inicio.localeCompare(b.inicio));
+  const citas = s.citas.filter((cita) => inRange(cita, inicio, fin)).sort((a, b) => String(a.inicio ?? a.fecha_servicio).localeCompare(String(b.inicio ?? b.fecha_servicio)));
   const reservas = s.reservas.map((reserva) => reservaEnDia(s, reserva, fecha)).filter(Boolean);
   return `${reservas.join("")}${citas.map((cita) => tarjetaCita(s, cita, compacta)).join("")}`;
 }
@@ -159,7 +165,7 @@ function vistaMes(s) {
       return `<button class="adm-agenda-cell" type="button" data-action="agenda-seleccionar-dia" data-fecha="${fecha}">
         <b>${Number(fecha.slice(-2))}</b><small>${citas.length} ${citas.length === 1 ? "cita" : "citas"}${hoteles.length ? ` · ${hoteles.length} en hotel` : ""}</small>
         ${hoteles.slice(0, 1).map((reserva) => `<span>Hotel · ${esc(persona(s, reserva.mascota_id)?.nombre ?? "Perro")}</span>`).join("")}
-        ${citas.slice(0, 2).map((cita) => `<span>${esc(persona(s, cita.mascota_id)?.nombre ?? "Cita")} · ${esc(horaTexto(cita.inicio))}${conflictosCita(cita, s.citas).length ? " · Choque" : ""}</span>`).join("")}
+        ${citas.slice(0, 2).map((cita) => `<span>${esc(persona(s, cita.mascota_id)?.nombre ?? "Cita")} · ${cita.inicio ? esc(horaTexto(cita.inicio)) : "Sin hora"}${conflictosCita(cita, s.citas).length ? " · Choque" : ""}</span>`).join("")}
       </button>`;
     }).join("")}</div></section>`;
 }
@@ -167,22 +173,27 @@ function vistaMes(s) {
 function formularioCita(s, alerta) {
   const f = s.formularios.cita;
   const input = (title, field, value, type = "text") => `<label class="adm-f"><span class="adm-fl">${title}</span>
-    <input type="${type}" data-agenda-field="${field}" value="${esc(value)}" ${type === "datetime-local" ? "required" : ""}></label>`;
+    <input type="${type}" data-agenda-field="${field}" value="${esc(value)}"></label>`;
   const select = (title, field, value, options) => `<label class="adm-f"><span class="adm-fl">${title}</span>
     <select data-agenda-field="${field}" required><option value="" disabled${value ? "" : " selected"}>Selecciona…</option>
       ${options.map(([id, label]) => `<option value="${esc(id)}"${String(value) === String(id) ? " selected" : ""}>${esc(label)}</option>`).join("")}</select></label>`;
+  const empleadosSelect = `<label class="adm-f"><span class="adm-fl">Empleados asignados</span>
+    <select data-agenda-field="empleado_ids" multiple required aria-describedby="agenda-empleados-ayuda">
+      ${empleados.map(([id,label])=>`<option value="${esc(id)}"${(f.empleado_ids??(f.empleado_id?[f.empleado_id]:[])).includes(id)?" selected":""}>${esc(label)}</option>`).join("")}
+    </select><small id="agenda-empleados-ayuda">Puedes elegir uno o varios empleados (usa selección múltiple del dispositivo).</small></label>`;
   const mascotas = s.mascotas.filter((m) => m.activa).map((m) => [m.id, m.nombre]);
   const empleados = s.empleados.map((e) => [e.id, e.nombre]);
   const servicios = s.servicios.map((svc) => [svc.codigo, svc.nombre]);
   const opciones = mascotas.length && empleados.length && servicios.length;
   return `<section class="adm-card"><h2>${f.id ? "Editar cita" : "Nueva cita"}</h2>
-    <p class="adm-sub">Cada cita necesita perro, servicio, empleado y hora de inicio y fin. Si hay un choque, se muestra antes de guardar.</p>
+    <p class="adm-sub">Cada servicio necesita perro, servicio, fecha y al menos un empleado. La hora es opcional; si la indicas, completa inicio y fin. Los choques se revisan cuando hay horario.</p>
     ${opciones ? `<div class="adm-grid">
       ${select("Perro", "mascota_id", f.mascota_id, mascotas)}
       ${select("Servicio", "servicio_codigo", f.servicio_codigo, servicios)}
-      ${select("Empleado", "empleado_id", f.empleado_id, empleados)}
-      ${input("Inicio", "inicio", f.inicio, "datetime-local")}
-      ${input("Fin", "fin", f.fin, "datetime-local")}
+      ${empleadosSelect}
+      ${input("Fecha del servicio", "fecha_servicio", f.fecha_servicio || s.fecha, "date")}
+      ${input("Inicio (opcional)", "inicio", f.inicio, "datetime-local")}
+      ${input("Fin (opcional)", "fin", f.fin, "datetime-local")}
       ${select("Estado", "estado", f.estado, ESTADOS_CITA)}
       <label class="adm-f adm-full"><span class="adm-fl">Notas (opcional)</span><textarea data-agenda-field="notas" maxlength="1000">${esc(f.notas)}</textarea></label>
     </div>${alerta}${button(f.id ? "Guardar cambios" : "Crear cita", "agenda-guardar-cita", "", "adm-btn--primary")}
