@@ -9,7 +9,7 @@ import { ApiError } from "./adminApi.js";
 const JSON_HEADERS={"Content-Type":"application/json"},REPRESENTACION={...JSON_HEADERS,Prefer:"return=representation"};
 const uuid=v=>{if(!esUuid(v))throw new ApiError("fail");return v;};
 async function listaCompleta(path){const filas=[];for(let offset=0;;offset+=1000){const pagina=await llamar(`${path}${path.includes("?")?"&":"?"}limit=1000&offset=${offset}`);filas.push(...pagina);if(pagina.length<1000)return filas;}}
-const primeraFila=async p=>(await p)?.[0]??null;
+const primeraFila=async p=>{const value=await p;return Array.isArray(value)?value[0]??null:value??null;};
 const escribir=(method,path,body)=>llamar(path,{method,headers:REPRESENTACION,body:JSON.stringify(body)});
 const normalizarCita=c=>({...c,empleado_ids:[...new Set([...(c.cita_empleados??[]).map(x=>x.empleado_id),c.empleado_id].filter(Boolean))]});
 export const AgendaApi={
