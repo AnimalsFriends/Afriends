@@ -19,7 +19,7 @@ test("la migración conserva asignaciones existentes y permite múltiples emplea
   assert.match(sql, /primary key \(cita_id, empleado_id\)/i);
   assert.match(sql, /insert into public\.cita_empleados[\s\S]*from public\.citas[\s\S]*on conflict/i);
   assert.match(sql, /guardar_cita_agenda/i);
-  assert.match(sql, /security invoker/i) || assert.match(sql, /language plpgsql/i);
+  assert.match(sql, /language plpgsql/i);
 });
 
 test("la relación nueva tiene RLS, permisos autenticados limitados y lectura por asignación", () => {
