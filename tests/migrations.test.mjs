@@ -46,7 +46,7 @@ test("hay tablas nuevas que revisar", () => {
 
 for (const t of tablas) {
   test(`tabla ${t}: RLS activo, acceso público limitado, política de admin y rollback versionado`, () => {
-    assert.match(todo, new RegExp(`alter table public\\.${t}\s+enable row level security`, "i"), "falta enable row level security");
+    assert.match(todo, new RegExp(`alter table public\\.${t}\\s+enable row level security`, "i"), "falta enable row level security");
 
     if (t === "site_config") {
       const grants = [...todo.matchAll(/grant\s+([^;]+?)\s+on\s+public\.site_config\s+to\s+([^;]+);/gi)];
@@ -127,8 +127,8 @@ test("mensajes_equipo restringe la lectura y canaliza escrituras por RPC", () =>
     ["uuid, text", "mensaje_equipo_enviar"],
     ["uuid", "mensaje_equipo_marcar_leido"],
   ]) {
-    assert.match(migracion.sql, new RegExp(`revoke all on function public\\.${functionName}\\(${signature.replace(", ", ",\s*")}\\) from public, anon`, "i"));
-    assert.match(migracion.sql, new RegExp(`grant execute on function public\\.${functionName}\\(${signature.replace(", ", ",\s*")}\\) to authenticated`, "i"));
+    assert.match(migracion.sql, new RegExp(`revoke all on function public\\.${functionName}\\(${signature.replace(", ", ",\\s*")}\\) from public, anon`, "i"));
+    assert.match(migracion.sql, new RegExp(`grant execute on function public\\.${functionName}\\(${signature.replace(", ", ",\\s*")}\\) to authenticated`, "i"));
   }
 
   assert.match(migracion.sql, /using \(public\.es_admin\(\) or empleado_id = public\.empleado_actual_id\(\)\)/i);
@@ -189,7 +189,7 @@ test("Fase 7 registra cambios con RLS admin, asistencia fechada y SOAT sin rollb
   for (const table of ["soat_vehiculos", "asistencia_colegio", "historial_cambios"]) {
     assert.match(migracion.sql, new RegExp(`create table if not exists public\\.${table}`));
     assert.match(migracion.sql, new RegExp(`alter table public\\.${table} enable row level security`));
-    assert.match(migracion.sql, new RegExp(`on public\\.${table}[\s\S]*?public\\.es_admin\\(\\)`));
+    assert.match(migracion.sql, new RegExp(`on public\\.${table}[\\s\\S]*?public\\.es_admin\\(\\)`));
   }
   assert.match(migracion.sql, /unique \(mascota_id, fecha\)/i);
   assert.match(migracion.sql, /statement_timestamp\(\)/i, "la hora de llegada y salida debe venir del servidor");
