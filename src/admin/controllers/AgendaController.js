@@ -196,7 +196,7 @@ export class AgendaController {
       id, mascota_id: cita.mascota_id,
       empleado_ids: cita.empleado_ids ?? cita.cita_empleados?.map((x) => x.empleado_id) ?? (cita.empleado_id ? [cita.empleado_id] : []),
       servicio_codigo: cita.servicio_codigo,
-      fecha_servicio: cita.fecha_servicio ?? fechaBogotaDeISO(cita.inicio) ?? this.state.fecha,
+      fecha_servicio: cita.fecha_servicio || fechaBogotaDeISO(cita.inicio) || this.state.fecha,
       inicio: fechaHoraBogotaDeISO(cita.inicio), fin: fechaHoraBogotaDeISO(cita.fin),
       estado: cita.estado, notas: cita.notas ?? ""
     };
