@@ -266,10 +266,30 @@
   .home-carousel__pause { font-size: .9rem; }
 }
 @media (max-width: 767px) {
-  .home-carousel__content { padding-inline: max(var(--gutter, 1rem), env(safe-area-inset-left)); }
-  .home-carousel__slide { min-height: 0; }
-  .home-carousel__content { min-height: 21.5rem; padding-top: 1.5rem; padding-bottom: 1.5rem; }
-  .home-carousel__slide img { height: clamp(220px, 80vw, 420px); aspect-ratio: 5 / 4; }
+  .home-carousel__slide {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    min-height: 0;
+    background: #26312d;
+  }
+  .home-carousel__slide img {
+    position: relative;
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    height: clamp(220px, 80vw, 420px);
+    aspect-ratio: 5 / 4;
+  }
+  .home-carousel__content {
+    position: absolute;
+    inset: auto 0 0;
+    grid-column: 1;
+    grid-row: 1;
+    justify-content: flex-end;
+    min-height: 21.5rem;
+    padding: 4rem max(var(--gutter, 1rem), env(safe-area-inset-left)) 1.5rem;
+    background: linear-gradient(0deg, rgba(18,28,26,.96) 0%, rgba(18,28,26,.78) 58%, rgba(18,28,26,0) 100%);
+  }
   .home-carousel__content .btn { margin-top: .25rem; }
   .home-carousel__shade { display: none; }
   .home-carousel__controls { border-top: 0; margin-bottom: .75rem; }
