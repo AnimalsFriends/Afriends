@@ -74,3 +74,22 @@ test("las vistas no inyectan texto externo ni manejadores en línea", () => {
   assert.doesNotMatch(html, /\son[a-z]+=/i);
   assert.doesNotMatch(html, /\sstyle=/i);
 });
+
+
+test("el formulario ofrece selección de varios empleados y horas opcionales para cualquier servicio", () => {
+  const s = base();
+  s.empleados.push({ id: "623e4567-e89b-12d3-a456-426614174006", nombre: "Marta" });
+  s.formularios.cita = {
+    id: null, mascota_id: DOG, empleado_ids: [EMPLOYEE, "623e4567-e89b-12d3-a456-426614174006"],
+    servicio_codigo: "hotel", fecha_servicio: MONDAY, inicio: "", fin: "",
+    estado: "pendiente", notas: ""
+  };
+  const html = AgendaViews.render(s);
+  assert.match(html, /data-agenda-employee[^>]*checked/);
+  assert.match(html, /Fecha del servicio/);
+  assert.match(html, /Inicio \(opcional\)/);
+  assert.match(html, /Fin \(opcional\)/);
+  assert.match(html, /La hora es opcional/);
+  assert.doesNotMatch(html, /data-agenda-field="inicio"[^>]*required/);
+  assert.doesNotMatch(html, /data-agenda-field="fin"[^>]*required/);
+});
