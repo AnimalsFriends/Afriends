@@ -211,7 +211,7 @@ export class AgendaController {
     this.setDirty(false);
     this.state.vista = "dia";
     const fechaAnterior = this.state.fecha;
-    this.state.fecha = fechaBogotaDeISO(cita.inicio) || hoyBogota();
+    this.state.fecha = cita.fecha_servicio || fechaBogotaDeISO(cita.inicio) || hoyBogota();
     this.render();
     if (this.state.fecha !== fechaAnterior) this.cargar();
   }
