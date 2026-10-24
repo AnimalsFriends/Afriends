@@ -15,9 +15,6 @@ create policy empleado_ve_sus_citas
   on public.citas for select to authenticated
   using (empleado_id = public.empleado_actual_id());
 
-alter table public.citas
-  drop constraint if exists citas_horario_opcional_ok;
-
--- No se fuerza NOT NULL: las citas creadas sin hora deben corregirse antes
--- de volver al esquema anterior. fecha_servicio se conserva para no perder datos.
+-- Se conserva citas_horario_opcional_ok y las columnas nullable: pueden existir
+-- citas legítimas sin hora. fecha_servicio también se conserva para no perder datos.
 commit;
