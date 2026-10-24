@@ -7,6 +7,7 @@ revoke all on function public.guardar_cita_agenda(uuid, uuid, uuid[], text, date
 drop function if exists public.guardar_cita_agenda(uuid, uuid, uuid[], text, date, timestamptz, timestamptz, text, text);
 
 drop policy if exists cita_empleados_empleado_ve_asignaciones on public.cita_empleados;
+drop policy if exists cita_empleados_admin_todo on public.cita_empleados;
 drop policy if exists cita_empleados_admin_total on public.cita_empleados;
 drop table if exists public.cita_empleados;
 
