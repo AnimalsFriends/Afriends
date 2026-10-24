@@ -80,6 +80,7 @@ create or replace function public.guardar_cita_agenda(
 )
 returns public.citas
 language plpgsql
+security invoker
 set search_path = ''
 as $$
 declare
