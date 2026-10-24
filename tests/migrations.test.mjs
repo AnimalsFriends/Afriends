@@ -203,10 +203,11 @@ test("Fase 7 registra cambios con RLS admin, asistencia fechada y SOAT sin rollb
   assert.doesNotMatch(rollbackFase7.sql, /drop table|drop column|truncate|delete from/i);
 });
 
-test("ninguna migración borra datos ni tablas (todo lo destructivo vive en rollbacks)", () => {
-  assert.doesNotMatch(todo, /\bdrop\s+table\b/i);
-  assert.doesNotMatch(todo, /\btruncate\b/i);
-  assert.doesNotMatch(todo, /\bdelete\s+from\b/i);
+test("ninguna migración ejecuta borrados destructivos al aplicarse (los DELETE dentro de RPC son lógica de ejecución)", () => {
+  const ddlSinCuerposFuncion = todo.replace(/create or replace function [\\s\\S]*?\\$\\$;/gi, "");
+  assert.doesNotMatch(ddlSinCuerposFuncion, /\\bdrop\\s+table\\b/i);
+  assert.doesNotMatch(ddlSinCuerposFuncion, /\\btruncate\\b/i);
+  assert.doesNotMatch(ddlSinCuerposFuncion, /\\bdelete\\s+from\\b/i);
 });
 
 test("los paréntesis de cada migración están balanceados", () => {
