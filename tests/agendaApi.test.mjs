@@ -23,7 +23,7 @@ const rango = { inicio: "2026-10-12", fin: "2026-10-19" };
 test("carga citas que cruzan el rango visible y reservas de hotel de la semana", async () => {
   llamadas.length = 0;
   await AgendaApi.cargar({ fecha: "2026-10-14", rango });
-  assert.ok(llamadas.some(({ url }) => /citas\?.*inicio=lt\.2026-10-19T05:00:00\.000Z&fin=gt\.2026-10-12T05:00:00\.000Z&order=inicio\.asc,id\.asc/.test(url)));
+  assert.ok(llamadas.some(({ url }) => /citas\?select=\*,cita_empleados/.test(url) && url.includes("fecha_servicio.gte.2026-10-12") && url.includes("fecha_servicio.lt.2026-10-19")));
   assert.ok(llamadas.some(({ url }) => /reservas_hotel\?.*entrada=lt\.2026-10-19.*salida=gt\.2026-10-12/.test(url)));
   assert.ok(llamadas.some(({ url }) => /servicios\?.*activo=eq\.true/.test(url)));
 });
@@ -31,14 +31,19 @@ test("carga citas que cruzan el rango visible y reservas de hotel de la semana",
 test("crea una cita con el empleado y los datos limpios del modelo", async () => {
   llamadas.length = 0;
   const datos = {
-    mascota_id: PET, empleado_id: EMPLOYEE, servicio_codigo: "bano",
+    mascota_id: PET, empleado_ids: [EMPLOYEE], servicio_codigo: "bano", fecha_servicio: "2026-10-12",
     inicio: "2026-10-12T13:30:00.000Z", fin: "2026-10-12T14:00:00.000Z",
     estado: "pendiente", notas: null
   };
   await AgendaApi.crearCita(datos);
-  assert.match(last().url, /\/citas$/);
+  assert.match(last().url, /\/rpc\/guardar_cita_agenda$/);
   assert.equal(last().init.method, "POST");
-  assert.deepEqual(JSON.parse(last().init.body), datos);
+  assert.deepEqual(JSON.parse(last().init.body), {
+    p_id: null, p_mascota_id: PET, p_empleado_ids: [EMPLOYEE],
+    p_servicio_codigo: "bano", p_fecha_servicio: "2026-10-12",
+    p_inicio: "2026-10-12T13:30:00.000Z", p_fin: "2026-10-12T14:00:00.000Z",
+    p_estado: "pendiente", p_notas: null
+  });
 });
 
 test("consulta choques del rango exacto aunque la fecha no esté en la vista actual", async () => {

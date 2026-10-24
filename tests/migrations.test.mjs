@@ -46,7 +46,7 @@ test("hay tablas nuevas que revisar", () => {
 
 for (const t of tablas) {
   test(`tabla ${t}: RLS activo, acceso público limitado, política de admin y rollback versionado`, () => {
-    assert.match(todo, new RegExp(`alter table public\\.${t}\\s+enable row level security`, "i"), "falta enable row level security");
+    assert.match(todo, new RegExp(`alter table public\\.${t}\s+enable row level security`, "i"), "falta enable row level security");
 
     if (t === "site_config") {
       const grants = [...todo.matchAll(/grant\s+([^;]+?)\s+on\s+public\.site_config\s+to\s+([^;]+);/gi)];
@@ -87,8 +87,8 @@ test("las funciones de apoyo no quedan abiertas al público", () => {
   const funciones = [...todo.matchAll(/create or replace function public\.(es_admin|empleado_actual_id|ruta_es_mia|parada_es_mia|mascota_asignada_a_mi|dueno_asignado_a_mi)\(/gi)].map((m) => m[1]);
   assert.deepEqual([...new Set(funciones)].sort(), nombresEsperados.sort());
   for (const fn of nombresEsperados) {
-    assert.match(todo, new RegExp(`revoke all on function public\\.${fn}\\([^)]*\\)\\s+from public, anon`, "i"), `falta revoke en ${fn}`);
-    const definiciones = [...todo.matchAll(new RegExp(`create or replace function public\\.${fn}\\([^)]*\\)[\\s\\S]*?\\$\\$;`, "gi"))].map(([definicion]) => definicion);
+    assert.match(todo, new RegExp(`revoke all on function public\\.${fn}\\([^)]*\\)\s+from public, anon`, "i"), `falta revoke en ${fn}`);
+    const definiciones = [...todo.matchAll(new RegExp(`create or replace function public\\.${fn}\\([^)]*\\)[\s\S]*?\$\$;`, "gi"))].map(([definicion]) => definicion);
     assert.ok(definiciones.length, `falta la definición de ${fn}`);
     for (const definicion of definiciones) {
       assert.match(definicion, /security definer\s+set search_path = ''/i, `${fn} debe ser security definer con search_path vacío`);
@@ -127,8 +127,8 @@ test("mensajes_equipo restringe la lectura y canaliza escrituras por RPC", () =>
     ["uuid, text", "mensaje_equipo_enviar"],
     ["uuid", "mensaje_equipo_marcar_leido"],
   ]) {
-    assert.match(migracion.sql, new RegExp(`revoke all on function public\\.${functionName}\\(${signature.replace(", ", ",\\s*")}\\) from public, anon`, "i"));
-    assert.match(migracion.sql, new RegExp(`grant execute on function public\\.${functionName}\\(${signature.replace(", ", ",\\s*")}\\) to authenticated`, "i"));
+    assert.match(migracion.sql, new RegExp(`revoke all on function public\\.${functionName}\\(${signature.replace(", ", ",\s*")}\\) from public, anon`, "i"));
+    assert.match(migracion.sql, new RegExp(`grant execute on function public\\.${functionName}\\(${signature.replace(", ", ",\s*")}\\) to authenticated`, "i"));
   }
 
   assert.match(migracion.sql, /using \(public\.es_admin\(\) or empleado_id = public\.empleado_actual_id\(\)\)/i);
@@ -189,7 +189,7 @@ test("Fase 7 registra cambios con RLS admin, asistencia fechada y SOAT sin rollb
   for (const table of ["soat_vehiculos", "asistencia_colegio", "historial_cambios"]) {
     assert.match(migracion.sql, new RegExp(`create table if not exists public\\.${table}`));
     assert.match(migracion.sql, new RegExp(`alter table public\\.${table} enable row level security`));
-    assert.match(migracion.sql, new RegExp(`on public\\.${table}[\\s\\S]*?public\\.es_admin\\(\\)`));
+    assert.match(migracion.sql, new RegExp(`on public\\.${table}[\s\S]*?public\\.es_admin\\(\\)`));
   }
   assert.match(migracion.sql, /unique \(mascota_id, fecha\)/i);
   assert.match(migracion.sql, /statement_timestamp\(\)/i, "la hora de llegada y salida debe venir del servidor");
@@ -203,10 +203,11 @@ test("Fase 7 registra cambios con RLS admin, asistencia fechada y SOAT sin rollb
   assert.doesNotMatch(rollbackFase7.sql, /drop table|drop column|truncate|delete from/i);
 });
 
-test("ninguna migración borra datos ni tablas (todo lo destructivo vive en rollbacks)", () => {
-  assert.doesNotMatch(todo, /\bdrop\s+table\b/i);
-  assert.doesNotMatch(todo, /\btruncate\b/i);
-  assert.doesNotMatch(todo, /\bdelete\s+from\b/i);
+test("ninguna migración ejecuta borrados destructivos al aplicarse (los DELETE dentro de RPC son lógica de ejecución)", () => {
+  const ddlSinCuerposFuncion = todo.replace(/create or replace function [\s\S]*?\$\$;/gi, "");
+  assert.doesNotMatch(ddlSinCuerposFuncion, /\bdrop\s+table\b/i);
+  assert.doesNotMatch(ddlSinCuerposFuncion, /\btruncate\b/i);
+  assert.doesNotMatch(ddlSinCuerposFuncion, /\bdelete\s+from\b/i);
 });
 
 test("los paréntesis de cada migración están balanceados", () => {

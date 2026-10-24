@@ -25,8 +25,8 @@ const moverMes = (fecha, delta) => {
 };
 
 const nuevaCita = () => ({
-  id: null, mascota_id: "", empleado_id: "", servicio_codigo: "",
-  inicio: "", fin: "", estado: "pendiente", notas: ""
+  id: null, mascota_id: "", empleado_ids: [], servicio_codigo: "",
+  fecha_servicio: hoyBogota(), inicio: "", fin: "", estado: "pendiente", notas: ""
 });
 
 export class AgendaController {
@@ -127,7 +127,9 @@ export class AgendaController {
   setField(target) {
     const field = target.dataset.agendaField;
     if (!field || !(field in this.state.formularios.cita)) return;
-    this.state.formularios.cita[field] = target.value;
+    this.state.formularios.cita[field] = target instanceof HTMLSelectElement && target.multiple
+      ? [...target.selectedOptions].map((option) => option.value)
+      : target.value;
     this.setDirty(true);
   }
 
@@ -142,6 +144,14 @@ export class AgendaController {
 
   onChange(event) {
     const target = event.target;
+    if (target.matches("[data-agenda-employee]")) {
+      const ids = new Set(this.state.formularios.cita.empleado_ids ?? []);
+      if (target.checked) ids.add(target.value); else ids.delete(target.value);
+      this.state.formularios.cita.empleado_ids = [...ids];
+      this.setDirty(true);
+      this.render();
+      return;
+    }
     if (target.matches("[data-agenda-field]")) this.actualizarFormulario(target);
     if (target.matches("[data-agenda-date]")) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(target.value)) { target.value = this.state.fecha; return; }
@@ -191,14 +201,17 @@ export class AgendaController {
     const cita = this.state.citas.find((row) => row.id === id);
     if (!cita) return;
     this.state.formularios.cita = {
-      id, mascota_id: cita.mascota_id, empleado_id: cita.empleado_id ?? "",
-      servicio_codigo: cita.servicio_codigo, inicio: fechaHoraBogotaDeISO(cita.inicio),
-      fin: fechaHoraBogotaDeISO(cita.fin), estado: cita.estado, notas: cita.notas ?? ""
+      id, mascota_id: cita.mascota_id,
+      empleado_ids: cita.empleado_ids ?? cita.cita_empleados?.map((x) => x.empleado_id) ?? (cita.empleado_id ? [cita.empleado_id] : []),
+      servicio_codigo: cita.servicio_codigo,
+      fecha_servicio: cita.fecha_servicio || fechaBogotaDeISO(cita.inicio) || this.state.fecha,
+      inicio: fechaHoraBogotaDeISO(cita.inicio), fin: fechaHoraBogotaDeISO(cita.fin),
+      estado: cita.estado, notas: cita.notas ?? ""
     };
     this.setDirty(false);
     this.state.vista = "dia";
     const fechaAnterior = this.state.fecha;
-    this.state.fecha = fechaBogotaDeISO(cita.inicio) || hoyBogota();
+    this.state.fecha = cita.fecha_servicio || fechaBogotaDeISO(cita.inicio) || hoyBogota();
     this.render();
     if (this.state.fecha !== fechaAnterior) this.cargar();
   }
@@ -216,7 +229,9 @@ export class AgendaController {
     if (errors.length) { this.toast("Revisa estos puntos:", "err", errors); return; }
     let conflictos;
     try {
-      const citasSolapadas = await AgendaApi.citasSolapadas(clean.inicio, clean.fin);
+      const citasSolapadas = clean.inicio && clean.fin
+        ? await AgendaApi.citasSolapadas(clean.inicio, clean.fin)
+        : [];
       if (version !== this.sessionVersion) return;
       conflictos = conflictosCita({ ...clean, id: formulario.id }, citasSolapadas);
     } catch (error) {
