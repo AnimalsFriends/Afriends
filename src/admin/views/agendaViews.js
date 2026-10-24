@@ -177,12 +177,12 @@ function formularioCita(s, alerta) {
   const select = (title, field, value, options) => `<label class="adm-f"><span class="adm-fl">${title}</span>
     <select data-agenda-field="${field}" required><option value="" disabled${value ? "" : " selected"}>Selecciona…</option>
       ${options.map(([id, label]) => `<option value="${esc(id)}"${String(value) === String(id) ? " selected" : ""}>${esc(label)}</option>`).join("")}</select></label>`;
-  const empleadosSelect = `<fieldset class="adm-f adm-full"><legend class="adm-fl">Empleados asignados</legend>
-    <div class="adm-row adm-wrapx">${empleados.map(([id,label])=>`<label class="adm-check"><input type="checkbox" data-agenda-employee value="${esc(id)}"${(f.empleado_ids??(f.empleado_id?[f.empleado_id]:[])).includes(id)?" checked":""}> ${esc(label)}</label>`).join("")}</div>
-    <small>Marca uno o varios empleados para este servicio.</small></fieldset>`;
   const mascotas = s.mascotas.filter((m) => m.activa).map((m) => [m.id, m.nombre]);
   const empleados = s.empleados.map((e) => [e.id, e.nombre]);
   const servicios = s.servicios.map((svc) => [svc.codigo, svc.nombre]);
+  const empleadosSelect = `<fieldset class="adm-f adm-full"><legend class="adm-fl">Empleados asignados</legend>
+    <div class="adm-row adm-wrapx">${empleados.map(([id,label])=>`<label class="adm-check"><input type="checkbox" data-agenda-employee value="${esc(id)}"${(f.empleado_ids??(f.empleado_id?[f.empleado_id]:[])).includes(id)?" checked":""}> ${esc(label)}</label>`).join("")}</div>
+    <small>Marca uno o varios empleados para este servicio.</small></fieldset>`;
   const opciones = mascotas.length && empleados.length && servicios.length;
   return `<section class="adm-card"><h2>${f.id ? "Editar cita" : "Nueva cita"}</h2>
     <p class="adm-sub">Cada servicio necesita perro, servicio, fecha y al menos un empleado. La hora es opcional; si la indicas, completa inicio y fin. Los choques se revisan cuando hay horario.</p>
