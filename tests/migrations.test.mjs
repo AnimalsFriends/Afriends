@@ -205,9 +205,9 @@ test("Fase 7 registra cambios con RLS admin, asistencia fechada y SOAT sin rollb
 
 test("ninguna migración ejecuta borrados destructivos al aplicarse (los DELETE dentro de RPC son lógica de ejecución)", () => {
   const ddlSinCuerposFuncion = todo.replace(/create or replace function [\\s\\S]*?\\$\\$;/gi, "");
-  assert.doesNotMatch(ddlSinCuerposFuncion, /\\bdrop\\s+table\\b/i);
-  assert.doesNotMatch(ddlSinCuerposFuncion, /\\btruncate\\b/i);
-  assert.doesNotMatch(ddlSinCuerposFuncion, /\\bdelete\\s+from\\b/i);
+  assert.doesNotMatch(ddlSinCuerposFuncion, /\bdrop\s+table\b/i);
+  assert.doesNotMatch(ddlSinCuerposFuncion, /\btruncate\b/i);
+  assert.doesNotMatch(ddlSinCuerposFuncion, /\bdelete\s+from\b/i);
 });
 
 test("los paréntesis de cada migración están balanceados", () => {
