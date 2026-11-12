@@ -1,0 +1,11 @@
+{
+  "name": "forgelock-web-starter",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python -m http.server 8000",
+    "build": "node scripts/build.mjs",
+    "check": "node --test tests/*.test.mjs && node scripts/validate.mjs"
+  }
+}
