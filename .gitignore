@@ -7,3 +7,4 @@ node_modules/
 dist/
 .wrangler/
 /.tmp-forgelock-review/
+ForgeLock-Web-Starter/
