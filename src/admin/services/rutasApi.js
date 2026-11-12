@@ -76,7 +76,7 @@ export const RutasApi = {
       listaCompleta("planes_colegio?select=id,mascota_id,dias_semana,desde,hasta,activo&order=desde.desc,id.asc"),
       listaCompleta(`reservas_hotel?select=id,mascota_id,entrada,salida,estado,tambien_colegio&entrada=lt.${finMes}&salida=gt.${inicioMes}&order=entrada.asc,id.asc`),
       listaCompleta(`ausencias_colegio?select=id,mascota_id,fecha&fecha=eq.${fecha}&order=created_at.asc,id.asc`),
-      listaCompleta(`paradas_dia?select=id,parada_id,fecha,estado,motivo&fecha=eq.${fecha}&order=parada_id.asc,id.asc`)
+      listaCompleta(`paradas_dia?select=id,parada_id,fecha,estado,motivo,ocurrido_cliente_en,sincronizado_en&fecha=eq.${fecha}&order=parada_id.asc,id.asc`)
     ]);
     return { rutas, paradas, mascotas: mascotasData.filas, mascotasPropiasDisponible: mascotasData.mascotasPropiasDisponible, duenos, planes, reservas, ausencias, paradasDia, empleados: [], cuposHotel: null };
   },
@@ -118,8 +118,10 @@ export const RutasApi = {
       Prefer: "resolution=ignore-duplicates,return=representation"
     });
   },
-  actualizarEstadoParada: (id, estado, motivo) =>
-    primeraFila(escribir("PATCH", `paradas_dia?id=eq.${uuid(id)}`, { estado, motivo })),
+  actualizarEstadoParada: (id, estado, motivo, ocurridoClienteEn = new Date().toISOString()) =>
+    primeraFila(escribir("PATCH", `paradas_dia?id=eq.${uuid(id)}`, {
+      estado, motivo, ocurrido_cliente_en: ocurridoClienteEn
+    })),
   crearAusencia: (mascotaId, fecha, motivo) =>
     primeraFila(escribir("POST", "ausencias_colegio", { mascota_id: uuid(mascotaId), fecha, motivo })),
   quitarAusencia: (id) => llamar(`ausencias_colegio?id=eq.${uuid(id)}`, { method: "DELETE" }),

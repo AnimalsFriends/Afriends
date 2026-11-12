@@ -241,8 +241,8 @@ export const AdminViews = {
       .map(([id, label, n]) => `<button type="button" class="adm-filter${filter === id ? " is-active" : ""}" data-action="lead-filter" data-filter="${id}" aria-pressed="${filter === id}">${label} (${n})</button>`).join("");
 
     let body;
-    if (error === "perm") body = '<p class="adm-note adm-note--err">Este usuario no tiene permiso para ver los mensajes. El correo debe ser idéntico al que se puso en <code>02_contact_requests.sql</code>.</p>';
-    else if (error === "missing") body = '<p class="adm-note adm-note--info">Aún no existe la tabla de mensajes. Ejecuta <code>supabase/02_contact_requests.sql</code> en Supabase.</p>';
+    if (error === "perm") body = '<p class="adm-note adm-note--err">Tu cuenta no tiene permiso para consultar los mensajes. Pide a un administrador que revise tu acceso.</p>';
+    else if (error === "missing") body = '<p class="adm-note adm-note--info">El servicio de mensajes no está disponible en este entorno. Pide a soporte que revise la configuración antes de hacer cambios.</p>';
     else if (error) body = '<p class="adm-note adm-note--err">No se pudieron cargar los mensajes. Revisa tu conexión e inténtalo de nuevo.</p>';
     else {
       const shown = leads.filter((l) => filter === "todos" || l.estado === filter);
@@ -263,7 +263,7 @@ export const AdminViews = {
   conversaciones({ admin, empleados, empleadoId, mensajes, error, userId }) {
     const actual = empleados.find((e) => e.id === empleadoId);
     const selector = admin ? `<label class="adm-f"><span class="adm-fl">Conversación</span><select data-conv-empleado><option value="">Elige un empleado</option>${empleados.map((e) => `<option value="${esc(e.id)}"${e.id === empleadoId ? " selected" : ""}>${esc(e.nombre)}</option>`).join("")}</select></label>` : `<p class="adm-sub">Conversación privada con administración.</p>`;
-    const body = error ? `<p class="adm-note adm-note--err">No se pudieron cargar los mensajes. ${error === "missing" ? "Aplica la migración de conversaciones." : "Revisa tu conexión y acceso."}</p>` : mensajes.map((m) => {
+    const body = error ? `<p class="adm-note adm-note--err">No se pudieron cargar los mensajes. ${error === "missing" ? "El servicio de conversaciones no está disponible en este entorno; pide a soporte que revise la configuración." : "Revisa tu conexión y pide a un administrador que verifique el acceso."}</p>` : mensajes.map((m) => {
       const propio = m.remitente_user_id === userId;
       const hora = new Date(m.creado_en).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
       return `<article class="adm-item"><div class="adm-grow"><b>${propio ? "Tú" : admin ? "Empleado" : "Administración"}</b><small>${esc(hora)} · ${m.leido_en ? "Leído" : propio ? "Enviado" : "No leído"}</small><p>${esc(m.cuerpo)}</p></div></article>`;

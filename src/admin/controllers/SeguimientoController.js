@@ -192,7 +192,7 @@ export class SeguimientoController {
       const mensaje = error?.code === "conflict"
         ? "Ya existe un vehículo con ese nombre o placa."
         : error?.code === "perm" ? "No tienes permiso para guardar el SOAT."
-          : "No se pudo guardar el SOAT. Revisa si la migración de Fase 7 está aplicada.";
+          : "No se pudo guardar el SOAT. Pide a soporte que verifique la configuración del módulo.";
       this.toast(mensaje, "err");
     } finally {
       if (version === this.sessionVersion) this.busy = false;

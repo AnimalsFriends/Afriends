@@ -71,6 +71,14 @@ test("empleado ve solo tareas asignadas y no recibe controles administrativos ni
   assert.doesNotMatch(html, /r-vista|Crear ruta|Crear reserva|Falta hoy|Reiniciar|Cupos disponibles/);
 });
 
+test("empleado con sincronización pendiente puede reintentarla cuando está conectado", () => {
+  const html = RutasViews.render({
+    ...base(), isAdmin: false, isEmpleado: true, online: true,
+    syncStates: { "daily-1": "pendiente" }
+  });
+  assert.match(html, /data-action="r-reintentar-cola"/);
+});
+
 test("empleado ve de inmediato perros alojados, servicio de hotel y ruta relacionada", () => {
   const s = { ...base(), isAdmin: false, isEmpleado: true };
   s.planes.push({ id: "b23e4567-e89b-12d3-a456-426614174010", mascota_id: OTHER_DOG, dias_semana: [1], desde: "2026-10-01", hasta: null, activo: true });

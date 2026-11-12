@@ -28,6 +28,15 @@ test("carga citas que cruzan el rango visible y reservas de hotel de la semana",
   assert.ok(llamadas.some(({ url }) => /servicios\?.*activo=eq\.true/.test(url)));
 });
 
+test("la agenda del empleado usa RLS y solicita solo su proyección de lectura", async () => {
+  llamadas.length = 0;
+  await AgendaApi.cargarEmpleado({ rango });
+  assert.ok(llamadas.some(({ url }) => /citas\?select=id,mascota_id,empleado_id/.test(url)));
+  assert.ok(llamadas.some(({ url }) => /duenos\?select=id,nombre,telefono,mascotas/.test(url)));
+  assert.ok(llamadas.some(({ url }) => /empleados\?select=id,nombre/.test(url)));
+  assert.ok(llamadas.every(({ init }) => !init.method || init.method === "GET"));
+});
+
 test("crea una cita con el empleado y los datos limpios del modelo", async () => {
   llamadas.length = 0;
   const datos = {

@@ -153,7 +153,7 @@ function cobros(s) {
 export const FinanzasViews = {
   render(s) {
     if (s.loading) return '<section class="adm-card"><p class="adm-sub">Cargando información financiera…</p></section>';
-    if (s.error) return `${nota(s.error === "missing" ? "Faltan las tablas financieras de la Fase 1 en Supabase." : s.error === "perm" ? "Tu usuario no tiene permiso para ver esta información." : "No se pudieron cargar las finanzas. Revisa conexión y permisos.", "err")}${boton("Reintentar", "fin-recargar")}`;
+    if (s.error) return `${nota(s.error === "missing" ? "Las finanzas no están disponibles en este entorno. Pide a soporte que verifique su configuración." : s.error === "perm" ? "Tu cuenta no tiene permiso para consultar esta información. Pide a un administrador que revise tu acceso." : "No se pudieron cargar las finanzas. Revisa la conexión y pide a un administrador que verifique el acceso.", "err")}${boton("Reintentar", "fin-recargar")}`;
     if (s.isAdmin === false) return nota("La información financiera solo está disponible para una cuenta admin.", "err");
     const contenido = s.vista === "gastos" ? gastos(s) : s.vista === "cobros" ? cobros(s) : resumen(s);
     return `<h1>Finanzas y cartera</h1>${pestanas(s)}${contenido}`;

@@ -24,6 +24,19 @@ propias del administrador con estancia permanente: no necesitan reserva de hotel
 ni fecha de salida, y se excluyen de los cálculos de capacidad. Para los seis perros
 ya registrados bajo Martín Jiménez, el administrador debe marcar “Mascota propia”
 en cada ficha; la migración no altera datos por nombre ni reclasifica clientes automáticamente.
+
+La migración `20261111120000_operacion_empleado_resiliente.sql` queda preparada,
+pero **no aplicada**, para permitir que un empleado cree de forma idempotente las filas
+diarias de sus propias paradas, incluir asignaciones secundarias de `cita_empleados` en
+`mascota_asignada_a_mi()` y separar la hora informativa del dispositivo de la hora
+autoritaria de sincronización. El rollback conserva esas marcas de tiempo y retira los
+permisos nuevos sin borrar historia. Antes de aplicarla hay que confirmar que
+`20261024120000_agenda_empleados_y_horario_opcional.sql` ya existe en el proyecto objetivo.
+
+La conexión externa revisada el 11 de noviembre de 2026 no permitió comparar el proyecto
+configurado por la aplicación: la conexión con nombre “Animals friends” no devolvió
+proyectos y la otra conexión disponible no coincidía con el identificador configurado.
+No se ejecutó SQL ni se cambió ningún recurso remoto.
 | `config.toml` | Configuración de la CLI de Supabase para correr todo en local. |
 
 > `migrations/20261005121608_crear_tablas_iniciales.sql` está vacía y se conserva
@@ -233,6 +246,10 @@ y rollback seguro, y que
 el empleado no tenga ninguna política sobre tablas de dinero. Es una revisión
 **estática** del texto de los `.sql`: no ejecuta nada ni comprueba que las políticas
 hagan lo correcto; eso se verifica con la lista de arriba.
+
+`node --test tests/operacionEmpleadoMigration.test.mjs` verifica además los permisos
+por columnas, la política de inserción por parada asignada, las dos marcas de tiempo y
+el carácter no destructivo del rollback de operación móvil.
 
 ## Pendiente
 

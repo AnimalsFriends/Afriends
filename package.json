@@ -10,8 +10,8 @@
     "dev:worker": "npm run package && npx wrangler dev --config wrangler.jsonc",
     "build": "node scripts/build.mjs && node scripts/package.mjs",
     "audit": "npm run package && node scripts/audit.mjs",
-    "test": "node --test",
+    "test": "node --test \"tests/*.test.mjs\"",
     "package": "node scripts/build.mjs && node scripts/package.mjs",
-    "check": "npm run audit && node --test"
+    "check": "npm run audit && node --test \"tests/*.test.mjs\""
   }
 }

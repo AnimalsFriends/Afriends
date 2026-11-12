@@ -3,6 +3,7 @@
  * La sesión se guarda en el navegador de quien administra.
  */
 import { ENV } from "../../config/env.js";
+import { RouteSyncQueue } from "./routeSyncQueue.js";
 
 const API = String(ENV.SUPABASE_URL || "").replace(/\/$/, "");
 const KEY = ENV.SUPABASE_ANON_KEY || "";
@@ -83,5 +84,10 @@ export const Auth = {
     return session.access_token;
   },
 
-  logout() { generation += 1; session = null; localStorage.removeItem(STORE); }
+  logout() {
+    generation += 1;
+    RouteSyncQueue.clearForUser(Auth.userId);
+    session = null;
+    localStorage.removeItem(STORE);
+  }
 };

@@ -3,7 +3,7 @@
  *   - leer / publicar los datos del sitio (tabla site_config)
  *   - leer y actualizar los mensajes del formulario (tabla contact_requests)
  * Las escrituras y la lectura de mensajes usan el token de la persona que administra;
- * la seguridad real la dan las políticas RLS (solo el correo del administrador).
+ * la seguridad real la dan las políticas RLS y los roles activos, no una comparación de correo.
  */
 import { ENV } from "../../config/env.js";
 import { Auth, AuthError } from "./authService.js";
@@ -55,7 +55,7 @@ export const LeadsApi = {
   async list({ limit = 200 } = {}) {
     const response = await authed(rest(`contact_requests?select=*&order=created_at.desc&limit=${limit}`));
     if (response.status === 401 || response.status === 403) throw new ApiError("perm");
-    if (response.status === 404) throw new ApiError("missing");      // la tabla aún no existe (falta 02_contact_requests.sql)
+    if (response.status === 404) throw new ApiError("missing");      // el servicio no está disponible en el entorno conectado
     if (!response.ok) throw new ApiError("fail");
     return response.json();
   },

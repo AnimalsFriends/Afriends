@@ -54,7 +54,7 @@ test("presenta el historial escapando actor, tablas y snapshots", () => {
   assert.doesNotMatch(html, /<img src=x>|<b>Max<\/b>/);
 });
 
-test("restringe la vista si no es admin y explica cuando falta la migración", () => {
+test("restringe la vista si no es admin y orienta cuando falta la configuración", () => {
   assert.match(SeguimientoViews.render({ ...base(), isAdmin: false }), /solo está disponible para una cuenta admin/);
-  assert.match(SeguimientoViews.render({ ...base(), error: "missing" }), /Falta aplicar la migración de la Fase 7/);
+  assert.match(SeguimientoViews.render({ ...base(), error: "missing" }), /no está disponible en este entorno/);
 });

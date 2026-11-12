@@ -46,12 +46,17 @@ test("lista: muestra el dueño, su teléfono con enlace a WhatsApp y sus perros"
   assert.match(html, /data-action="g-abrir-dueno" data-id="123e4567/);
 });
 
-test("empleado consulta solo su lista asignada y no recibe acciones administrativas ni campos adicionales", () => {
-  const html = GestionViews.render({ ...base(), isAdmin: false, isEmpleado: true });
-  assert.match(html, /Dueños y mascotas asignados/);
+test("empleado consulta la ficha de cuidado asignada sin acciones administrativas", () => {
+  const s = base();
+  Object.assign(s.duenos[0], { contacto_emergencia_nombre: "Luis", contacto_emergencia_telefono: "573009998877", personas_autorizadas: [{ id: "a", mascota_id: MID, nombre: "Marta", telefono: null, parentesco: "Tía" }] });
+  Object.assign(s.duenos[0].mascotas[0], { tipo_comida: "Concentrado", comidas_por_dia: 2, nota_comportamiento: "Usar correa", medicamentos_mascota: [{ id: "m", medicamento: "Tableta", dosis: "1", horario: "8:00", activo: true }] });
+  const html = GestionViews.render({ ...s, isAdmin: false, isEmpleado: true });
+  assert.match(html, /Mascotas asignadas · ficha de cuidado/);
   assert.match(html, /Ana &lt;b&gt;Pérez/);
   assert.match(html, /Max/);
-  assert.doesNotMatch(html, /g-nuevo-dueno|g-abrir-dueno|Contacto de emergencia|Bravo|Medicamentos/);
+  assert.match(html, /Alimentación|Comportamiento|Salud|Medicamentos activos|Autorizados|Emergencia/);
+  assert.match(html, /Concentrado|Usar correa|Tableta|Marta/);
+  assert.doesNotMatch(html, /g-nuevo-dueno|g-abrir-dueno|data-g="/);
 });
 
 test("lista vacía y búsqueda sin resultados dan mensajes distintos", () => {
@@ -121,8 +126,8 @@ test("la foto lleva texto alternativo con el nombre del perro", () => {
 });
 
 test("estados de error y de usuario sin rol de admin", () => {
-  assert.match(GestionViews.render({ ...base(), error: "missing" }), /migraciones de la Fase 1/);
+  assert.match(GestionViews.render({ ...base(), error: "missing" }), /no está disponible en este entorno/);
   assert.match(GestionViews.render({ ...base(), error: "perm" }), /no tiene permiso/);
-  assert.match(GestionViews.render({ ...base(), isAdmin: false }), /Crear tu usuario admin/);
+  assert.match(GestionViews.render({ ...base(), isAdmin: false }), /rol activo autorizado/);
   assert.match(GestionViews.render({ ...base(), loading: true }), /Cargando/);
 });

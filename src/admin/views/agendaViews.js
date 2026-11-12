@@ -27,8 +27,9 @@ const inRange = (cita, inicio, fin) => {
 };
 
 function selectorVista(s) {
+  const vistas = s.isEmpleado ? VISTAS_AGENDA.filter(([id]) => id !== "mes") : VISTAS_AGENDA;
   return `<div class="adm-tabs" role="tablist" aria-label="Vistas de la agenda">
-    ${VISTAS_AGENDA.map(([id, texto]) => `<button class="adm-tab" type="button" role="tab"
+    ${vistas.map(([id, texto]) => `<button class="adm-tab" type="button" role="tab"
       data-action="agenda-vista" data-view="${id}" aria-selected="${s.vista === id}">${texto}</button>`).join("")}
   </div>`;
 }
@@ -82,11 +83,12 @@ function tarjetaCita(s, cita, compacta = false) {
       ${cita.notas ? `<small>${esc(cita.notas)}</small>` : ""}
       ${avisoChoques(cita, s)}
       <div class="adm-row adm-wrapx">
+        ${s.isEmpleado ? citaEnlaceWhatsapp(s, cita) : `
         <label class="adm-f adm-agenda-status"><span class="visually-hidden">Estado de la cita de ${esc(mascota?.nombre ?? "perro")}</span>
           <select data-agenda-status data-id="${esc(cita.id)}">${ESTADOS_CITA.map(([value, label]) => `<option value="${value}"${cita.estado === value ? " selected" : ""}>${label}</option>`).join("")}</select>
         </label>
         ${citaEnlaceWhatsapp(s, cita)}
-        ${button("Editar", "agenda-editar-cita", ` data-id="${esc(cita.id)}"`)}
+        ${button("Editar", "agenda-editar-cita", ` data-id="${esc(cita.id)}"`)}`}
       </div>` : ""}
   </article>`;
 }
@@ -124,6 +126,8 @@ function eventosDia(s, fecha, compacta = false) {
 }
 
 function vistaDia(s) {
+  if (s.isEmpleado) return `<section class="adm-card"><h2>${esc(fechaTexto(s.fecha))}</h2>
+    ${eventosDia(s, s.fecha) || note("No tienes citas ni estancias asignadas para esta fecha.")}</section>`;
   const resultado = s.formularios.cita.id
     ? { errors: [], clean: { ...s.formularios.cita, inicio: fechaHoraBogotaAUTC(s.formularios.cita.inicio), fin: fechaHoraBogotaAUTC(s.formularios.cita.fin) } }
     : validarCita(s.formularios.cita);
@@ -143,7 +147,7 @@ function vistaSemana(s) {
     <div class="adm-agenda-week">${dias.map((fecha) => `<section class="adm-agenda-day">
       <h3><button type="button" data-action="agenda-seleccionar-dia" data-fecha="${fecha}">${esc(fechaTexto(fecha))}</button></h3>
       ${eventosDia(s, fecha, true) || '<small class="adm-sub">Sin eventos</small>'}
-    </section>`).join("")}</div></section>${planDiario(s)}`;
+    </section>`).join("")}</div></section>${s.isEmpleado ? "" : planDiario(s)}`;
 }
 
 function vistaMes(s) {
@@ -204,9 +208,9 @@ function formularioCita(s, alerta) {
 export const AgendaViews = {
   render(s) {
     if (s.loading) return '<section class="adm-card"><p class="adm-sub">Cargando agenda…</p></section>';
-    if (s.error) return `${note(s.error === "missing" ? "Faltan tablas de la Fase 1 en Supabase." : "No se pudo cargar la agenda. Revisa conexión y permisos.", "err")}${button("Reintentar", "agenda-recargar")}`;
-    if (s.isAdmin === false) return note("La agenda solo está disponible para una cuenta admin.", "err");
+    if (s.error) return `${note(s.error === "missing" ? "La agenda no está disponible en este entorno. Pide a soporte que verifique su configuración." : "No se pudo cargar la agenda. Revisa la conexión y pide a un administrador que verifique el acceso.", "err")}${button("Reintentar", "agenda-recargar")}`;
+    if (!s.isAdmin && !s.isEmpleado) return note("La agenda no está disponible para esta cuenta.", "err");
     const contenido = s.vista === "semana" ? vistaSemana(s) : s.vista === "mes" ? vistaMes(s) : vistaDia(s);
-    return `<h1>Agenda y planeación</h1>${selectorVista(s)}${navegacion(s)}${contenido}`;
+    return `<h1>${s.isEmpleado ? "Mi agenda" : "Agenda y planeación"}</h1>${s.isEmpleado ? note("Solo ves citas, hotel y mascotas que tienes asignados. Esta agenda es de solo lectura.") : ""}${selectorVista(s)}${navegacion(s)}${contenido}`;
   }
 };

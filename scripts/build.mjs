@@ -61,6 +61,15 @@ const replaceBlock = (html, name, content) => {
   return re.test(html) ? html.replace(re, block) : html.replace("</head>", `  ${block}\n</head>`);
 };
 const jsonLd = (id, obj) => `  <script type="application/ld+json" id="${id}">${JSON.stringify(obj)}</script>`;
+const text = (value) => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const staticServices = (currentState) => (currentState.categorias ?? []).filter((cat) => cat.activa !== false).map((cat) => `
+        <li class="card service-card" data-static-service="${text(cat.id)}">
+          <article><span class="service-card__icon" aria-hidden="true">${text(cat.tarjeta?.icono)}</span>
+            <h3>${text(cat.tarjeta?.titulo ?? cat.id)}</h3>
+            <p>${text(cat.tarjeta?.descripcion)}</p>
+            ${cat.tarjeta?.puntos?.length ? `<ul>${cat.tarjeta.puntos.map((point) => `<li>${text(typeof point === "string" ? point : point.texto)}</li>`).join("")}</ul>` : ""}
+          </article>
+        </li>`).join("");
 
 /* ---------- grafo de módulos JS (para modulepreload) ---------- */
 async function moduleGraph(entry) {
@@ -116,6 +125,11 @@ for (const page of PAGES) {
 
   if (page.kind === "home") {
     seo.push(jsonLd("ld-business", buildBusinessSchema({ negocio: state.negocio, categorias: state.categorias, siteUrl: SITE_URL })));
+    const servicesStart = "<!-- services-static:start -->";
+    const servicesEnd = "<!-- services-static:end -->";
+    const servicesBlock = `${servicesStart}\n${staticServices(state)}\n        ${servicesEnd}`;
+    const servicesPattern = new RegExp(`${servicesStart}[\\s\\S]*?${servicesEnd}`);
+    html = servicesPattern.test(html) ? html.replace(servicesPattern, servicesBlock) : html;
   } else if (page.kind === "legal" && SITE_URL) {
     const name = title.split("|")[0].trim();
     seo.push(jsonLd("ld-page", buildPageSchema({ siteUrl: SITE_URL, path: page.path, name, description })));

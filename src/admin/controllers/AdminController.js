@@ -222,18 +222,24 @@ export class AdminController {
       const button = $(id);
       button.hidden = !puedeVerModulo(this.role, modulo);
     }
+    document.querySelectorAll(".adm-tab-group").forEach((group) => {
+      group.hidden = !group.querySelector("[data-tab]:not([hidden])");
+    });
     $("adm-rutas-tab").textContent = this.role === "empleado" ? "Mis rutas" : "Rutas y hotel";
+    $("adm-agenda-tab").textContent = this.role === "empleado" ? "Mi agenda" : "Agenda y planeación";
+    $("adm-gestion-tab").textContent = this.role === "empleado" ? "Mascotas asignadas" : "Dueños y mascotas";
     this.setDirty(this.dirty);
     $("adm-reset").hidden = this.role === "empleado";
     $("adm-save").hidden = this.role !== "admin";
     $("adm-download").hidden = this.role === "empleado";
     $("adm-note").innerHTML = note;
     if (!keepDraft) { this.openCat = null; this.setDirty(false); }
-    this.setTab(puedeVerModulo(this.role, this.tab) ? this.tab : this.role === "empleado" ? "rutas" : "negocio");
+    this.setTab(puedeVerModulo(this.role, this.tab) ? this.tab : this.role === "empleado" ? "agenda" : "negocio");
   }
 
   setTab(tab) {
     if (!puedeVerModulo(this.role, tab)) return;
+    if (this.tab === "gestion" && tab !== "gestion" && !this.gestion.puedeSalir()) return;
     if (this.tab === "rutas" && tab !== "rutas" && !this.rutas.puedeSalir()) return;
     if (this.tab === "agenda" && tab !== "agenda" && !this.agenda.puedeSalir()) return;
     if (this.tab === "finanzas" && tab !== "finanzas" && !this.finanzas.puedeSalir()) return;
@@ -398,7 +404,7 @@ export class AdminController {
       e.preventDefault();
       const cuerpo = new FormData(e.target).get("mensaje");
       try { await MensajesApi.enviar(this.conversacionEmpleadoId, String(cuerpo ?? "").trim()); e.target.reset(); await this.refreshConversacion(); }
-      catch (error) { this.toast(error.code === "perm" ? "No tienes permiso para enviar en esta conversación." : "No se pudo enviar el mensaje.", "err"); }
+      catch (error) { this.toast(error.code === "perm" ? "Tu cuenta no tiene permiso para enviar en esta conversación. Pide a un administrador que revise tu acceso." : "No se pudo enviar el mensaje.", "err"); }
     });
     panel.addEventListener("input", (e) => this.onInput(e));
     panel.addEventListener("change", (e) => this.onChange(e));
@@ -561,7 +567,7 @@ export class AdminController {
     } catch (error) {
       if (!this.sessionIsCurrent(generation, identity)) return;
       if (error.code === "expired" || error instanceof AuthError) this.expireSession();
-      else if (error.code === "perm") this.toast("Este usuario no tiene permiso para guardar. Pide ayuda a quien configuró el panel.", "err");
+      else if (error.code === "perm") this.toast("Tu cuenta no tiene permiso para publicar. Pide a un administrador que revise tu acceso.", "err");
       else this.toast("No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.", "err");
     } finally {
       if (!this.sessionIsCurrent(generation, identity)) return;

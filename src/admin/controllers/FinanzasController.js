@@ -26,7 +26,7 @@ export class FinanzasController {
     this.ocultarPestana = ocultarPestana;
     this.active = false;
     this.loaded = false;
-    this.dirty = false;
+    this.dirtyForms = new Set();
     this.saving = false;
     this.sessionVersion = 0;
     const fecha = hoyBogota();
@@ -52,7 +52,7 @@ export class FinanzasController {
   }
 
   invalidateSession() {
-    this.sessionVersion += 1; this.active = false; this.loaded = false; this.dirty = false; this.saving = false;
+    this.sessionVersion += 1; this.active = false; this.loaded = false; this.dirtyForms.clear(); this.saving = false;
     const fecha = hoyBogota();
     this.state = { ...this.state, loading: false, error: null, isAdmin: null, vista: "resumen", mes: fecha.slice(0, 7),
       gastos: [], pagos: [], abonos: [], duenos: [], mascotas: [], servicios: [], reciboPendiente: null,
@@ -101,22 +101,38 @@ export class FinanzasController {
     }
   }
 
-  setDirty(value) {
-    this.dirty = value;
+  get dirty() {
+    return this.dirtyForms.size > 0;
   }
 
-  puedeSalir() {
-    if (!this.dirty) return true;
+  setDirty(value, form = "gasto") {
+    if (value) this.dirtyForms.add(form);
+    else this.dirtyForms.delete(form);
+  }
+
+  puedeSalir(form = null) {
+    const pendientes = form ? this.dirtyForms.has(form) : this.dirty;
+    if (!pendientes) return true;
     if (!confirm("Hay un registro financiero sin guardar. ¿Salir y descartar el borrador?")) return false;
-    this.descartarBorradores();
+    this.descartarBorradores(form);
     return true;
   }
 
-  descartarBorradores() {
+  descartarBorradores(form = null) {
     const fecha = hoyBogota();
-    this.state.forms = { gasto: gastoVacio(fecha), cobro: cobroVacio(fecha), abono: abonoVacio(fecha) };
-    this.state.reciboPendiente = null;
-    this.setDirty(false);
+    if (!form || form === "gasto") {
+      this.state.forms.gasto = gastoVacio(fecha);
+      this.state.reciboPendiente = null;
+      this.setDirty(false, "gasto");
+    }
+    if (!form || form === "cobro") {
+      this.state.forms.cobro = cobroVacio(fecha);
+      this.setDirty(false, "cobro");
+    }
+    if (!form || form === "abono") {
+      this.state.forms.abono = abonoVacio(fecha);
+      this.setDirty(false, "abono");
+    }
   }
 
   onInput(event) {
@@ -125,7 +141,7 @@ export class FinanzasController {
     const field = target.dataset.finField;
     if (form && field && this.state.forms[form] && field in this.state.forms[form]) {
       this.state.forms[form][field] = target.value;
-      this.setDirty(true);
+      this.setDirty(true, form);
     }
   }
 
@@ -153,7 +169,7 @@ export class FinanzasController {
         return;
       }
       this.state.reciboPendiente = archivo;
-      this.setDirty(true);
+      this.setDirty(true, "gasto");
       this.render();
     }
   }
@@ -203,7 +219,7 @@ export class FinanzasController {
           if (version !== this.sessionVersion) return;
           if (this.sesionVencida(error)) return;
           this.state.forms.gasto = { ...clean, id: row.id, categoria: clean.categoria, valor: String(clean.valor) };
-          this.setDirty(true);
+          this.setDirty(true, "gasto");
           await this.recargarFinanzas();
           this.toast("El gasto se guardó, pero no quedó asociado el recibo. Puedes intentarlo de nuevo desde Editar.", "err");
           return;
@@ -211,7 +227,7 @@ export class FinanzasController {
       }
       this.state.forms.gasto = gastoVacio(hoyBogota());
       this.state.reciboPendiente = null;
-      this.setDirty(false);
+      this.setDirty(false, "gasto");
       if (await this.recargarFinanzas() && version === this.sessionVersion) this.toast("Gasto guardado.", "ok");
     } catch (error) {
       if (version !== this.sessionVersion) return;
@@ -225,22 +241,20 @@ export class FinanzasController {
   editarGasto(id) {
     const gasto = this.state.gastos.find((item) => item.id === id);
     if (!gasto) return;
-    if (!this.puedeSalir()) return;
+    if (!this.puedeSalir("gasto")) return;
     this.state.forms.gasto = {
       id: gasto.id, fecha: gasto.fecha, categoria: gasto.categoria,
       descripcion: gasto.descripcion ?? "", valor: String(gasto.valor)
     };
     this.state.reciboPendiente = null;
     this.state.vista = "gastos";
-    this.setDirty(false);
+    this.setDirty(false, "gasto");
     this.render();
   }
 
   cancelarGasto() {
-    if (!this.puedeSalir()) return;
-    this.state.forms.gasto = gastoVacio(hoyBogota());
-    this.state.reciboPendiente = null;
-    this.setDirty(false);
+    if (!this.puedeSalir("gasto")) return;
+    this.descartarBorradores("gasto");
     this.render();
   }
 
@@ -255,7 +269,7 @@ export class FinanzasController {
       if (version !== this.sessionVersion) return;
       if (!row) { this.toast("No se pudo registrar el cobro.", "err"); return; }
       this.state.forms.cobro = cobroVacio(hoyBogota());
-      this.setDirty(false);
+      this.setDirty(false, "cobro");
       if (await this.recargarFinanzas() && version === this.sessionVersion) this.toast("Cobro registrado.", "ok");
     } catch (error) {
       if (version !== this.sessionVersion) return;
@@ -279,7 +293,7 @@ export class FinanzasController {
       if (version !== this.sessionVersion) return;
       if (!row) { this.toast("No se pudo guardar el abono.", "err"); return; }
       this.state.forms.abono = abonoVacio(hoyBogota());
-      this.setDirty(false);
+      this.setDirty(false, "abono");
       if (await this.recargarFinanzas() && version === this.sessionVersion) this.toast("Abono registrado.", "ok");
     } catch (error) {
       if (version !== this.sessionVersion) return;

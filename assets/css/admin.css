@@ -172,6 +172,20 @@ body.adm { padding-bottom: 7rem; font-size: 1rem; }
 .adm-r-stop__main { min-width: 0; display: grid; gap: 3px; }
 .adm-r-stop__main small, .adm-r-booking small { display: block; color: var(--color-text-soft); overflow-wrap: anywhere; }
 .adm-r-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.adm-r-reason-form { display: grid; gap: 8px; margin-top: 8px; padding: 10px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); }
+.adm-r-reason-form textarea { width: 100%; resize: vertical; }
+.adm-care-owner { display: grid; gap: 10px; }
+.adm-care-card { padding: 12px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); }
+.adm-care-card h3 { margin: 0 0 8px; }
+.adm-care-list { display: grid; gap: 8px; margin: 0; }
+.adm-care-list > div { display: grid; grid-template-columns: minmax(110px, 0.35fr) minmax(0, 1fr); gap: 8px; }
+.adm-care-list dt { font-weight: 700; }
+.adm-care-list dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 520px) { .adm-care-list > div { grid-template-columns: 1fr; gap: 2px; } }
+.adm-history-diff { display: grid; gap: 8px; min-width: min(30rem, 75vw); }
+.adm-history-diff > div { padding-block: 6px; border-bottom: 1px solid var(--color-border); }
+.adm-history-diff dt { font-weight: 700; text-transform: capitalize; }
+.adm-history-diff dd { display: grid; gap: 2px; margin: 3px 0 0; overflow-wrap: anywhere; }
 .adm-r-reason { color: var(--color-error) !important; }
 .adm-r-capacity { display: grid; grid-template-columns: minmax(180px, 1fr) 2fr; align-items: end; gap: 16px; margin: 14px 0; }
 .adm-r-capacity form { display: flex; align-items: end; gap: 8px; }
@@ -273,6 +287,9 @@ body.adm { padding-bottom: 7rem; font-size: 1rem; }
   border: 1px solid var(--color-border);
   border-radius: 16px;
 }
+.adm-tab-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-right: 8px; border-right: 1px solid var(--color-border); }
+.adm-tab-group:last-child { border-right: 0; padding-right: 0; }
+.adm-tab-group__label { width: 100%; padding-inline: 6px; color: var(--color-text-soft); font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
 .adm-tab {
   flex: 0 0 auto;
   border-color: transparent;
@@ -389,6 +406,8 @@ body.adm { padding-bottom: 7rem; font-size: 1rem; }
     white-space: nowrap;
     padding-inline: 13px;
   }
+  .adm-tab-group { flex: 0 0 auto; flex-wrap: nowrap; border-right: 1px solid var(--color-border); }
+  .adm-tab-group__label { width: auto; align-self: center; writing-mode: vertical-rl; transform: rotate(180deg); padding: 2px; }
   .adm-card {
     margin-bottom: 12px;
     border-radius: 16px;

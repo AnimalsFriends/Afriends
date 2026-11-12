@@ -73,7 +73,17 @@ export function buildBusinessSchema({ negocio, categorias, siteUrl = "" }) {
     publisher: { "@id": business["@id"] }
   });
 
-  return { "@context": "https://schema.org", "@graph": [business, website] };
+  const areaServed = n.ciudad ? clean({ "@type": "City", name: n.ciudad }) : undefined;
+  const services = (categorias ?? []).filter((cat) => cat.activa !== false).map((cat) => clean({
+    "@type": "Service",
+    "@id": abs(siteUrl, `/#servicio-${encodeURIComponent(cat.id)}`) ?? `#servicio-${cat.id}`,
+    name: cat.tarjeta?.titulo ?? cat.id,
+    description: cat.tarjeta?.descripcion,
+    provider: { "@id": business["@id"] },
+    areaServed
+  }));
+
+  return { "@context": "https://schema.org", "@graph": [business, website, ...services] };
 }
 
 /** Página interna (p. ej. páginas legales): WebPage + migas de pan. */

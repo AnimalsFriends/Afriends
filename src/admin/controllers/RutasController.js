@@ -3,7 +3,8 @@
  * Las fichas se guardan al momento; el estado del servicio se calcula desde planes,
  * reservas y ausencias, no se copia a la mascota.
  */
-import { AuthError } from "../services/authService.js";
+import { Auth, AuthError } from "../services/authService.js";
+import { RouteSyncQueue } from "../services/routeSyncQueue.js";
 import { GestionApi } from "../services/gestionApi.js";
 import { RutasApi } from "../services/rutasApi.js";
 import {
@@ -39,13 +40,20 @@ export class RutasController {
     this.loaded = false;
     this.dirtyForms = new Set();
     this.sessionVersion = 0;
+    this.syncQueue = null;
+    this.onlineHandler = () => {
+      this.state.online = navigator.onLine;
+      if (this.state.online) this.sincronizarCola();
+      else this.render();
+    };
     const fecha = hoyBogota();
     this.state = {
       loading: false, error: null, isAdmin: null, isEmpleado: false, vista: "hoy",
       fecha, mes: fecha.slice(0, 7),
       rutas: [], paradas: [], mascotas: [], duenos: [], planes: [], reservas: [],
       ausencias: [], paradasDia: [], empleados: [], cuposHotel: null,
-      formularios: formulariosNuevos(fecha)
+      formularios: formulariosNuevos(fecha), online: navigator.onLine,
+      syncStates: {}, reasonEditor: null
     };
   }
 
@@ -53,6 +61,8 @@ export class RutasController {
     panel.addEventListener("input", (event) => this.active && this.onInput(event));
     panel.addEventListener("change", (event) => this.active && this.onChange(event));
     panel.addEventListener("click", (event) => this.active && this.onClick(event));
+    window.addEventListener("online", this.onlineHandler);
+    window.addEventListener("offline", this.onlineHandler);
   }
 
   setActive(activo) {
@@ -63,11 +73,14 @@ export class RutasController {
   }
 
   invalidateSession() {
+    this.syncQueue?.clear();
+    this.syncQueue = null;
     this.sessionVersion += 1; this.active = false; this.loaded = false; this.dirtyForms.clear();
     const fecha = hoyBogota();
     this.state = { ...this.state, loading: false, error: null, isAdmin: null, isEmpleado: false, vista: "hoy",
       fecha, mes: fecha.slice(0, 7), rutas: [], paradas: [], mascotas: [], duenos: [], planes: [], reservas: [],
-      ausencias: [], paradasDia: [], empleados: [], cuposHotel: null, formularios: formulariosNuevos(fecha) };
+      ausencias: [], paradasDia: [], empleados: [], cuposHotel: null, formularios: formulariosNuevos(fecha),
+      online: navigator.onLine, syncStates: {}, reasonEditor: null };
   }
 
   render() {
@@ -85,8 +98,8 @@ export class RutasController {
   fallo(error, mensaje) {
     if (this.sesionVencida(error)) return;
     const textos = {
-      perm: "Tu usuario no tiene permiso para gestionar rutas o reservas.",
-      missing: "Faltan las tablas de la Fase 1 en Supabase. Revisa las migraciones.",
+      perm: "Tu cuenta no tiene acceso a esta operación. Pide a un administrador que revise tus permisos.",
+      missing: "El módulo no está disponible en este entorno. Pide a soporte que verifique su configuración.",
       conflict: "Ese dato se cruza con otro registro. Revisa fechas y paradas."
     };
     this.toast(textos[error?.code] ?? mensaje, "err");
@@ -104,17 +117,16 @@ export class RutasController {
       s.isAdmin = contexto?.rol === "admin";
       s.isEmpleado = contexto?.rol === "empleado";
       if (!s.isAdmin && !s.isEmpleado) { s.error = "perm"; return false; }
+      if (s.isEmpleado && Auth.userId && this.syncQueue?.userId !== Auth.userId) {
+        this.syncQueue = new RouteSyncQueue(Auth.userId);
+      }
       const periodo = rangoMes(s.mes);
       const data = s.isAdmin
         ? await RutasApi.cargar({ fecha: s.fecha, ...periodo })
         : await RutasApi.cargarEmpleado({ fecha: s.fecha, ...periodo });
       if (version !== this.sessionVersion) return false;
       Object.assign(s, data);
-      if (s.isEmpleado) {
-        s.vista = "hoy";
-        this.loaded = true;
-        return true;
-      }
+      if (s.isEmpleado) s.vista = "hoy";
       if (!this.dirtyForms.has("cupos")) s.formularios.cupos = String(s.cuposHotel ?? "");
       if (!s.formularios.parada.ruta_id) s.formularios.parada.ruta_id = s.rutas.find((r) => r.activa)?.id ?? "";
       if (!s.formularios.parada.mascota_id) s.formularios.parada.mascota_id = s.mascotas.find((m) => m.activa)?.id ?? "";
@@ -123,6 +135,7 @@ export class RutasController {
       await this.prepararParadasDelDia(version);
       if (version !== this.sessionVersion) return false;
       this.loaded = true;
+      if (s.isEmpleado) await this.sincronizarCola(false);
       return true;
     } catch (error) {
       if (version !== this.sessionVersion) return false;
@@ -137,7 +150,7 @@ export class RutasController {
   }
 
   async prepararParadasDelDia(version = this.sessionVersion) {
-    if (version !== this.sessionVersion || !this.state.isAdmin) return;
+    if (version !== this.sessionVersion || (!this.state.isAdmin && !this.state.isEmpleado)) return;
     const s = this.state;
     const ids = [];
     for (const route of s.rutas.filter((r) => r.activa)) {
@@ -201,8 +214,12 @@ export class RutasController {
   }
 
   onInput(event) {
-    if (!this.state.isAdmin) return;
     const target = event.target;
+    if (target.matches("[data-r-reason]")) {
+      if (this.state.reasonEditor) this.state.reasonEditor.motivo = target.value;
+      return;
+    }
+    if (!this.state.isAdmin) return;
     if (target.matches("[data-r-field]")) this.setField(target);
   }
 
@@ -245,7 +262,13 @@ export class RutasController {
     const button = event.target.closest("[data-action]");
     if (!button) return;
     if (!this.state.isAdmin) {
-      const accion = { "r-recargar": "recargar", "r-marcar-parada": "marcar_parada" }[button.dataset.action];
+      const accion = {
+        "r-recargar": "recargar",
+        "r-marcar-parada": "marcar_parada",
+        "r-guardar-motivo": "marcar_parada",
+        "r-cancelar-motivo": "marcar_parada",
+        "r-reintentar-cola": "marcar_parada"
+      }[button.dataset.action];
       if (!puedeEjecutarAccion(this.state.isEmpleado ? "empleado" : null, "rutas", accion)) return;
     }
     const id = button.dataset.id;
@@ -271,6 +294,9 @@ export class RutasController {
       case "r-guardar-plan": this.guardarPlan(); break;
       case "r-toggle-plan": this.alternarPlan(id); break;
       case "r-marcar-parada": this.marcarParada(id, button.dataset.estado); break;
+      case "r-reintentar-cola": this.sincronizarCola(); break;
+      case "r-guardar-motivo": this.confirmarMotivo(); break;
+      case "r-cancelar-motivo": this.state.reasonEditor = null; this.render(); break;
       case "r-registrar-ausencia": this.registrarAusencia(button.dataset.mascotaId); break;
       case "r-quitar-ausencia": this.quitarAusencia(id); break;
       case "r-guardar-reserva": this.guardarReserva(); break;
@@ -453,6 +479,17 @@ export class RutasController {
     if (version !== this.sessionVersion) return false;
     this.state.ausencias = data.ausencias;
     this.state.paradasDia = data.paradasDia;
+    const paradasPorId = new Map(this.state.paradasDia.map((parada) => [parada.id, parada]));
+    for (const item of this.syncQueue?.list() ?? []) {
+      const parada = paradasPorId.get(item.id);
+      if (!parada) continue;
+      Object.assign(parada, {
+        estado: item.estado,
+        motivo: item.motivo,
+        ocurrido_cliente_en: item.ocurridoClienteEn
+      });
+      this.state.syncStates[item.id] = item.status;
+    }
     const porId = new Map(this.state.reservas.map((r) => [r.id, r]));
     for (const reserva of data.reservas) porId.set(reserva.id, reserva);
     this.state.reservas = [...porId.values()];
@@ -469,16 +506,77 @@ export class RutasController {
       if (!id || !permitidos.includes(estado)) return;
     } else if (!this.state.isAdmin) return;
     if (!id) { this.toast("No se encontró el registro del día; recarga la pantalla.", "err"); return; }
-    const motivo = estado === "no_se_pudo" ? prompt("¿Por qué no se pudo? (opcional)") : null;
-    if (estado === "no_se_pudo" && motivo === null) return;
+    if (estado === "no_se_pudo") {
+      this.state.reasonEditor = { id, estado, motivo: "" };
+      this.render();
+      return;
+    }
+    await this.guardarEstadoParada(id, estado, null);
+  }
+
+  async confirmarMotivo() {
+    const editor = this.state.reasonEditor;
+    if (!editor) return;
+    this.state.reasonEditor = null;
+    await this.guardarEstadoParada(editor.id, editor.estado, editor.motivo);
+  }
+
+  async guardarEstadoParada(id, estado, motivo) {
+    const version = this.sessionVersion;
+    if (this.state.isEmpleado && this.syncQueue) {
+      let item;
+      try {
+        item = this.syncQueue.enqueue({ id, estado, motivo });
+      } catch {
+        this.toast("No se pudo guardar el cambio pendiente en este dispositivo; no se envió al servidor.", "err");
+        return;
+      }
+      this.state.syncStates[id] = "pendiente";
+      const diario = this.state.paradasDia.find((fila) => fila.id === id);
+      if (diario) Object.assign(diario, { estado, motivo: item.motivo, ocurrido_cliente_en: item.ocurridoClienteEn });
+      this.render();
+      if (!navigator.onLine) {
+        this.toast("Cambio pendiente. Se enviará cuando vuelva la conexión.", "ok");
+        return;
+      }
+      await this.sincronizarCola();
+      return;
+    }
     try {
-      const row = await RutasApi.actualizarEstadoParada(id, estado, motivo?.trim() || null);
+      const row = await RutasApi.actualizarEstadoParada(id, estado, motivo?.trim() || null, new Date().toISOString());
       if (version !== this.sessionVersion) return;
       if (!row) { this.toast("No se pudo guardar el estado de la parada.", "err"); return; }
       await this.recargarDia();
       if (version !== this.sessionVersion) return;
       this.toast("Estado de la parada actualizado.", "ok");
     } catch (error) { if (version === this.sessionVersion) this.fallo(error, "No se pudo actualizar la parada."); }
+  }
+
+  async sincronizarCola(mostrarToast = true) {
+    if (!this.syncQueue || !navigator.onLine || !this.syncQueue.list().length) return;
+    const version = this.sessionVersion;
+    try {
+      await this.syncQueue.flush(
+        async (item) => {
+          const row = await RutasApi.actualizarEstadoParada(item.id, item.estado, item.motivo, item.ocurridoClienteEn);
+          if (!row) throw new Error("La parada ya no está disponible.");
+        },
+        (id, status) => { this.state.syncStates[id] = status; this.render(); }
+      );
+      if (version !== this.sessionVersion) return;
+      await this.recargarDia();
+      if (this.syncQueue.list().length) {
+        this.render();
+        if (mostrarToast) this.toast("Hay cambios nuevos pendientes. Reintenta la sincronización.", "err");
+        return;
+      }
+      if (mostrarToast) this.toast("Cambios de ruta sincronizados.", "ok");
+    } catch (error) {
+      if (version !== this.sessionVersion) return;
+      if (this.sesionVencida(error)) return;
+      this.render();
+      if (mostrarToast) this.toast("El cambio sigue pendiente. Puedes reintentarlo ahora o se reintentará al recuperar la conexión.", "err");
+    }
   }
 
   async registrarAusencia(mascotaId) {

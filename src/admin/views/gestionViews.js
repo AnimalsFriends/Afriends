@@ -50,10 +50,10 @@ const telefonoLink = (telefono) =>
 
 /* ------------------------------ avisos de estado ------------------------------ */
 const AVISOS = {
-  missing: nota("info", "Todavía no existen las tablas del panel en Supabase. Aplica las migraciones de la Fase 1 (están explicadas en <code>supabase/README.md</code>) y vuelve a intentarlo."),
-  perm: nota("err", "Este usuario no tiene permiso para ver esta información. Revisa que figure como administrador en la tabla <code>empleados</code>."),
+  missing: nota("info", "El módulo no está disponible en este entorno. Pide a soporte que verifique su configuración antes de hacer cambios."),
+  perm: nota("err", "Tu cuenta no tiene permiso para consultar esta información. Pide a un administrador que revise tu acceso."),
   fail: nota("err", "No se pudieron cargar los datos. Revisa tu conexión e inténtalo de nuevo."),
-  noadmin: nota("info", "Tu usuario todavía no figura como administrador en la tabla <code>empleados</code>. Falta el paso <b>Crear tu usuario admin</b> de <code>supabase/README.md</code>.")
+  noadmin: nota("info", "Esta cuenta no tiene un rol activo autorizado para este módulo. Pide a un administrador que revise tu acceso.")
 };
 
 /* ------------------------------ LISTA ------------------------------ */
@@ -82,11 +82,30 @@ function itemsListaEmpleado(duenos, q) {
   });
   if (!duenos.length) return '<p class="adm-sub">No tienes dueños o perros asignados.</p>';
   if (!filas.length) return '<p class="adm-sub">Nadie coincide con esa búsqueda.</p>';
-  return filas.map((dueno) => `<article class="adm-dueno">
-    <header class="adm-dueno__head"><b>${esc(dueno.nombre)}</b></header>
-    <p class="adm-lead__meta">${telefonoLink(dueno.telefono)} · ${(dueno.mascotas ?? []).length} ${(dueno.mascotas ?? []).length === 1 ? "perro" : "perros"}</p>
-    ${(dueno.mascotas ?? []).length ? `<p class="adm-pets">${dueno.mascotas.map((mascota) => chip(`🐾 ${mascota.nombre}${mascota.raza ? ` · ${mascota.raza}` : ""}`)).join(" ")}</p>` : ""}
-  </article>`).join("");
+  return filas.map((dueno) => {
+    const emergencia = dueno.contacto_emergencia_nombre || dueno.contacto_emergencia_telefono
+      ? `<p><b>Emergencia:</b> ${esc(dueno.contacto_emergencia_nombre ?? "Contacto sin nombre")}${dueno.contacto_emergencia_parentesco ? ` · ${esc(dueno.contacto_emergencia_parentesco)}` : ""}${dueno.contacto_emergencia_telefono ? ` · ${telefonoLink(dueno.contacto_emergencia_telefono)}` : ""}</p>`
+      : '<p class="adm-sub">Sin contacto de emergencia registrado.</p>';
+    const mascotas = (dueno.mascotas ?? []).map((mascota) => {
+      const medicamentos = (mascota.medicamentos_mascota ?? []).filter((item) => item.activo);
+      const autorizados = (dueno.personas_autorizadas ?? []).filter((persona) => !persona.mascota_id || persona.mascota_id === mascota.id);
+      return `<section class="adm-care-card">
+        <h3>🐾 ${esc(mascota.nombre)}${mascota.raza ? ` · ${esc(mascota.raza)}` : ""}</h3>
+        <dl class="adm-care-list">
+          <div><dt>Alimentación</dt><dd>${esc(mascota.tipo_comida ?? "Sin indicación")}${mascota.comidas_por_dia ? ` · ${esc(mascota.comidas_por_dia)} al día` : ""}</dd></div>
+          <div><dt>Comportamiento</dt><dd>${mascota.es_bravo ? `<b>Precaución.</b> ${esc(mascota.nota_comportamiento ?? "Sin detalle adicional")}` : esc(mascota.nota_comportamiento ?? "Sin alerta registrada")}</dd></div>
+          <div><dt>Salud</dt><dd>${mascota.esta_enfermo ? `<b>Enfermedad reportada.</b> ${esc(mascota.detalle_enfermedad ?? "Sin detalle adicional")}` : "Sin enfermedad reportada"}</dd></div>
+          <div><dt>Medicamentos activos</dt><dd>${medicamentos.length ? medicamentos.map((item) => `<span><b>${esc(item.medicamento)}</b>${item.dosis ? ` · ${esc(item.dosis)}` : ""}${item.horario ? ` · ${esc(item.horario)}` : ""}${item.notas ? ` · ${esc(item.notas)}` : ""}</span>`).join("<br>") : "Ninguno registrado"}</dd></div>
+          <div><dt>Autorizados</dt><dd>${autorizados.length ? autorizados.map((persona) => `${esc(persona.nombre)}${persona.parentesco ? ` · ${esc(persona.parentesco)}` : ""}${persona.telefono ? ` · ${telefonoLink(persona.telefono)}` : ""}`).join("<br>") : "Ninguno registrado"}</dd></div>
+        </dl>
+      </section>`;
+    }).join("");
+    return `<article class="adm-dueno adm-care-owner">
+      <header class="adm-dueno__head"><b>${esc(dueno.nombre)}</b></header>
+      <p class="adm-lead__meta">${telefonoLink(dueno.telefono)} · ${(dueno.mascotas ?? []).length} ${(dueno.mascotas ?? []).length === 1 ? "perro" : "perros"}</p>
+      ${emergencia}${mascotas}
+    </article>`;
+  }).join("");
 }
 
 function lista(s) {
@@ -335,7 +354,7 @@ export const GestionViews = {
   render(s) {
     if (s.loading) return '<section class="adm-card"><p class="adm-sub">Cargando…</p></section>';
     if (s.error) return `${AVISOS[s.error] ?? AVISOS.fail}<div>${boton("Reintentar", "g-recargar", { sm: true })}</div>`;
-    if (s.isEmpleado) return `<section class="adm-card"><h2>Dueños y mascotas asignados</h2><p class="adm-sub">Consulta solo los datos necesarios para atender tus servicios. Para actualizar una ficha, contacta al administrador.</p><label class="adm-f adm-grow"><span class="adm-fl">Buscar</span><input type="search" data-g-search value="${esc(s.q)}" placeholder="Nombre, perro o teléfono" autocomplete="off"></label><div id="g-lista">${itemsListaEmpleado(s.duenos, s.q)}</div></section>`;
+    if (s.isEmpleado) return `<section class="adm-card"><h2>Mascotas asignadas · ficha de cuidado</h2><p class="adm-sub">Consulta solo los datos operativos necesarios. Esta vista es de solo lectura; solicita al administrador cualquier corrección.</p><label class="adm-f adm-grow"><span class="adm-fl">Buscar</span><input type="search" data-g-search value="${esc(s.q)}" placeholder="Nombre, perro o teléfono" autocomplete="off"></label><div id="g-lista">${itemsListaEmpleado(s.duenos, s.q)}</div></section>`;
     if (s.isAdmin === false) return `${AVISOS.noadmin}<div>${boton("Reintentar", "g-recargar", { sm: true })}</div>`;
     if (s.vista === "mascota") return mascota(s);
     if (s.vista === "dueno") return dueno(s);

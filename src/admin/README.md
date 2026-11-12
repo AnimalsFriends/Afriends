@@ -2,6 +2,17 @@
 
 > Las descripciones de esta guía documentan el comportamiento previsto del código. Las pruebas automatizadas usan datos simulados y no sustituyen una validación real del login, la sesión, los roles ni las políticas RLS de Supabase.
 
+El panel conserva sus controladores existentes y organiza la navegación por Operación,
+Clientes, Finanzas, Sitio y Equipo. Para empleados, la agenda es de solo lectura, las
+rutas preparan sus filas diarias mediante RLS y los estados de parada usan una cola local
+aislada por usuario que no guarda nombres, teléfonos, direcciones ni fichas. La ficha de
+cuidado muestra únicamente datos operativos de mascotas autorizadas por RLS.
+
+La cola distingue pendiente, sincronizando, guardado y error. El instante del toque se
+envía como contexto; Supabase conserva por separado la hora autoritativa de recepción.
+Cerrar sesión elimina las colas locales. Estas funciones requieren aplicar y verificar
+la migración `20261111120000_operacion_empleado_resiliente.sql` en un entorno autorizado.
+
 Todo el código del panel privado de `/admin/`. Sigue la misma idea MVC que el resto del
 proyecto: cada archivo hace una sola cosa y las pantallas no hablan directo con la base de datos.
 

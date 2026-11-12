@@ -96,3 +96,14 @@ test("el formulario ofrece selección de varios empleados y horas opcionales par
   assert.doesNotMatch(html, /data-agenda-field="inicio"[^>]*required/);
   assert.doesNotMatch(html, /data-agenda-field="fin"[^>]*required/);
 });
+
+test("empleado ve agenda diaria y semanal de solo lectura", () => {
+  const s = { ...base(), isAdmin: false, isEmpleado: true };
+  const dia = AgendaViews.render(s);
+  assert.match(dia, /Mi agenda/);
+  assert.match(dia, /Solo ves citas, hotel y mascotas que tienes asignados/);
+  assert.match(dia, /Baño e higiene|Hotel · Max/);
+  assert.doesNotMatch(dia, /agenda-guardar-cita|agenda-editar-cita|data-agenda-status|Nueva cita|Planeación de recogidas/);
+  const semana = AgendaViews.render({ ...s, vista: "semana" });
+  assert.doesNotMatch(semana, /data-view="mes"|Planeación de recogidas/);
+});

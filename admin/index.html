@@ -52,15 +52,30 @@
   <main id="adm-main" class="adm-wrap" hidden>
     <div id="adm-note" aria-live="polite"></div>
     <div id="adm-tabs" class="adm-tabs" role="tablist" aria-label="Secciones del panel">
-      <button id="adm-business-tab" class="adm-tab" role="tab" type="button" data-tab="negocio" aria-selected="true">Negocio</button>
-      <button id="adm-services-tab" class="adm-tab" role="tab" type="button" data-tab="servicios" aria-selected="false" tabindex="-1">Servicios y precios</button>
-      <button id="adm-gestion-tab" class="adm-tab" role="tab" type="button" data-tab="gestion" aria-selected="false" tabindex="-1" hidden>Dueños y mascotas</button>
-      <button id="adm-rutas-tab" class="adm-tab" role="tab" type="button" data-tab="rutas" aria-selected="false" tabindex="-1" hidden>Rutas y hotel</button>
-      <button id="adm-agenda-tab" class="adm-tab" role="tab" type="button" data-tab="agenda" aria-selected="false" tabindex="-1" hidden>Agenda y planeación</button>
-      <button id="adm-finanzas-tab" class="adm-tab" role="tab" type="button" data-tab="finanzas" aria-selected="false" tabindex="-1" hidden>Finanzas y cartera</button>
-      <button id="adm-seguimiento-tab" class="adm-tab" role="tab" type="button" data-tab="seguimiento" aria-selected="false" tabindex="-1" hidden>Alertas, asistencia e historial</button>
-      <button id="adm-leads-tab" class="adm-tab" role="tab" type="button" data-tab="leads" aria-selected="false" tabindex="-1" hidden>Mensajes<span id="adm-leads-count"></span></button>
-      <button id="adm-conversations-tab" class="adm-tab" role="tab" type="button" data-tab="conversaciones" aria-selected="false" tabindex="-1" hidden>Equipo: mensajes</button>
+      <div class="adm-tab-group" role="group" aria-label="Operación">
+        <span class="adm-tab-group__label" aria-hidden="true">Operación</span>
+        <button id="adm-agenda-tab" class="adm-tab" role="tab" type="button" data-tab="agenda" aria-selected="false" tabindex="-1" hidden>Agenda y planeación</button>
+        <button id="adm-rutas-tab" class="adm-tab" role="tab" type="button" data-tab="rutas" aria-selected="false" tabindex="-1" hidden>Rutas y hotel</button>
+        <button id="adm-seguimiento-tab" class="adm-tab" role="tab" type="button" data-tab="seguimiento" aria-selected="false" tabindex="-1" hidden>Alertas, asistencia e historial</button>
+      </div>
+      <div class="adm-tab-group" role="group" aria-label="Clientes">
+        <span class="adm-tab-group__label" aria-hidden="true">Clientes</span>
+        <button id="adm-gestion-tab" class="adm-tab" role="tab" type="button" data-tab="gestion" aria-selected="false" tabindex="-1" hidden>Dueños y mascotas</button>
+      </div>
+      <div class="adm-tab-group" role="group" aria-label="Finanzas">
+        <span class="adm-tab-group__label" aria-hidden="true">Finanzas</span>
+        <button id="adm-finanzas-tab" class="adm-tab" role="tab" type="button" data-tab="finanzas" aria-selected="false" tabindex="-1" hidden>Cartera y movimientos</button>
+      </div>
+      <div class="adm-tab-group" role="group" aria-label="Sitio">
+        <span class="adm-tab-group__label" aria-hidden="true">Sitio</span>
+        <button id="adm-business-tab" class="adm-tab" role="tab" type="button" data-tab="negocio" aria-selected="true">Negocio</button>
+        <button id="adm-services-tab" class="adm-tab" role="tab" type="button" data-tab="servicios" aria-selected="false" tabindex="-1">Servicios y precios</button>
+        <button id="adm-leads-tab" class="adm-tab" role="tab" type="button" data-tab="leads" aria-selected="false" tabindex="-1" hidden>Mensajes web<span id="adm-leads-count"></span></button>
+      </div>
+      <div class="adm-tab-group" role="group" aria-label="Equipo">
+        <span class="adm-tab-group__label" aria-hidden="true">Equipo</span>
+        <button id="adm-conversations-tab" class="adm-tab" role="tab" type="button" data-tab="conversaciones" aria-selected="false" tabindex="-1" hidden>Conversaciones</button>
+      </div>
     </div>
     <div id="adm-panel" role="tabpanel"></div>
   </main>
@@ -72,7 +87,7 @@
       <div class="adm-row adm-wrapx">
         <button id="adm-reset" class="adm-btn adm-btn--ghost" type="button">Volver a valores originales</button>
         <button id="adm-download" class="adm-btn adm-btn--ghost" type="button">Descargar respaldo</button>
-        <button id="adm-save" class="adm-btn adm-btn--primary" type="button">Guardar y publicar</button>
+        <button id="adm-save" class="adm-btn adm-btn--primary" type="button">Publicar cambios del sitio</button>
       </div>
     </div>
   </div>

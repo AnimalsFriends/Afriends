@@ -52,10 +52,15 @@ test("omite precios desconocidos y solo usa cero cuando el servicio es gratis", 
 });
 
 test("con dominio genera URLs absolutas", () => {
-  const b = business({}, "https://ejemplo.co");
+  const schema = buildBusinessSchema({ negocio: state.negocio, categorias: state.categorias, siteUrl: "https://ejemplo.co" });
+  const b = schema["@graph"][0];
   assert.equal(b["@id"], "https://ejemplo.co/#negocio");
   assert.equal(b.url, "https://ejemplo.co/");
   assert.equal(b.image, "https://ejemplo.co/img/animalsfriends-social-preview.png");
+  const services = schema["@graph"].filter((item) => item["@type"] === "Service");
+  assert.equal(services.length, state.categorias.filter((cat) => cat.activa !== false).length);
+  assert.ok(services.every((service) => service.provider["@id"] === b["@id"]));
+  assert.ok(services.every((service) => service.areaServed.name === state.negocio.ciudad));
 });
 
 test("sameAs descarta enlaces peligrosos o inválidos", () => {

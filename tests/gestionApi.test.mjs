@@ -36,11 +36,14 @@ test("lista de dueños: trae los perros anidados, ordenados por nombre", async (
   assert.match(ultima().url, /order=nombre\.asc/);
 });
 
-test("lista de empleado consulta solo columnas operativas", async () => {
+test("lista de empleado consulta una proyección limitada de cuidado", async () => {
   responder(200, []);
   await GestionApi.listDuenosAsignados();
-  assert.match(ultima().url, /select=id,nombre,telefono,mascotas\(id,nombre,raza,activa\)/);
-  assert.doesNotMatch(ultima().url, /contacto_emergencia|notas/);
+  assert.match(ultima().url, /select=id,nombre,telefono,contacto_emergencia_nombre/);
+  assert.match(ultima().url, /mascotas\(id,nombre,raza,activa,tipo_comida/);
+  assert.match(ultima().url, /medicamentos_mascota\(/);
+  assert.match(ultima().url, /personas_autorizadas\(/);
+  assert.doesNotMatch(ultima().url, /correo|direccion|foto_path|vacunas_mascota|created_at/);
 });
 
 test("crear dueño: POST con el JSON y devuelve la fila creada", async () => {

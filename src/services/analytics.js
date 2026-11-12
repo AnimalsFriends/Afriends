@@ -1,52 +1,70 @@
-/**
- * Google Analytics 4 con CONSENTIMIENTO PREVIO.
- *  - Nada se descarga ni se envía a Google hasta que el visitante acepte.
- *  - Sin GA_MEASUREMENT_ID configurado, este módulo no hace nada.
- */
+/** Google Tag Manager con consentimiento previo y sin configuración GA4 duplicada. */
 import { ENV } from "../config/env.js";
 
-const ID = String(ENV.GA_MEASUREMENT_ID || "").trim();
+const ID = String(ENV.GTM_CONTAINER_ID || "").trim();
 let loaded = false;
+let granted = false;
 
-export const analyticsConfigured = () => /^G-[A-Z0-9]{4,}$/.test(ID);
+const consent = (analyticsStorage) => ({
+  analytics_storage: analyticsStorage,
+  ad_storage: "denied",
+  ad_user_data: "denied",
+  ad_personalization: "denied"
+});
 
-export const Analytics = {
-  enable() {
-    if (!analyticsConfigured()) return;
-    window[`ga-disable-${ID}`] = false;
-    if (loaded) return;
-    loaded = true;
+function ensureDataLayer() {
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = window.gtag || function gtag() { window.dataLayer.push(arguments); };
+}
 
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = function gtag() { window.dataLayer.push(arguments); };   // GA4 exige "arguments"
-
-    // Privacidad: solo medición; sin señales de publicidad ni personalización
-    window.gtag("consent", "default", { analytics_storage: "granted", ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied" });
-    window.gtag("js", new Date());
-    window.gtag("config", ID, { allow_google_signals: false, allow_ad_personalization_signals: false });
-
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ID)}`;
-    document.head.appendChild(script);
-  },
-
-  /** Revoca el consentimiento: detiene el envío y borra las cookies de GA. */
-  disable() {
-    if (!analyticsConfigured()) return;
-    window[`ga-disable-${ID}`] = true;
-    const host = location.hostname;
-    const parent = host.split(".").slice(-2).join(".");
-    document.cookie.split(";").map((c) => c.split("=")[0].trim()).filter((n) => n === "_ga" || n.startsWith("_ga_")).forEach((name) => {
+function clearAnalyticsCookies() {
+  const host = location.hostname;
+  const parent = host.split(".").slice(-2).join(".");
+  document.cookie.split(";").map((cookie) => cookie.split("=")[0].trim())
+    .filter((name) => name === "_ga" || name.startsWith("_ga_"))
+    .forEach((name) => {
       for (const domain of [host, `.${host}`, `.${parent}`]) {
         document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${domain}`;
       }
       document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
     });
+}
+
+export const analyticsConfigured = () => /^GTM-[A-Z0-9]{4,}$/.test(ID);
+
+export const Analytics = {
+  /** Establece Consent Mode v2 denegado sin descargar recursos de Google. */
+  prepare() {
+    if (!analyticsConfigured()) return;
+    ensureDataLayer();
+    window.gtag("consent", "default", consent("denied"));
+  },
+
+  enable() {
+    if (!analyticsConfigured()) return;
+    ensureDataLayer();
+    granted = true;
+    window.gtag("consent", "update", consent("granted"));
+    if (loaded) return;
+    loaded = true;
+    window.dataLayer.push({ "gtm.start": Date.now(), event: "gtm.js" });
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(ID)}`;
+    script.dataset.analyticsContainer = ID;
+    document.head.appendChild(script);
+  },
+
+  disable() {
+    if (!analyticsConfigured()) return;
+    ensureDataLayer();
+    granted = false;
+    window.gtag("consent", "update", consent("denied"));
+    clearAnalyticsCookies();
   },
 
   track(name, params = {}) {
-    if (!loaded || !analyticsConfigured() || window[`ga-disable-${ID}`] === true) return;
-    window.gtag("event", name, params);
+    if (!loaded || !granted || !analyticsConfigured()) return;
+    window.dataLayer.push({ event: name, ...params });
   }
 };

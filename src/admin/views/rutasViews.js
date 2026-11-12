@@ -34,6 +34,9 @@ const dateText = (value) => {
   return new Date(y, m - 1, d).toLocaleDateString("es-CO", { dateStyle: "medium" });
 };
 const nameOptions = (mascotas) => mascotas.filter((m) => m.activa).map((m) => [m.id, m.nombre]);
+const mapsUrl = (address) => address
+  ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+  : "";
 
 function tabs(s) {
   return `<div class="adm-tabs" role="tablist" aria-label="Operación de rutas y hotel">
@@ -71,22 +74,30 @@ function tarjetaParada(s, parada, indice, sentido) {
     pendiente: "Pendiente", recogido: "Recogido", entregado: "Entregado", no_se_pudo: "No se pudo"
   }[diario?.estado ?? "pendiente"];
   const estadoRuta = sentido === "recogida" ? "recogido" : "entregado";
+  const sync = s.syncStates?.[diario?.id];
+  const syncLabel = { pendiente: "Pendiente de enviar", sincronizando: "Sincronizando", guardado: "Guardado", error: "Error: reintentar" }[sync];
+  const editor = s.reasonEditor?.id === diario?.id;
   return `<article class="adm-r-stop">
     <span class="adm-r-stop__number">${indice + 1}</span>
     <div class="adm-r-stop__main">
       <b>${esc(mascota?.nombre ?? "Perro no disponible")}</b>
       ${dueno ? `<small>${esc(dueno.nombre)}${dueno.telefono ? ` · ${esc(dueno.telefono)}` : ""}</small>` : ""}
-      <small>${esc(parada.direccion)}</small>
+      <small>${esc(parada.direccion)}${mapsUrl(parada.direccion) ? ` · <a href="${esc(mapsUrl(parada.direccion))}" target="_blank" rel="noopener noreferrer">Abrir navegación ↗</a>` : ""}</small>
       <div class="adm-tags">${parada.hora_estimada ? tag(parada.hora_estimada.slice(0, 5)) : tag("Hora sin definir", "off")}
         ${tag(servicio.codigo === "hotel_colegio" ? "Hotel + colegio" : "Colegio")}
         ${tag(etiquetaEstado, diario?.estado === "no_se_pudo" ? "warn" : diario?.estado && diario.estado !== "pendiente" ? "ok" : "off")}
+        ${syncLabel ? tag(syncLabel, sync === "error" ? "warn" : sync === "guardado" ? "ok" : "off") : ""}
       </div>
       ${diario?.motivo ? `<small class="adm-r-reason">${esc(diario.motivo)}</small>` : ""}
+      ${editor ? `<form class="adm-r-reason-form" data-r-reason-form>
+        <label class="adm-f"><span class="adm-fl">Motivo (opcional)</span><textarea data-r-reason maxlength="1000" rows="2">${esc(s.reasonEditor.motivo)}</textarea></label>
+        <div class="adm-row adm-wrapx">${button("Guardar estado", "r-guardar-motivo", "", "adm-btn--danger")}${button("Cancelar", "r-cancelar-motivo")}</div>
+      </form>` : ""}
     </div>
     <div class="adm-r-actions">${s.isEmpleado
       ? diario?.id
         ? `${button(sentido === "recogida" ? "Recogido" : "Entregado", "r-marcar-parada", ` data-id="${esc(diario.id)}" data-estado="${estadoRuta}"`, "adm-btn--primary")}${button("No se pudo", "r-marcar-parada", ` data-id="${esc(diario.id)}" data-estado="no_se_pudo"`, "adm-btn--danger")}`
-        : '<small>Estado diario pendiente de preparar. Informa al administrador.</small>'
+        : '<small>No se pudo preparar el estado diario. Revisa la conexión y vuelve a cargar.</small>'
       : `${button(sentido === "recogida" ? "Recogido" : "Entregado", "r-marcar-parada", ` data-id="${esc(diario?.id ?? "")}" data-estado="${estadoRuta}"`, "adm-btn--primary")}${button("No se pudo", "r-marcar-parada", ` data-id="${esc(diario?.id ?? "")}" data-estado="no_se_pudo"`, "adm-btn--danger")}${diario?.estado !== "pendiente" ? button("Reiniciar", "r-marcar-parada", ` data-id="${esc(diario.id)}" data-estado="pendiente"`) : ""}${button("Falta hoy", "r-registrar-ausencia", ` data-mascota-id="${esc(parada.mascota_id)}"`, "adm-btn--danger")}`}
     </div>
   </article>`;
@@ -172,7 +183,15 @@ function panelDiaEmpleado(s) {
     }).join("");
     return `<article class="adm-card"><h2>${esc(route.nombre)}</h2>${sentidos}</article>`;
   }).join("") : '<section class="adm-card"><p class="adm-sub">No tienes rutas asignadas.</p></section>';
-  return `<section class="adm-card"><div class="adm-row adm-between adm-wrapx"><div><h2>Tareas de ruta asignadas</h2><p class="adm-sub">Consulta tus recogidas y entregas del día y actualiza su estado.</p></div><label class="adm-f"><span class="adm-fl">Fecha</span><input type="date" data-r-date="fecha" value="${esc(s.fecha)}"></label></div></section>${hotel}${contenido}`;
+  const conexion = s.online
+    ? note("Con conexión. Los cambios pendientes se sincronizan automáticamente.", "info")
+    : note("Sin conexión. Puedes seguir marcando paradas; verás cuáles quedan pendientes.", "err");
+  const retry = Object.values(s.syncStates ?? {}).some((status) =>
+    status === "error" || (s.online && status === "pendiente")
+  )
+    ? button("Reintentar cambios pendientes", "r-reintentar-cola")
+    : "";
+  return `<section class="adm-card"><div class="adm-row adm-between adm-wrapx"><div><h2>Tareas de ruta asignadas</h2><p class="adm-sub">Consulta tus recogidas y entregas del día y actualiza su estado.</p></div><label class="adm-f"><span class="adm-fl">Fecha</span><input type="date" data-r-date="fecha" value="${esc(s.fecha)}"></label></div>${conexion}${retry}</section>${hotel}${contenido}`;
 }
 
 function formularioRuta(s) {
@@ -346,9 +365,9 @@ function panelHotel(s) {
 export const RutasViews = {
   render(s) {
     if (s.loading) return '<section class="adm-card"><p class="adm-sub">Cargando rutas y reservas…</p></section>';
-    if (s.error) return `${note(s.error === "missing" ? "Faltan las tablas de la Fase 1 en Supabase. Revisa supabase/README.md." : "No se pudieron cargar las rutas. Revisa conexión y permisos, y vuelve a intentar.", "err")}${button("Reintentar", "r-recargar")}`;
+    if (s.error) return `${note(s.error === "missing" ? "Las rutas no están disponibles en este entorno. Pide a soporte que verifique su configuración." : "No se pudieron cargar las rutas. Revisa la conexión y pide a un administrador que verifique el acceso.", "err")}${button("Reintentar", "r-recargar")}`;
     const avisoMigracion = s.mascotasPropiasDisponible === false
-      ? note('Las rutas están cargadas, pero Supabase aún no tiene el campo de mascotas propias. Aplica la migración <code>20261022120200_mascotas_propias_permanentes.sql</code> para activar esa función.', "info")
+      ? note("Las rutas están cargadas, pero el entorno conectado no ofrece la función de mascotas propias. Pide a soporte que verifique la versión del esquema.", "info")
       : "";
     if (s.isEmpleado) return `${avisoMigracion}${panelDiaEmpleado(s)}`;
     if (s.isAdmin === false) return note("Esta sección no está disponible para esta cuenta.", "err");

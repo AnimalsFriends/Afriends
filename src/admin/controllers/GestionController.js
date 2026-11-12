@@ -150,10 +150,10 @@ export class GestionController {
   fallo(error, mensaje) {
     if (this.sesionVencida(error)) return;
     const textos = {
-      perm: "Este usuario no tiene permiso para hacer eso.",
+      perm: "Tu cuenta no tiene acceso a esta operación. Pide a un administrador que revise tus permisos.",
       conflict: "Ese dato choca con otro que ya existe.",
-      missing: "Faltan las tablas del panel en Supabase (Fase 1).",
-      schema: "Supabase aún no tiene las columnas de las nuevas funciones de mascotas. Aplica las migraciones 20261022120100 y 20261022120200 y vuelve a intentarlo."
+      missing: "El módulo no está disponible en este entorno. Pide a soporte que verifique su configuración.",
+      schema: "El entorno conectado no tiene disponible esta función de mascotas. Pide a soporte que verifique la versión del esquema."
     };
     this.toast(textos[error?.code] ?? mensaje, "err");
   }

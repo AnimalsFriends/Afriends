@@ -127,10 +127,10 @@ Todo el paso a paso está en **`GUIA_FASE4_CONFIGURACION.md`**. Resumen:
   Los mensajes se guardan en Supabase (`supabase/02_contact_requests.sql`) sin exponer claves privadas en el navegador.
   Guarda la autorización de datos y la versión de la política aceptada. Si algo falla, el visitante siempre tiene salida por WhatsApp.
 - **Analítica GA4 con consentimiento**: no se carga nada de Google hasta que el visitante acepte; aceptar y rechazar pesan igual;
-  "Configurar cookies" en el pie permite cambiar la decisión. Sin `GA_MEASUREMENT_ID` no hay aviso ni analítica.
+  "Configurar cookies" en el pie permite cambiar la decisión. Sin `GTM_CONTAINER_ID` no hay analítica. GA4 debe configurarse una sola vez dentro del contenedor para evitar duplicados.
   Eventos: `generate_lead` y `whatsapp_click` (con la ubicación del botón).
 - **CI/CD**: cada PR y push a `main` ejecuta build, auditoría y pruebas; solo `main` puede actualizar el Worker de producción.
-- **CSP** ampliada solo con lo necesario: Cloudflare Turnstile y Google Analytics.
+- **CSP** ampliada solo con lo necesario: Cloudflare Turnstile y Google Tag Manager/Analytics.
 
 ## SEO, rendimiento y seguridad (auditoría del sitio público)
 

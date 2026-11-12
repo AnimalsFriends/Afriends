@@ -67,9 +67,10 @@ Flujo resultante:
 - Confirma en la ejecución de Actions si el job de despliegue corrió o fue omitido; no lo deduzcas solo de la configuración.
 - Antes de desplegar, el workflow rechaza `SITE_URL` distinta del hostname confirmado y una Site Key de Turnstile de prueba.
 
-## 6. Google Analytics 4 (opcional hasta tener dominio)
+## 6. Google Analytics 4 mediante Google Tag Manager
 1. analytics.google.com → crear propiedad → flujo de datos **Web** → copia el **ID de medición** (`G-XXXXXXXXXX`).
-2. Pégalo en `src/config/env.js` → `GA_MEASUREMENT_ID`. Con eso aparece el aviso de cookies y el botón "Configurar cookies".
+2. Configura una única Google tag de GA4 dentro del contenedor GTM y usa `src/config/env.js` → `GTM_CONTAINER_ID` para el identificador público del contenedor. No conserves otra carga directa de `gtag.js`.
+3. En GTM crea activadores de evento personalizado para `generate_lead` y `whatsapp_click`. Valida en Preview y GA4 Realtime antes de publicar el contenedor.
 3. En GA4 → Administrar → **Eventos** → marca como *evento clave*: `generate_lead` (formulario enviado) y `whatsapp_click` (clic en WhatsApp, con el parámetro `location`: flotante, encabezado, pie, servicios, formulario).
 4. Vincula Search Console (Administrar → Vinculaciones de productos).
 

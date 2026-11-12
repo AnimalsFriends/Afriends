@@ -134,9 +134,32 @@ const fechaHora = (valor) => new Intl.DateTimeFormat("es-CO", {
   dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota"
 }).format(new Date(valor));
 
+const ETIQUETAS_CAMPOS = {
+  created_at: "Creado", updated_at: "Actualizado", mascota_id: "Mascota",
+  dueno_id: "Dueño", empleado_id: "Empleado", fecha_servicio: "Fecha del servicio",
+  ocurrido_cliente_en: "Hora del dispositivo", sincronizado_en: "Hora de sincronización",
+  marcado_en: "Hora autoritativa", marcado_por: "Marcado por"
+};
+const SENSIBLE = /telefono|correo|direccion|contacto_emergencia|user_id|foto_path/i;
+const etiquetaCampo = (campo) => ETIQUETAS_CAMPOS[campo] ?? campo.replaceAll("_", " ").replace(/^./, (letra) => letra.toUpperCase());
+const valorLegible = (campo, valor) => {
+  if (SENSIBLE.test(campo) && valor != null && valor !== "") return "Dato personal protegido";
+  if (valor == null || valor === "") return "Sin valor";
+  if (typeof valor === "boolean") return valor ? "Sí" : "No";
+  if (typeof valor === "object") return JSON.stringify(valor);
+  return String(valor);
+};
+
 function detalleCambio(fila) {
-  const datos = { anterior: fila.valores_anteriores, nuevo: fila.valores_nuevos };
-  return `<details><summary>Ver detalle</summary><pre>${esc(JSON.stringify(datos, null, 2))}</pre></details>`;
+  const anterior = fila.valores_anteriores ?? {};
+  const nuevo = fila.valores_nuevos ?? {};
+  const campos = [...new Set([...Object.keys(anterior), ...Object.keys(nuevo)])]
+    .filter((campo) => JSON.stringify(anterior[campo]) !== JSON.stringify(nuevo[campo]));
+  if (!campos.length) return "Sin cambios de campos";
+  return `<details><summary>${campos.length} ${campos.length === 1 ? "campo cambiado" : "campos cambiados"}</summary>
+    <dl class="adm-history-diff">${campos.map((campo) => `<div><dt>${esc(etiquetaCampo(campo))}</dt>
+      <dd><span>Antes: ${esc(valorLegible(campo, anterior[campo]))}</span><span>Después: ${esc(valorLegible(campo, nuevo[campo]))}</span></dd></div>`).join("")}</dl>
+  </details>`;
 }
 
 function vistaHistorial(s) {
@@ -150,7 +173,7 @@ function vistaHistorial(s) {
     <td>${detalleCambio(fila)}</td></tr>`).join("")}</tbody></table></div>`
     : nota("Todavía no hay cambios registrados.");
   return `<section class="adm-card"><h2>Historial de cambios</h2>
-    <p class="adm-sub">Muestra quién creó, editó o eliminó registros y guarda sus valores anterior y nuevo. Solo admin puede consultarlo.</p>
+    <p class="adm-sub">Muestra quién creó, editó o eliminó registros. Los datos de contacto se ocultan en esta vista; la retención histórica debe definirse antes de eliminar registros.</p>
     ${filas}${s.historialMas ? boton(s.historialCargando ? "Cargando…" : "Cargar anteriores", "seg-historial-mas") : ""}
   </section>`;
 }
@@ -160,8 +183,8 @@ export const SeguimientoViews = {
     if (s.loading) return `<section class="adm-card"><p role="status">Cargando alertas y asistencia…</p></section>`;
     if (s.error) {
       const mensaje = s.error === "missing"
-        ? "Falta aplicar la migración de la Fase 7 en Supabase."
-        : s.error === "perm" ? "Tu cuenta no tiene permiso para ver esta sección."
+        ? "Este módulo no está disponible en este entorno. Pide a soporte que verifique su configuración."
+        : s.error === "perm" ? "Tu cuenta no tiene permiso para consultar esta sección. Pide a un administrador que revise tu acceso."
           : "No se pudieron cargar los datos. Revisa la conexión e inténtalo de nuevo.";
       return `<section class="adm-card">${nota(mensaje, "err")}${boton("Reintentar", "seg-recargar")}</section>`;
     }

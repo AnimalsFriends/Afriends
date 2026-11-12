@@ -1,13 +1,13 @@
 /**
  * SERVICIO de la gestión de dueños y mascotas (Fase 2): habla con Supabase por REST.
  *
- * Reutiliza el manejo de sesión de adminApi.js (token del administrador, renovación
+ * Reutiliza el manejo de sesión de adminApi.js (token del usuario, renovación
  * automática y reintento). La seguridad real NO está aquí sino en las políticas RLS
- * de la base de datos (Fase 1): aunque alguien manipulara este archivo, un usuario
- * que no sea admin recibiría listas vacías o errores de permiso.
+ * y los roles activos: aunque alguien manipulara este archivo, el servidor conserva
+ * la autorización de cada operación.
  *
- * Errores (ApiError.code): perm (sin permiso) · missing (falta la tabla: no se aplicó
- * la Fase 1) · conflict (choca con otro dato) · fail (cualquier otro) · expired (sesión vencida).
+ * Errores (ApiError.code): perm (sin permiso) · missing (recurso no disponible en el
+ * entorno conectado) · conflict (choca con otro dato) · fail (cualquier otro) · expired (sesión vencida).
  */
 import { ENV } from "../../config/env.js";
 import { ApiError, authed, rest } from "./adminApi.js";
@@ -74,8 +74,8 @@ export const GestionApi = {
     }
   },
   listEmpleados: () => llamar("empleados?select=id,nombre&rol=eq.empleado&activo=eq.true&order=nombre.asc"),
-  /** Lista mínima de dueños y perros que RLS ya autoriza a este empleado. */
-  listDuenosAsignados: () => llamar("duenos?select=id,nombre,telefono,mascotas(id,nombre,raza,activa)&order=nombre.asc&limit=1000"),
+  /** Proyección de cuidado limitada; RLS filtra dueños, perros y relaciones asignadas. */
+  listDuenosAsignados: () => llamar("duenos?select=id,nombre,telefono,contacto_emergencia_nombre,contacto_emergencia_telefono,contacto_emergencia_parentesco,mascotas(id,nombre,raza,activa,tipo_comida,comidas_por_dia,es_bravo,nota_comportamiento,esta_enfermo,detalle_enfermedad,toma_medicamentos,medicamentos_mascota(id,medicamento,dosis,horario,fecha_inicio,fecha_fin,activo,notas)),personas_autorizadas(id,mascota_id,nombre,telefono,parentesco)&order=nombre.asc&limit=1000"),
   createDueno: (datos) => primero(escribir("POST", "duenos", datos)),
   updateDueno: (id, datos) => primero(escribir("PATCH", `duenos?id=eq.${uuid(id)}`, datos)),
   setDuenoActivo: (id, activo) => primero(escribir("PATCH", `duenos?id=eq.${uuid(id)}`, { activo })),

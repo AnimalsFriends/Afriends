@@ -13,6 +13,7 @@ const WA_LOCATIONS = [
 
 export class AnalyticsController {
   init() {
+    Analytics.prepare();
     const consent = ConsentModel.get();
     if (consent?.analytics && analyticsConfigured()) Analytics.enable();
     if (!consent) this.showBanner();

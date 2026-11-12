@@ -40,7 +40,7 @@ export class AgendaController {
     this.sessionVersion = 0;
     const fecha = hoyBogota();
     this.state = {
-      loading: false, error: null, isAdmin: null, vista: "dia", fecha,
+      loading: false, error: null, isAdmin: null, isEmpleado: false, vista: "dia", fecha,
       citas: [], reservas: [], mascotas: [], duenos: [], empleados: [],
       rutas: [], paradas: [], planes: [], ausencias: [], servicios: [],
       formularios: { cita: nuevaCita() }
@@ -62,7 +62,7 @@ export class AgendaController {
 
   invalidateSession() {
     this.sessionVersion += 1; this.active = false; this.loaded = false; this.dirty = false;
-    this.state = { ...this.state, loading: false, error: null, isAdmin: null, vista: "dia",
+    this.state = { ...this.state, loading: false, error: null, isAdmin: null, isEmpleado: false, vista: "dia",
       citas: [], reservas: [], mascotas: [], duenos: [], empleados: [], rutas: [], paradas: [],
       planes: [], ausencias: [], servicios: [], formularios: { cita: nuevaCita() } };
   }
@@ -86,12 +86,17 @@ export class AgendaController {
     s.error = null;
     this.render();
     try {
-      s.isAdmin = await GestionApi.esAdmin();
+      const contexto = await GestionApi.contextoActual();
       if (version !== this.sessionVersion) return false;
-      if (!s.isAdmin) return false;
+      s.isAdmin = contexto?.rol === "admin";
+      s.isEmpleado = contexto?.rol === "empleado";
+      if (!s.isAdmin && !s.isEmpleado) return false;
+      if (s.isEmpleado && s.vista === "mes") s.vista = "semana";
       const rango = rangoAgenda(s.fecha, s.vista);
       if (!rango) throw new Error("El rango de la agenda no es válido.");
-      const datos = await AgendaApi.cargar({ fecha: s.fecha, rango });
+      const datos = s.isAdmin
+        ? await AgendaApi.cargar({ fecha: s.fecha, rango })
+        : await AgendaApi.cargarEmpleado({ rango });
       if (version !== this.sessionVersion) return false;
       Object.assign(s, datos);
       this.loaded = true;
@@ -125,6 +130,7 @@ export class AgendaController {
   }
 
   setField(target) {
+    if (!this.state.isAdmin) return;
     const field = target.dataset.agendaField;
     if (!field || !(field in this.state.formularios.cita)) return;
     this.state.formularios.cita[field] = target instanceof HTMLSelectElement && target.multiple
@@ -144,6 +150,7 @@ export class AgendaController {
 
   onChange(event) {
     const target = event.target;
+    if (this.state.isEmpleado && !target.matches("[data-agenda-date]")) return;
     if (target.matches("[data-agenda-employee]")) {
       const ids = new Set(this.state.formularios.cita.empleado_ids ?? []);
       if (target.checked) ids.add(target.value); else ids.delete(target.value);
@@ -165,6 +172,7 @@ export class AgendaController {
   onClick(event) {
     const button = event.target.closest("[data-action]");
     if (!button) return;
+    if (this.state.isEmpleado && !["agenda-recargar", "agenda-vista", "agenda-mover", "agenda-hoy", "agenda-seleccionar-dia"].includes(button.dataset.action)) return;
     switch (button.dataset.action) {
       case "agenda-recargar": this.cargar(); break;
       case "agenda-vista":
@@ -198,6 +206,7 @@ export class AgendaController {
   }
 
   editarCita(id) {
+    if (!this.state.isAdmin) return;
     const cita = this.state.citas.find((row) => row.id === id);
     if (!cita) return;
     this.state.formularios.cita = {
@@ -223,6 +232,7 @@ export class AgendaController {
   }
 
   async guardarCita() {
+    if (!this.state.isAdmin) return;
     const version = this.sessionVersion;
     const formulario = this.state.formularios.cita;
     const { errors, clean } = validarCita(formulario);
@@ -265,6 +275,7 @@ export class AgendaController {
   }
 
   async cambiarEstado(id, estado) {
+    if (!this.state.isAdmin) return;
     const version = this.sessionVersion;
     try {
       const row = await AgendaApi.actualizarEstado(id, estado);

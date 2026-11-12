@@ -25,6 +25,20 @@ export const AgendaApi={
   ]);
   return {...operacion,citas:citas.map(normalizarCita),reservas,servicios};
  },
+ async cargarEmpleado({rango}){
+  const desde=inicioDiaBogotaUTC(rango.inicio),hasta=inicioDiaBogotaUTC(rango.fin);if(!desde||!hasta)throw new ApiError("fail");
+  const filtro=`or=(and(inicio.lt.${hasta},fin.gt.${desde}),and(inicio.is.null,fecha_servicio.gte.${rango.inicio},fecha_servicio.lt.${rango.fin}))`;
+  const [citas,reservas,servicios,duenos,empleados]=await Promise.all([
+   listaCompleta(`citas?select=id,mascota_id,empleado_id,servicio_codigo,fecha_servicio,inicio,fin,estado,notas,cita_empleados(empleado_id)&${filtro}&order=fecha_servicio.asc,inicio.asc.nullslast,id.asc`),
+   RutasApi.reservasEntre(rango.inicio,rango.fin),
+   listaCompleta("servicios?select=codigo,nombre,activo,orden&activo=eq.true&order=orden.asc,codigo.asc"),
+   listaCompleta("duenos?select=id,nombre,telefono,mascotas(id,nombre,dueno_id,activa)&order=nombre.asc,id.asc"),
+   listaCompleta("empleados?select=id,nombre&activo=eq.true&order=nombre.asc,id.asc")
+  ]);
+  return {citas:citas.map(normalizarCita),reservas,servicios,duenos,empleados,
+   mascotas:duenos.flatMap(dueno=>(dueno.mascotas??[]).map(mascota=>({...mascota,dueno_id:mascota.dueno_id??dueno.id}))),
+   rutas:[],paradas:[],planes:[],ausencias:[]};
+ },
  citasSolapadas(inicio,fin){
   if(!inicio||!fin)return Promise.resolve([]);
   if(!Number.isFinite(Date.parse(inicio))||!Number.isFinite(Date.parse(fin))||Date.parse(fin)<=Date.parse(inicio))throw new ApiError("fail");
