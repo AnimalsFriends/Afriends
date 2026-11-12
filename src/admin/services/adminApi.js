@@ -13,7 +13,7 @@ const KEY = ENV.SUPABASE_ANON_KEY || "";
 export const rest = (path) => `${API}/rest/v1/${path}`;
 
 export class ApiError extends Error {
-  constructor(code) { super(code); this.code = code; }     // perm | missing | fail | expired
+  constructor(code) { super(code); this.code = code; }     // perm | missing | schema | network | conflict | fail | expired
 }
 
 /** fetch con el token del administrador; si vence, lo renueva una vez y reintenta. */
@@ -21,9 +21,18 @@ export async function authed(url, init = {}) {
   const send = async () => fetch(url, { ...init, headers: { apikey: KEY, Authorization: `Bearer ${await Auth.token()}`, ...(init.headers || {}) } });
   let response;
   try { response = await send(); }
-  catch (error) { if (error instanceof AuthError) throw new ApiError("expired"); throw new ApiError("fail"); }
+  catch (error) {
+    if (error instanceof AuthError) throw new ApiError(error.code === "network" ? "network" : "expired");
+    if (error instanceof TypeError) throw new ApiError("network");
+    throw error;
+  }
   if (response.status === 401) {
-    try { await Auth.refresh(); response = await send(); } catch { throw new ApiError("expired"); }
+    try { await Auth.refresh(); response = await send(); }
+    catch (error) {
+      if (error instanceof AuthError) throw new ApiError(error.code === "network" ? "network" : "expired");
+      if (error instanceof TypeError) throw new ApiError("network");
+      throw error;
+    }
   }
   return response;
 }

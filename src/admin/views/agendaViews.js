@@ -208,7 +208,16 @@ function formularioCita(s, alerta) {
 export const AgendaViews = {
   render(s) {
     if (s.loading) return '<section class="adm-card"><p class="adm-sub">Cargando agenda…</p></section>';
-    if (s.error) return `${note(s.error === "missing" ? "La agenda no está disponible en este entorno. Pide a soporte que verifique su configuración." : "No se pudo cargar la agenda. Revisa la conexión y pide a un administrador que verifique el acceso.", "err")}${button("Reintentar", "agenda-recargar")}`;
+    if (s.error) {
+      const mensaje = {
+        missing: "La agenda no está disponible en este entorno. Pide a soporte que verifique su configuración.",
+        network: "No se pudo conectar con el servicio de agenda. Revisa la conexión e inténtalo de nuevo.",
+        perm: "Tu cuenta no tiene permiso para consultar la agenda. Pide a un administrador que revise tu acceso.",
+        schema: "La estructura de la agenda no coincide con la base de datos. Pide a un administrador que revise la configuración.",
+        fail: "No se pudo cargar la agenda por un error inesperado. Inténtalo de nuevo o pide a soporte que revise el servicio."
+      }[s.error] ?? "No se pudo cargar la agenda por un error inesperado. Inténtalo de nuevo o pide a soporte que revise el servicio.";
+      return `${note(mensaje, "err")}${button("Reintentar", "agenda-recargar")}`;
+    }
     if (!s.isAdmin && !s.isEmpleado) return note("La agenda no está disponible para esta cuenta.", "err");
     const contenido = s.vista === "semana" ? vistaSemana(s) : s.vista === "mes" ? vistaMes(s) : vistaDia(s);
     return `<h1>${s.isEmpleado ? "Mi agenda" : "Agenda y planeación"}</h1>${s.isEmpleado ? note("Solo ves citas, hotel y mascotas que tienes asignados. Esta agenda es de solo lectura.") : ""}${selectorVista(s)}${navegacion(s)}${contenido}`;

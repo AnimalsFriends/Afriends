@@ -16,7 +16,7 @@ globalThis.fetch = async (url, init = {}) => {
     json: async () => respuesta.body, blob: async () => new Blob(["x"])
   };
 };
-const { GestionApi } = await import("../src/admin/services/gestionApi.js");
+const { GestionApi, llamar } = await import("../src/admin/services/gestionApi.js");
 
 const ID = "123e4567-e89b-12d3-a456-426614174000";
 const ultima = () => llamadas.at(-1);
@@ -81,6 +81,30 @@ test("códigos de error: sin permiso, sesión vencida, tabla inexistente, choque
   for (const [status, code] of [[403, "perm"], [401, "expired"], [404, "missing"], [409, "conflict"], [500, "fail"]]) {
     responder(status, {});
     await assert.rejects(GestionApi.listDuenos(), (e) => e.code === code, `${status} -> ${code}`);
+  }
+});
+
+test("llamar distingue errores de estructura de datos y denegaciones SQL", async () => {
+  for (const body of [
+    { code: "PGRST200", message: "relationship not found" },
+    { code: "PGRST205", message: "table not found" },
+    { code: "42703", message: "column not found" },
+    { code: "42P01", message: "table does not exist" }
+  ]) {
+    responder(400, body);
+    await assert.rejects(llamar("citas?select=*,cita_empleados(empleado_id)"), (error) => error.code === "schema");
+  }
+  responder(400, { code: "42501", message: "permission denied" });
+  await assert.rejects(llamar("citas?select=*"), (error) => error.code === "perm");
+});
+
+test("fallas de fetch se informan como conectividad y no como permisos", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new TypeError("Failed to fetch"); };
+  try {
+    await assert.rejects(llamar("citas?select=*"), (error) => error.code === "network");
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 });
 

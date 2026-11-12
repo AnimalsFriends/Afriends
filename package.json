@@ -13,5 +13,8 @@
     "test": "node --test \"tests/*.test.mjs\"",
     "package": "node scripts/build.mjs && node scripts/package.mjs",
     "check": "npm run audit && node --test \"tests/*.test.mjs\""
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.16"
   }
 }

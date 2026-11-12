@@ -6,8 +6,9 @@
  * y los roles activos: aunque alguien manipulara este archivo, el servidor conserva
  * la autorización de cada operación.
  *
- * Errores (ApiError.code): perm (sin permiso) · missing (recurso no disponible en el
- * entorno conectado) · conflict (choca con otro dato) · fail (cualquier otro) · expired (sesión vencida).
+ * Errores (ApiError.code): perm (sin permiso) · schema (esquema incompatible) ·
+ * network (fallo de conexión) · missing (recurso no disponible) · conflict ·
+ * fail (error inesperado) · expired (sesión vencida).
  */
 import { ENV } from "../../config/env.js";
 import { ApiError, authed, rest } from "./adminApi.js";
@@ -17,6 +18,7 @@ const API = String(ENV.SUPABASE_URL || "").replace(/\/$/, "");
 const BUCKET_FOTOS = "fotos-mascotas";
 const JSON_HEADERS = { "Content-Type": "application/json" };
 const DEVOLVER = { ...JSON_HEADERS, Prefer: "return=representation" };
+const ERRORES_ESQUEMA = new Set(["42P01", "42703", "42883", "PGRST200", "PGRST201", "PGRST202", "PGRST204", "PGRST205"]);
 
 /** Los ids van directo en la dirección de la petición: se exige formato uuid para que nada raro se cuele. */
 const uuid = (v) => {
@@ -26,14 +28,18 @@ const uuid = (v) => {
 
 export async function llamar(path, init = {}) {
   const response = await authed(rest(path), init);
-  if (response.status === 401 || response.status === 403) throw new ApiError("perm");
-  if (response.status === 404) throw new ApiError("missing");
-  if (response.status === 409) throw new ApiError("conflict");
+  if (response.status === 401) throw new ApiError("expired");
+  if (response.status === 403) throw new ApiError("perm");
   if (!response.ok) {
-    const body = await response.clone().json().catch(() => ({}));
-    if (["42703", "PGRST204"].includes(body.code) || /es_mascota_propia|responsable_empleado_id/i.test(body.message ?? "")) {
+    let body = null;
+    try { body = await response.clone().json(); }
+    catch (error) { if (!(error instanceof SyntaxError)) throw error; }
+    if (ERRORES_ESQUEMA.has(body?.code) || /es_mascota_propia|responsable_empleado_id/i.test(body?.message ?? "")) {
       throw new ApiError("schema");
     }
+    if (body?.code === "42501") throw new ApiError("perm");
+    if (response.status === 404) throw new ApiError("missing");
+    if (response.status === 409) throw new ApiError("conflict");
     throw new ApiError("fail");
   }
   return response.status === 204 ? null : response.json();
@@ -47,6 +53,8 @@ export const GestionApi = {
   async esAdmin() {
     const response = await authed(rest("rpc/es_admin"), { method: "POST", headers: JSON_HEADERS, body: "{}" });
     if (response.status === 404) throw new ApiError("missing");
+    if (response.status === 401) throw new ApiError("expired");
+    if (response.status === 403) throw new ApiError("perm");
     if (!response.ok) throw new ApiError("fail");
     return (await response.json()) === true;
   },
@@ -58,7 +66,9 @@ export const GestionApi = {
       method: "POST", headers: { "Content-Type": "application/json" }, body: "{}"
     });
     if (response.status === 404) throw new ApiError("missing");
-    if (!response.ok) throw new ApiError(response.status === 401 || response.status === 403 ? "perm" : "fail");
+    if (response.status === 401) throw new ApiError("expired");
+    if (response.status === 403) throw new ApiError("perm");
+    if (!response.ok) throw new ApiError("fail");
     const empleadoId = await response.json();
     return empleadoId ? { rol: "empleado", empleadoId } : null;
   },

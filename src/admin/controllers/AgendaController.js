@@ -104,7 +104,7 @@ export class AgendaController {
     } catch (error) {
       if (version !== this.sessionVersion) return false;
       if (this.sesionVencida(error)) return false;
-      s.error = error?.code === "perm" ? "perm" : error?.code === "missing" ? "missing" : "fail";
+      s.error = ["network", "perm", "schema", "missing"].includes(error?.code) ? error.code : "fail";
       return false;
     } finally {
       if (version !== this.sessionVersion) return;

@@ -40,6 +40,21 @@ test("día muestra citas, ocupación de hotel y enlace para confirmar por WhatsA
   assert.match(html, /Se requieren 1 empleado/);
 });
 
+test("agenda explica de forma distinta errores de conexión, permisos y esquema", () => {
+  const casos = [
+    ["network", /No se pudo conectar con el servicio de agenda/],
+    ["perm", /Tu cuenta no tiene permiso para consultar la agenda/],
+    ["schema", /La estructura de la agenda no coincide con la base de datos/],
+    ["missing", /La agenda no está disponible en este entorno/],
+    ["fail", /error inesperado/]
+  ];
+  for (const [error, mensaje] of casos) {
+    const html = AgendaViews.render({ ...base(), error });
+    assert.match(html, mensaje);
+    assert.match(html, /agenda-recargar/);
+  }
+});
+
 test("exige perro y servicio y permite asignar varios empleados", () => {
   const s = base();
   s.formularios.cita = {
