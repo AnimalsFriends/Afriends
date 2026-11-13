@@ -9,6 +9,14 @@ import { formatMoney } from "../utils/format.js";
 import { SiteConfigModel } from "../models/SiteConfigModel.js";
 import { PRICE_TYPE } from "../shared/pricing.js";
 
+const IMAGE_TONES = { banos: "bath", colegio: "school", hotel: "hotel", peluqueria: "groom" };
+const SERVICE_IMAGES = {
+  banos: { src: "assets/img/services/banos.jpg", alt: "Imagen ilustrativa de un perro durante su baño" },
+  colegio: { src: "assets/img/services/colegio.jpg", alt: "Imagen ilustrativa de perros jugando en el colegio canino" },
+  hotel: { src: "assets/img/services/hotel.jpg", alt: "Imagen ilustrativa de un perro descansando en el hotel" },
+  peluqueria: { src: "assets/img/services/peluqueria.jpg", alt: "Imagen ilustrativa de un perro durante su peluquería" }
+};
+
 const renderBullet = (item) => {
   const text = typeof item === "string" ? item : item.texto;
   const highlight = typeof item === "object" && item.destacado ? ' class="is-highlight"' : "";
@@ -34,14 +42,18 @@ const renderCard = (cat, currency) => {
       : minPrice !== null && hasQuotePrice
         ? "Algunas opciones son por cotizar."
         : "";
+  const image = SERVICE_IMAGES[cat.id];
+  const media = image
+    ? `<img class="service-card__image" src="${image.src}" alt="${image.alt}" width="1280" height="714" loading="lazy" decoding="async">`
+    : `<div class="service-card__image service-card__image--${esc(IMAGE_TONES[cat.id] || "bath")}" role="img" aria-label="Imagen ilustrativa pendiente para ${esc(t.titulo ?? cat.id)}"><span>Imagen ilustrativa pendiente</span></div>`;
   return `
     <li>
       <article class="card" data-category="${esc(cat.id)}">
-        <div class="card__icon" aria-hidden="true">${esc(t.icono)}</div>
+        ${media}
         <h3 class="card__title">${esc(t.titulo ?? cat.id)}</h3>
         <p class="card__text">${esc(t.descripcion)}</p>
         <ul class="card__list">${(t.puntos ?? []).map(renderBullet).join("")}</ul>
-        <p class="card__price"><strong>${esc(priceLabel)}</strong>${minPrice === null ? "" : unit}${priceNote ? ` <small>${esc(priceNote)}</small>` : ""}</p>
+        ${minPrice !== null || hasUnknownPrice ? `<p class="card__price"><strong>${esc(priceLabel)}</strong>${minPrice === null ? "" : unit}${priceNote ? ` <small>${esc(priceNote)}</small>` : ""}</p>` : ""}
         <a class="card__link" href="#cotizador" data-goto-category="${esc(cat.id)}" aria-label="Cotizar ${esc(t.titulo ?? cat.id)}">Cotizar este servicio →</a>
       </article>
     </li>`;

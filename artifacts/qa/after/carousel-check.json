@@ -1,0 +1,23 @@
+[
+  {
+    "category": "colegio",
+    "image": "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&fm=webp&w=1800&q=80",
+    "label": "Cotizar colegio por WhatsApp",
+    "href": "https://wa.me/573123044174?text=%C2%A1Hola!%20Qu%C3%A9%20alegr%C3%ADa%20saludarte%20%F0%9F%90%BE.%0AQuiero%20cotizar%20Colegio%20con%20Ruta%20Canina%20(Colegio%20Canino)%20para%20mi%20mascota.%0A%C2%BFMe%20confirman%20disponibilidad%20por%20favor%3F",
+    "message": "¡Hola! Qué alegría saludarte 🐾.\nQuiero cotizar Colegio con Ruta Canina (Colegio Canino) para mi mascota.\n¿Me confirman disponibilidad por favor?"
+  },
+  {
+    "category": "hotel",
+    "image": "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&fm=webp&w=1800&q=80",
+    "label": "Cotizar hotel por WhatsApp",
+    "href": "https://wa.me/573123044174?text=%C2%A1Hola!%20Qu%C3%A9%20alegr%C3%ADa%20saludarte%20%F0%9F%90%BE.%0AQuiero%20cotizar%20Hotel%20con%20Alojamiento%20(Hotel%20para%20Mascotas)%20para%20mi%20mascota.%0A%C2%BFMe%20confirman%20disponibilidad%20por%20favor%3F",
+    "message": "¡Hola! Qué alegría saludarte 🐾.\nQuiero cotizar Hotel con Alojamiento (Hotel para Mascotas) para mi mascota.\n¿Me confirman disponibilidad por favor?"
+  },
+  {
+    "category": "banos",
+    "image": "https://images.unsplash.com/photo-1551717743-49959800b1f6?auto=format&fit=crop&fm=webp&w=1800&q=80",
+    "label": "Cotizar baño por WhatsApp",
+    "href": "https://wa.me/573123044174?text=%C2%A1Hola!%20Qu%C3%A9%20alegr%C3%ADa%20saludarte%20%F0%9F%90%BE.%0AQuiero%20cotizar%20Ba%C3%B1o%20normal%20(Ba%C3%B1os%20para%20Perros)%20para%20mi%20mascota.%0A%C2%BFMe%20confirman%20disponibilidad%20por%20favor%3F",
+    "message": "¡Hola! Qué alegría saludarte 🐾.\nQuiero cotizar Baño normal (Baños para Perros) para mi mascota.\n¿Me confirman disponibilidad por favor?"
+  }
+]

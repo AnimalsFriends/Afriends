@@ -10,7 +10,7 @@ import { LayoutController } from "./controllers/LayoutController.js";
 import { HomeController } from "./controllers/HomeController.js";
 import { SeoController } from "./controllers/SeoController.js";
 import { AnalyticsController } from "./controllers/AnalyticsController.js";
-import "./controllers/HomeCarouselController.js";
+import { syncCarouselQuotes } from "./controllers/HomeCarouselController.js";
 
 const byId = (id) => document.getElementById(id);
 const page = document.body.dataset.page ?? "home";
@@ -32,6 +32,7 @@ try {
   layout.render(state);
   layout.showDebugBadge(state);
   home?.render(state);
+  syncCarouselQuotes(state);
   new SeoController().update(state);
   document.documentElement.dataset.source = state.source;   // "supabase" | "local"
 

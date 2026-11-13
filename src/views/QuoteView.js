@@ -5,6 +5,7 @@
 import { esc } from "../utils/dom.js";
 import { formatMoney } from "../utils/format.js";
 import { normalizePrice, PRICE_TYPE } from "../shared/pricing.js";
+import { categoryIcon, withoutEmoji } from "../utils/categoryIcon.js";
 
 const DEFAULT_DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
@@ -65,7 +66,7 @@ export const QuoteView = {
     const tabs = categorias.map((c, i) => `
       <button type="button" role="tab" class="quote-tab" id="qt-${esc(c.id)}" data-quote-tab="${esc(c.id)}"
         aria-controls="qp-${esc(c.id)}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}">
-        ${esc(c.pestana || c.tarjeta?.titulo || c.id)}
+        <img class="quote-tab__icon" src="${esc(categoryIcon(c.id))}" alt="" width="24" height="24">${esc(withoutEmoji(c.pestana || c.tarjeta?.titulo || c.id))}
       </button>`).join("");
 
     const panels = categorias.map((c, i) => `
@@ -91,7 +92,8 @@ export const QuoteView = {
             <input id="qs-mascota" type="text" maxlength="60" data-quote-name="mascota"></div>
         </div>
         <ul id="qs-list" class="quote-list"></ul>
-        <p class="quote-total"><span id="qs-total-label">Total estimado</span> <strong id="qs-total" aria-live="polite"></strong></p>
+        <p class="quote-total" id="qs-total-row" hidden><span id="qs-total-label">Total estimado</span> <strong id="qs-total" aria-live="polite"></strong></p>
+        <p class="quote-note" id="qs-pending" hidden></p>
         <p id="qs-note" class="quote-note">Precios de referencia en ${esc(currency)}. Te confirmamos disponibilidad y valor final por WhatsApp.</p>
         <p id="qs-status" class="form__status" role="status" aria-live="polite"></p>
         <a id="qs-wa" class="btn btn--primary" href="#cotizador" target="_blank" rel="noopener noreferrer" aria-disabled="true">Cotizar por WhatsApp</a>

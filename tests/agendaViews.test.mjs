@@ -40,6 +40,14 @@ test("día muestra citas, ocupación de hotel y enlace para confirmar por WhatsA
   assert.match(html, /Se requieren 1 empleado/);
 });
 
+test("cita muestra la foto enlazada a su mascota y un marcador si falta", () => {
+  const s = base();
+  s.mascotas[0].fotoUrl = "data:image/webp;base64,abc";
+  assert.match(AgendaViews.render(s), /alt="Foto de Max"/);
+  s.mascotas[0].fotoUrl = "";
+  assert.match(AgendaViews.render(s), /Foto de Max no disponible/);
+});
+
 test("agenda explica de forma distinta errores de conexión, permisos y esquema", () => {
   const casos = [
     ["network", /No se pudo conectar con el servicio de agenda/],

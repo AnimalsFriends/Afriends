@@ -47,8 +47,8 @@ test("gratis, cotizar y precio sin definir se mantienen distintos en el total y 
   assert.match(QuoteView.summaryItems(q.items, "COP"), /Precio por confirmar/);
   assert.match(q.message(), /- Gratis \(Gratis\)/);
   assert.match(q.message(), /- Cotizar \(Por cotizar\)/);
-  assert.match(q.message(), /\*Total estimado parcial:\* \$25\.000 COP\./);
-  assert.match(q.message(), /no incluye los servicios sin precio definido o por cotizar/);
+  assert.match(q.message(), /\*Subtotal de servicios con precio:\* \$25\.000 COP\./);
+  assert.match(q.message(), /Pendiente de cotizar: Cotizar, Por confirmar\./);
 });
 
 test("un pedido compuesto solo por servicios por cotizar no se presenta como total cero", () => {
@@ -60,7 +60,7 @@ test("un pedido compuesto solo por servicios por cotizar no se presenta como tot
 
   assert.equal(q.total, 0);
   assert.equal(q.hasPricedItems, false);
-  assert.match(q.message(), /\*Total estimado parcial:\* Por cotizar\./);
+  assert.match(q.message(), /\*Total estimado:\* Por cotizar\./);
   assert.doesNotMatch(q.message(), /\$0 COP/);
 });
 
@@ -119,6 +119,21 @@ test("el enlace de WhatsApp codifica el mensaje con el número del negocio", () 
   const url = new URL(q.url());
   assert.equal(url.pathname, "/573123044174");
   assert.match(decodeURIComponent(url.searchParams.get("text")), /Mi nombre es \*Ana\*/);
+});
+
+test("WhatsApp conserva emojis, tildes, saltos de línea, ampersand y signo más", () => {
+  const q = new QuoteModel({
+    negocio: { whatsapp: "573000000000", mensajeWhatsApp: { saludo: "¡Hola! 🐾", cierre: "Día y noche: café & amor + paseo" } },
+    categorias: [{ id: "x", tipo: "normal", servicios: [{ id: "s", nombre: "Baño y peluquería", precio: 0, tipoPrecio: "gratis" }] }]
+  });
+  q.setService("x", "s", true);
+  const url = new URL(q.url());
+  const text = url.searchParams.get("text");
+  assert.match(text, /¡Hola! 🐾/);
+  assert.match(text, /\n/);
+  assert.match(text, /Baño y peluquería/);
+  assert.match(text, /café & amor \+ paseo/);
+  assert.match(url.search, /%F0%9F%90%BE/);
 });
 
 test("los nombres no pueden alterar el formato de WhatsApp ni romper líneas", () => {

@@ -4,7 +4,7 @@ import { GestionController } from "../src/admin/controllers/GestionController.js
 import { GestionApi } from "../src/admin/services/gestionApi.js";
 import { RutasApi } from "../src/admin/services/rutasApi.js";
 import { RutasController } from "../src/admin/controllers/RutasController.js";
-import { identidadCambio, rolCambio, rolPanelAutorizado } from "../src/admin/controllers/AdminController.js";
+import { identidadCambio, rolCambio, rolPanelAutorizado, etiquetaUsuario } from "../src/admin/controllers/AdminController.js";
 
 const deferred = () => {
   let resolve, reject;
@@ -30,6 +30,12 @@ test("un rol desconocido o ausente no está autorizado", () => {
   assert.equal(rolPanelAutorizado("admin"), true);
   assert.equal(rolPanelAutorizado("empleado"), true);
   assert.equal(rolPanelAutorizado("offline"), false);
+});
+
+test("el encabezado prioriza el nombre del perfil y usa correo si no hay nombre", () => {
+  assert.equal(etiquetaUsuario({ perfil: "Ana Pérez", autenticacion: "Ana G.", email: "ana@example.test" }), "Ana Pérez");
+  assert.equal(etiquetaUsuario({ perfil: "", autenticacion: "Ana G.", email: "ana@example.test" }), "Ana G.");
+  assert.equal(etiquetaUsuario({ perfil: "", autenticacion: "", email: "ana@example.test" }), "ana@example.test");
 });
 
 test("invalidar la sesión limpia datos y descarta una carga antigua exitosa", async () => {

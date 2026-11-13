@@ -40,6 +40,7 @@ const store = (json) => {
     refresh_token: json.refresh_token,
     expires_at: Date.now() + (Number(json.expires_in) || 3600) * 1000,
     email: json.user?.email || session?.email || "",
+    name: json.user?.user_metadata?.full_name || json.user?.user_metadata?.name || json.user?.user_metadata?.display_name || session?.name || "",
     user_id: json.user?.id || userIdFromToken(json.access_token) || session?.user_id || null
   };
   localStorage.setItem(STORE, JSON.stringify(session));
@@ -48,6 +49,7 @@ const store = (json) => {
 export const Auth = {
   isConfigured: () => Boolean(API && KEY),
   get email() { return session?.email || ""; },
+  get name() { return session?.name || ""; },
   get userId() { return userIdFromToken(session?.access_token) || session?.user_id || null; },
   get generation() { return generation; },
   hasSession: () => Boolean(session?.access_token),

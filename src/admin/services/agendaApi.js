@@ -6,12 +6,29 @@ import { esUuid } from "../models/gestionModel.js";
 import { llamar } from "./gestionApi.js";
 import { RutasApi } from "./rutasApi.js";
 import { ApiError } from "./adminApi.js";
+import { GestionApi } from "./gestionApi.js";
 const JSON_HEADERS={"Content-Type":"application/json"},REPRESENTACION={...JSON_HEADERS,Prefer:"return=representation"};
 const uuid=v=>{if(!esUuid(v))throw new ApiError("fail");return v;};
 async function listaCompleta(path){const filas=[];for(let offset=0;;offset+=1000){const pagina=await llamar(`${path}${path.includes("?")?"&":"?"}limit=1000&offset=${offset}`);filas.push(...pagina);if(pagina.length<1000)return filas;}}
 const primeraFila=async p=>{const value=await p;return Array.isArray(value)?value[0]??null:value??null;};
 const escribir=(method,path,body)=>llamar(path,{method,headers:REPRESENTACION,body:JSON.stringify(body)});
 const normalizarCita=c=>({...c,empleado_ids:[...new Set([...(c.cita_empleados??[]).map(x=>x.empleado_id),c.empleado_id].filter(Boolean))]});
+async function duenosAgendaEmpleado(){
+ const conFoto="duenos?select=id,nombre,telefono,mascotas(id,nombre,dueno_id,activa,foto_path)&order=nombre.asc,id.asc";
+ try{return await listaCompleta(conFoto);}
+ catch(error){
+  if(error.code!=="schema")throw error;
+  const sinFoto=await listaCompleta("duenos?select=id,nombre,telefono,mascotas(id,nombre,dueno_id,activa)&order=nombre.asc,id.asc");
+  return sinFoto.map(d=>({...d,mascotas:(d.mascotas??[]).map(m=>({...m,foto_path:null}))}));
+ }
+}
+async function fotosAgenda(mascotas,citas,reservas){
+ const ids=new Set([...citas.map(c=>c.mascota_id),...reservas.map(r=>r.mascota_id)].filter(Boolean));
+ const seleccionadas=mascotas.filter(m=>ids.has(m.id)&&m.foto_path);
+ const fotos=await Promise.all(seleccionadas.map(async m=>[m.id,await GestionApi.bajarFoto(m.foto_path).catch(()=>"")]));
+ const porId=new Map(fotos);
+ return mascotas.map(m=>({...m,fotoUrl:porId.get(m.id)||""}));
+}
 export const AgendaApi={
  async cargar({fecha,rango}){
   const mes=fecha.slice(0,7),[year,month]=mes.split("-").map(Number),inicioMes=`${mes}-01`,finMes=new Date(Date.UTC(year,month,1)).toISOString().slice(0,10);
@@ -23,7 +40,8 @@ export const AgendaApi={
    RutasApi.reservasEntre(rango.inicio,rango.fin),
    listaCompleta("servicios?select=codigo,nombre,activo,orden&activo=eq.true&order=orden.asc,codigo.asc")
   ]);
-  return {...operacion,citas:citas.map(normalizarCita),reservas,servicios};
+  const citasListas=citas.map(normalizarCita);
+  return {...operacion,citas:citasListas,reservas,servicios,mascotas:await fotosAgenda(operacion.mascotas,citasListas,reservas)};
  },
  async cargarEmpleado({rango}){
   const desde=inicioDiaBogotaUTC(rango.inicio),hasta=inicioDiaBogotaUTC(rango.fin);if(!desde||!hasta)throw new ApiError("fail");
@@ -32,11 +50,13 @@ export const AgendaApi={
    listaCompleta(`citas?select=id,mascota_id,empleado_id,servicio_codigo,fecha_servicio,inicio,fin,estado,notas,cita_empleados(empleado_id)&${filtro}&order=fecha_servicio.asc,inicio.asc.nullslast,id.asc`),
    RutasApi.reservasEntre(rango.inicio,rango.fin),
    listaCompleta("servicios?select=codigo,nombre,activo,orden&activo=eq.true&order=orden.asc,codigo.asc"),
-   listaCompleta("duenos?select=id,nombre,telefono,mascotas(id,nombre,dueno_id,activa)&order=nombre.asc,id.asc"),
+   duenosAgendaEmpleado(),
    listaCompleta("empleados?select=id,nombre&activo=eq.true&order=nombre.asc,id.asc")
   ]);
-  return {citas:citas.map(normalizarCita),reservas,servicios,duenos,empleados,
-   mascotas:duenos.flatMap(dueno=>(dueno.mascotas??[]).map(mascota=>({...mascota,dueno_id:mascota.dueno_id??dueno.id}))),
+  const citasListas=citas.map(normalizarCita);
+  const mascotas=duenos.flatMap(dueno=>(dueno.mascotas??[]).map(mascota=>({...mascota,dueno_id:mascota.dueno_id??dueno.id})));
+  return {citas:citasListas,reservas,servicios,duenos,empleados,
+   mascotas:await fotosAgenda(mascotas,citasListas,reservas),
    rutas:[],paradas:[],planes:[],ausencias:[]};
  },
  citasSolapadas(inicio,fin){

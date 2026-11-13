@@ -21,15 +21,17 @@ test("login registra el usuario autenticado y logout invalida la generación", a
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => ({ ok: true, json: async () => ({
     access_token: token, refresh_token: "refresh", expires_in: 3600,
-    user: { id: userId, email: "empleado@example.test" }
+    user: { id: userId, email: "empleado@example.test", user_metadata: { full_name: "Ana Pérez" } }
   }) });
   const before = Auth.generation;
   try {
     await Auth.login("empleado@example.test", "password-falso-de-prueba");
     assert.equal(Auth.userId, userId);
+    assert.equal(Auth.name, "Ana Pérez");
     assert.equal(Auth.generation, before + 1);
     Auth.logout();
     assert.equal(Auth.userId, null);
+    assert.equal(Auth.name, "");
     assert.equal(Auth.generation, before + 2);
   } finally {
     globalThis.fetch = originalFetch;

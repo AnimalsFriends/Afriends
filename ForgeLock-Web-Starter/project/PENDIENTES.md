@@ -1,5 +1,15 @@
 # Pendientes — Animals Friends
 
+## Avances locales — 13 de noviembre de 2026
+
+- [x] Carrusel: CTA contextual por servicio, imágenes de hero coherentes y ajuste responsive.
+- [x] Tarjetas: fotos ilustrativas proporcionadas para Baños, Colegio, Hotel y Peluquería; iconos existentes en el cotizador y enlace de cotización conservado.
+- [x] Cotizador: total, cotización sola y subtotal mixto distinguen precio gratis explícito de precio ausente.
+- [x] Panel: navegación lateral/plegable, nombre desde perfil con respaldo de Auth/correo y cita con foto o marcador.
+- [x] WhatsApp: prueba de emoji, tildes, saltos, `&` y `+` en el parámetro `text`, sin enviar mensajes.
+- [x] `npm run check` y revisión responsive con navegador local; informe y capturas en `docs/QA_mejoras_publico_panel_2026-11-13.md` y `artifacts/qa/`.
+- [ ] Comparar con la captura de referencia (no llegó adjunta) y verificar la cuenta/rol/RLS y fotos reales de mascotas en un entorno Supabase autorizado.
+
 ## Avances locales — 11 de noviembre de 2026
 
 - [x] Proteger el borrador de Gestión al intentar cambiar de pestaña.
@@ -17,7 +27,7 @@
 - [ ] Recibir razón social/titular, NIT o cédula, dirección y responsable de datos personales.
 - [ ] Confirmar si atiende gatos y modalidad (local, domicilio o ambas).
 - [ ] Recibir redes y enlace de Google Business Profile, si existen.
-- [ ] Recibir fotos reales con autorización.
+- [ ] Recibir fotos reales de clientes/mascotas con autorización (las fotos ilustrativas de servicios no se presentan como fotos reales).
 - [ ] Obtener revisión profesional de aviso legal y políticas.
 - [ ] Confirmar URL canónica y último despliegue en GitHub Actions y Cloudflare.
 - [ ] Confirmar resultado de build, auditoría y pruebas de la ejecución correspondiente.

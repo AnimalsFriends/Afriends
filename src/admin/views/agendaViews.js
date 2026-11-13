@@ -76,8 +76,11 @@ function tarjetaCita(s, cita, compacta = false) {
   const servicio = s.servicios.find((row) => row.codigo === cita.servicio_codigo);
   const estado = ESTADOS_CITA.find(([value]) => value === cita.estado)?.[1] ?? cita.estado;
   const choqueCorto = compacta && conflictosCita(cita, s.citas).length ? tag("Choque", "warn") : "";
+  const foto = mascota?.fotoUrl
+    ? `<img class="adm-agenda-pet__photo" src="${esc(mascota.fotoUrl)}" alt="Foto de ${esc(mascota.nombre)}" width="48" height="48">`
+    : `<span class="adm-agenda-pet__placeholder" role="img" aria-label="Foto de ${esc(mascota?.nombre ?? "la mascota")} no disponible">🐾</span>`;
   return `<article class="adm-agenda-event${compacta ? " adm-agenda-event--compact" : ""}${cita.estado === "cancelado" ? " is-off" : ""}">
-    <div class="adm-row adm-between adm-wrapx"><b>${esc(mascota?.nombre ?? "Perro no disponible")}</b>${tag(estado, cita.estado === "listo" ? "ok" : cita.estado === "cancelado" ? "off" : "warn")}${choqueCorto}</div>
+    <div class="adm-agenda-pet">${foto}<div class="adm-agenda-pet__info"><div class="adm-row adm-between adm-wrapx"><b>${esc(mascota?.nombre ?? "Perro no disponible")}</b>${tag(estado, cita.estado === "listo" ? "ok" : cita.estado === "cancelado" ? "off" : "warn")}${choqueCorto}</div>
     <small>${esc(servicio?.nombre ?? "Servicio no disponible")} · ${cita.inicio && cita.fin ? `${esc(horaTexto(cita.inicio))}–${esc(horaTexto(cita.fin))}` : "Horario por definir"}</small>
     ${!compacta ? `<small>${esc(dueno?.nombre ?? "Dueño no disponible")}${nombresEmpleados.length ? ` · ${esc(nombresEmpleados.join(", "))}` : " · Sin empleado"}</small>
       ${cita.notas ? `<small>${esc(cita.notas)}</small>` : ""}
@@ -89,7 +92,7 @@ function tarjetaCita(s, cita, compacta = false) {
         </label>
         ${citaEnlaceWhatsapp(s, cita)}
         ${button("Editar", "agenda-editar-cita", ` data-id="${esc(cita.id)}"`)}`}
-      </div>` : ""}
+      </div>` : ""}</div></div>
   </article>`;
 }
 

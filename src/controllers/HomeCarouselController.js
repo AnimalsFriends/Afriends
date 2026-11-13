@@ -1,3 +1,26 @@
+import { whatsappUrl } from "../utils/whatsapp.js";
+
+const CTA_LABELS = { hotel: "hotel", colegio: "colegio", banos: "baño", peluqueria: "peluquería" };
+
+/** Mantiene servicio, etiqueta y mensaje ligados a la categoría visible del slide. */
+export function syncCarouselQuotes(state, root = document.querySelector("[data-carousel]")) {
+  if (!root) return;
+  root.querySelectorAll("[data-carousel-quote]").forEach((link) => {
+    const category = state.categorias.find((item) => item.id === link.closest("[data-service-category]")?.dataset.serviceCategory);
+    const service = category?.servicios[0];
+    if (!category || !service) {
+      link.href = "#servicios";
+      link.textContent = "Consultar servicios";
+      return;
+    }
+    const label = CTA_LABELS[category.id] || category.tarjeta?.titulo || service.nombre;
+    const { saludo = "¡Hola!", cierre = "¿Me confirman disponibilidad por favor?" } = state.negocio.mensajeWhatsApp || {};
+    const message = `${saludo}\nQuiero cotizar ${service.nombreMensaje || service.nombre} (${category.tarjeta?.titulo || category.id}) para mi mascota.\n${cierre}`;
+    link.href = whatsappUrl(state.negocio.whatsapp, message) || "#cotizador";
+    link.textContent = `Cotizar ${label} por WhatsApp`;
+  });
+}
+
 /**
  * Carrusel accesible de la página principal.
  * No usa dependencias; pausa con hover/foco, controles manuales y movimiento reducido.

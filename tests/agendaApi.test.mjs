@@ -26,6 +26,7 @@ test("carga citas que cruzan el rango visible y reservas de hotel de la semana",
   assert.ok(llamadas.some(({ url }) => /citas\?select=\*,cita_empleados/.test(url) && url.includes("fecha_servicio.gte.2026-10-12") && url.includes("fecha_servicio.lt.2026-10-19")));
   assert.ok(llamadas.some(({ url }) => /reservas_hotel\?.*entrada=lt\.2026-10-19.*salida=gt\.2026-10-12/.test(url)));
   assert.ok(llamadas.some(({ url }) => /servicios\?.*activo=eq\.true/.test(url)));
+  assert.ok(llamadas.some(({ url }) => /mascotas\?select=id,nombre,activa,dueno_id,es_mascota_propia,foto_path/.test(url)), "las mascotas conservan el path de su foto");
 });
 
 test("la agenda del empleado usa RLS y solicita solo su proyección de lectura", async () => {
@@ -33,8 +34,29 @@ test("la agenda del empleado usa RLS y solicita solo su proyección de lectura",
   await AgendaApi.cargarEmpleado({ rango });
   assert.ok(llamadas.some(({ url }) => /citas\?select=id,mascota_id,empleado_id/.test(url)));
   assert.ok(llamadas.some(({ url }) => /duenos\?select=id,nombre,telefono,mascotas/.test(url)));
+  assert.ok(llamadas.some(({ url }) => /mascotas\(id,nombre,dueno_id,activa,foto_path\)/.test(url)), "la proyección autorizada incluye el path de foto");
   assert.ok(llamadas.some(({ url }) => /empleados\?select=id,nombre/.test(url)));
   assert.ok(llamadas.every(({ init }) => !init.method || init.method === "GET"));
+});
+
+test("la agenda sigue cargando con su proyección anterior si falta foto_path", async () => {
+  const originalFetch = globalThis.fetch;
+  const peticiones = [];
+  globalThis.fetch = async (url) => {
+    const value = String(url);
+    peticiones.push(value);
+    if (value.includes("duenos?") && value.includes("foto_path")) return {
+      status: 400, ok: false,
+      clone: () => ({ json: async () => ({ code: "42703", message: "column foto_path does not exist" }) })
+    };
+    return { status: 200, ok: true, json: async () => [] };
+  };
+  try {
+    const result = await AgendaApi.cargarEmpleado({ rango });
+    assert.ok(peticiones.some((url) => url.includes("foto_path")));
+    assert.ok(peticiones.some((url) => url.includes("mascotas(id,nombre,dueno_id,activa)")));
+    assert.deepEqual(result.mascotas, []);
+  } finally { globalThis.fetch = originalFetch; }
 });
 
 test("crea una cita con el empleado y los datos limpios del modelo", async () => {

@@ -128,8 +128,9 @@ export class QuoteModel {
       : unpricedItems.length && unpricedItems.every((item) => item.tipoPrecio === PRICE_TYPE.QUOTE) ? "Por cotizar"
         : this.hasPartialTotal ? "Precio por confirmar"
           : formatMoney(this.total, this.currency);
-    const totalLabel = this.hasPartialTotal ? "Total estimado parcial" : "Total estimado";
-    const note = this.hasPartialTotal ? "\nEl total parcial no incluye los servicios sin precio definido o por cotizar." : "";
+    const totalLabel = this.hasPartialTotal && this.hasPricedItems ? "Subtotal de servicios con precio" : "Total estimado";
+    const pendingNames = unpricedItems.map((item) => item.name).join(", ");
+    const note = this.hasPartialTotal && this.hasPricedItems ? `\nPendiente de cotizar: ${pendingNames}.` : "";
     return `${saludo}\n${who} agendar servicios${pet}.\n\n*Servicios y detalles seleccionados:*\n${lines}\n\n*${totalLabel}:* ${total}.${note}\n\n${cierre}`;
   }
 

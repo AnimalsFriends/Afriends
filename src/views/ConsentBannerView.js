@@ -10,12 +10,12 @@ export const ConsentBannerView = {
     const note = current === true ? "Tu elección guardada: aceptaste las cookies opcionales."
       : current === false ? "Tu elección guardada: rechazaste las cookies opcionales." : "";
     const detail = configured
-      ? "Si aceptas, activaremos la medición de Google Analytics administrada desde Google Tag Manager. Si rechazas, no se cargará el contenedor."
-      : "Actualmente no hay herramientas de analítica opcional configuradas. Puedes guardar tu preferencia y cambiarla más adelante.";
+      ? "Si aceptas, mediremos el uso con Google Analytics. Si rechazas, solo quedarán las necesarias."
+      : "No hay analítica opcional configurada. Puedes guardar tu preferencia y cambiarla más adelante.";
     return `
     <section class="consent" id="consent-banner" role="region" aria-labelledby="consent-title" aria-describedby="consent-text">
       <h2 id="consent-title" class="consent__title">Tu privacidad importa 🍪</h2>
-      <p id="consent-text" class="consent__text">Usamos almacenamiento necesario para que el sitio funcione. ${detail} Consulta nuestra <a href="politica-cookies.html">Política de cookies</a>.</p>
+      <p id="consent-text" class="consent__text">Las cookies necesarias siempre están activas. ${detail} Lee la <a href="politica-cookies.html">Política de cookies</a>.</p>
       ${note ? `<p class="consent__text">${note}</p>` : ""}
       <div class="consent__actions">
         <button type="button" class="btn btn--ghost" data-consent="reject">Rechazar opcionales</button>

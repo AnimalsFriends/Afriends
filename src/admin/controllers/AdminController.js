@@ -24,6 +24,7 @@ const $ = (id) => document.getElementById(id);
 export const identidadCambio = (anterior, actual) => anterior !== null && anterior !== actual;
 export const rolCambio = (anterior, actual) => anterior !== null && anterior !== actual;
 export const rolPanelAutorizado = (rol) => rol === "admin" || rol === "empleado";
+export const etiquetaUsuario = ({ perfil, autenticacion, email } = {}) => String(perfil || autenticacion || email || "").trim();
 
 export class AdminController {
   constructor() {
@@ -179,7 +180,13 @@ export class AdminController {
 
     if (this.remote) {
       $("adm-userbox").hidden = false;
-      $("adm-user").textContent = Auth.email;
+      const userLabel = $("adm-user");
+      userLabel.textContent = etiquetaUsuario({ autenticacion: Auth.name, email: Auth.email });
+      GestionApi.getProfileName(Auth.userId).then((profileName) => {
+        if (profileName && this.sessionIsCurrent(generation, identity)) {
+          userLabel.textContent = etiquetaUsuario({ perfil: profileName, autenticacion: Auth.name, email: Auth.email });
+        }
+      }).catch(() => {});
       if (this.role === "admin") {
         const result = await SiteConfigApi.fetch();
         if (!this.sessionIsCurrent(generation, identity)) return;
@@ -392,7 +399,13 @@ export class AdminController {
       this.data = normalizeDraft(this.original); this.openCat = null; this.setDirty(true); this.render();
     });
 
-    $("adm-tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) this.setTab(b.dataset.tab); });
+    $("adm-tabs").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-tab]");
+      if (b) {
+        this.setTab(b.dataset.tab);
+        if (window.matchMedia("(max-width: 900px)").matches) $("adm-navigation").open = false;
+      }
+    });
     $("adm-tabs").addEventListener("keydown", (e) => this.onTabKeys(e));
 
     const panel = $("adm-panel");

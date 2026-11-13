@@ -235,7 +235,7 @@
     display: block;
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, rgba(18,28,26,.85) 0%, rgba(18,28,26,.55) 48%, rgba(18,28,26,0) 78%);
+    background: linear-gradient(90deg, rgba(18,28,26,.88) 0%, rgba(18,28,26,.62) 42%, rgba(18,28,26,.12) 78%), linear-gradient(0deg, rgba(18,28,26,.16), transparent 38%);
     pointer-events: none;
   }
   .home-carousel__content {
@@ -273,14 +273,42 @@
   }
   .home-carousel__pause { font-size: .9rem; }
 }
+
+/* Fotos panorámicas completas sobre una base oscura; el bloque de texto conserva contraste. */
+.home-carousel__slide img { background: #26312d; }
+
+/* Fotografías ilustrativas con encuadre consistente en las tarjetas de servicios. */
+.service-card__image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  margin: 0 0 1rem;
+  overflow: hidden;
+  border-radius: 14px;
+  object-fit: cover;
+  object-position: center;
+  background: linear-gradient(145deg, #d9bba3, #f0e3d5 55%, #a9b8a8);
+  color: #51473f;
+}
+.service-card__image span {
+  padding: .5rem .75rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,.86);
+  font-size: .8rem;
+  font-weight: 700;
+}
+.service-card__image--school { background: linear-gradient(145deg, #aec5ad, #e6ebda 55%, #d8b88f); }
+.service-card__image--hotel { background: linear-gradient(145deg, #d7c9bc, #f1e6d6 55%, #a9b6a3); }
+.service-card__image--groom { background: linear-gradient(145deg, #e4c4b1, #f3e7db 55%, #c2b4a3); }
 @media (max-width: 767px) {
+  .home-carousel__slide img { aspect-ratio: 3 / 2; }
   .home-carousel__content { padding-inline: max(var(--gutter, 1rem), env(safe-area-inset-left)); }
   .home-carousel__slide { min-height: 0; }
-  .home-carousel__content { min-height: 21rem; padding-top: 1.5rem; padding-bottom: 1.25rem; }
+  .home-carousel__content { min-height: 0; padding-top: 1.25rem; padding-bottom: .9rem; }
   .home-carousel__content .btn { margin-top: .25rem; }
   .home-carousel__shade { display: none; }
   .home-carousel__controls { border-top: 0; }
-  .home-carousel__content .btn { min-height: 48px; }
+  .home-carousel__content .btn { min-height: 48px; padding-inline: .75rem; font-size: 1rem; }
   .home-carousel__controls { gap: .25rem; }
   .home-carousel__arrow { flex-basis: 44px; }
   .home-carousel__dots { gap: 0; }

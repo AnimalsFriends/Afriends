@@ -32,14 +32,19 @@ const escribir = (method, path, body, headers = REPRESENTACION) =>
 async function cargarMascotas() {
   try {
     return {
-      filas: await listaCompleta("mascotas?select=id,nombre,activa,dueno_id,es_mascota_propia&order=nombre.asc,id.asc"),
+      filas: await listaCompleta("mascotas?select=id,nombre,activa,dueno_id,es_mascota_propia,foto_path&order=nombre.asc,id.asc"),
       mascotasPropiasDisponible: true
     };
   }
   catch (error) {
     if (error.code !== "schema") throw error;
-    const filas = await listaCompleta("mascotas?select=id,nombre,activa,dueno_id&order=nombre.asc,id.asc");
-    return { filas: filas.map((mascota) => ({ ...mascota, es_mascota_propia: false })), mascotasPropiasDisponible: false };
+    try {
+      return { filas: await listaCompleta("mascotas?select=id,nombre,activa,dueno_id,es_mascota_propia&order=nombre.asc,id.asc"), mascotasPropiasDisponible: true };
+    } catch (nested) {
+      if (nested.code !== "schema") throw nested;
+      const filas = await listaCompleta("mascotas?select=id,nombre,activa,dueno_id&order=nombre.asc,id.asc");
+      return { filas: filas.map((mascota) => ({ ...mascota, es_mascota_propia: false, foto_path: null })), mascotasPropiasDisponible: false };
+    }
   }
 }
 

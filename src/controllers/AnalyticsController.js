@@ -35,7 +35,9 @@ export class AnalyticsController {
     const holder = document.createElement("div");
     holder.id = "consent-holder";
     holder.innerHTML = ConsentBannerView.render({ current: ConsentModel.get()?.analytics });
-    document.body.appendChild(holder);
+    const header = document.getElementById("site-header");
+    if (header) header.before(holder);
+    else document.body.appendChild(holder);
     document.body.classList.add("has-consent-banner");
     const height = holder.firstElementChild.getBoundingClientRect().height;
     document.documentElement.style.setProperty("--consent-h", `${Math.ceil(height)}px`);   // CSSOM: permitido por la CSP

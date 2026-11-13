@@ -19,10 +19,27 @@ test("tarjetas públicas no presentan un precio desconocido como cero", () => {
 
   assert.match(unknown, /Precio por confirmar/);
   assert.doesNotMatch(unknown, /\$0 COP/);
-  assert.match(quote, /Por cotizar/);
+  assert.doesNotMatch(quote, /<strong>Por cotizar<\/strong>/);
+  assert.match(quote, /Cotizar este servicio/);
   assert.match(free, /Gratis/);
   assert.match(mixed, /Desde \$12\.000 COP/);
   assert.match(mixed, /Algunas opciones son por cotizar/);
+  assert.match(unknown, /Imagen ilustrativa pendiente/);
+  assert.match(unknown, /Cotizar este servicio/);
+});
+
+test("las cuatro categorías de servicio usan las fotografías ilustrativas proporcionadas", () => {
+  const cases = [
+    ["banos", "assets/img/services/banos.jpg"],
+    ["colegio", "assets/img/services/colegio.jpg"],
+    ["hotel", "assets/img/services/hotel.jpg"],
+    ["peluqueria", "assets/img/services/peluqueria.jpg"]
+  ];
+  for (const [id, src] of cases) {
+    const html = ServicesView.cards([{ ...category("cotizar", null), id }], "COP");
+    assert.match(html, new RegExp(`src="${src}"`));
+    assert.match(html, /alt="Imagen ilustrativa/);
+  }
 });
 
 test("el panel permite clasificar el precio y solo solicita monto para precio fijo", () => {

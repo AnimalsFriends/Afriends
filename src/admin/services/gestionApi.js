@@ -49,6 +49,11 @@ const escribir = (method, path, body) => llamar(path, { method, headers: DEVOLVE
 const primero = async (promesa) => (await promesa)?.[0] ?? null;
 
 export const GestionApi = {
+  async getProfileName(userId) {
+    if (!esUuid(userId)) return "";
+    const rows = await llamar(`empleados?select=nombre&user_id=eq.${uuid(userId)}&limit=1`);
+    return String(rows?.[0]?.nombre || "").trim();
+  },
   /** ¿Este usuario es administrador? (función es_admin() de la base de datos) */
   async esAdmin() {
     const response = await authed(rest("rpc/es_admin"), { method: "POST", headers: JSON_HEADERS, body: "{}" });
